@@ -1,0 +1,29 @@
+{
+  "name" : "实习生权限",
+  "accessRights" : {
+    "公共区域" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : [ "Thu", "Wed", "Mon", "Fri", "Tue" ],
+      "timeRanges" : [ "9:00-17:00" ],
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : false,
+      "excludeTimeRanges" : false
+    },
+    "办公区域" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : [ "Thu", "Wed", "Mon", "Fri", "Tue" ],
+      "timeRanges" : [ "9:00-17:00" ],
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : false,
+      "excludeTimeRanges" : false
+    }
+  }
+}

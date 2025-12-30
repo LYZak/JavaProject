@@ -1,0 +1,29 @@
+{
+  "name" : "排除周末",
+  "accessRights" : {
+    "公共区域" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : [ "Sat", "Sun" ],
+      "timeRanges" : [ "8:00-18:00" ],
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : true,
+      "excludeTimeRanges" : false
+    },
+    "办公区域" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : [ "Sat", "Sun" ],
+      "timeRanges" : [ "8:00-18:00" ],
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : true,
+      "excludeTimeRanges" : false
+    }
+  }
+}

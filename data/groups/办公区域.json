@@ -1,0 +1,5 @@
+{
+  "name" : "办公区域",
+  "securityLevel" : 2,
+  "resources" : [ "RES007", "RES008", "RES009", "RES010" ]
+}

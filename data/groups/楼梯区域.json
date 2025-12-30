@@ -1,0 +1,5 @@
+{
+  "name" : "楼梯区域",
+  "securityLevel" : 2,
+  "resources" : [ "RES014", "RES015" ]
+}

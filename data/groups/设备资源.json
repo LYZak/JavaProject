@@ -1,0 +1,5 @@
+{
+  "name" : "设备资源",
+  "securityLevel" : 2,
+  "resources" : [ "RES020", "RES016", "RES017", "RES018", "RES019" ]
+}

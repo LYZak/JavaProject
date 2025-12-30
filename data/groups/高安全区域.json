@@ -1,0 +1,5 @@
+{
+  "name" : "高安全区域",
+  "securityLevel" : 3,
+  "resources" : [ "RES024", "RES025", "RES026", "RES012", "RES013" ]
+}

@@ -1,17 +1,20 @@
 package com.bigcomp.accesscontrol.gui;
 
+import com.bigcomp.accesscontrol.core.AccessControlSystem;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 /**
  * 主窗口 - 访问控制系统的GUI主界面
  */
 public class MainWindow extends JFrame {
     private JTabbedPane tabbedPane;
+    private AccessControlSystem accessControlSystem;
 
     public MainWindow() {
+        // 创建共享的访问控制系统实例
+        this.accessControlSystem = new AccessControlSystem();
+        
         initializeComponents();
         setupLayout();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -23,13 +26,14 @@ public class MainWindow extends JFrame {
     private void initializeComponents() {
         tabbedPane = new JTabbedPane();
 
-        // 添加各个功能标签页
-        tabbedPane.addTab("用户管理", new UserManagementPanel());
-        tabbedPane.addTab("资源管理", new ResourceManagementPanel());
-        tabbedPane.addTab("配置文件", new ProfileManagementPanel());
-        tabbedPane.addTab("实时监控", new RealTimeMonitorPanel());
-        tabbedPane.addTab("日志查看", new LogViewerPanel());
-        tabbedPane.addTab("事件模拟", new EventSimulationPanel());
+        // 添加各个功能标签页，传递共享的系统实例
+        tabbedPane.addTab("用户管理", new UserManagementPanel(accessControlSystem));
+        tabbedPane.addTab("资源管理", new ResourceManagementPanel(accessControlSystem));
+        tabbedPane.addTab("资源组管理", new ResourceGroupManagementPanel(accessControlSystem));
+        tabbedPane.addTab("配置文件", new ProfileManagementPanel(accessControlSystem));
+        tabbedPane.addTab("实时监控", new RealTimeMonitorPanel(accessControlSystem));
+        tabbedPane.addTab("日志查看", new LogViewerPanel(accessControlSystem));
+        tabbedPane.addTab("事件模拟", new EventSimulationPanel(accessControlSystem));
     }
 
     private void setupLayout() {

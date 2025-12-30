@@ -1,0 +1,29 @@
+{
+  "name" : "全天候权限",
+  "accessRights" : {
+    "公共区域" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : null,
+      "timeRanges" : null,
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : false,
+      "excludeTimeRanges" : false
+    },
+    "办公区域" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : null,
+      "timeRanges" : null,
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : false,
+      "excludeTimeRanges" : false
+    }
+  }
+}
