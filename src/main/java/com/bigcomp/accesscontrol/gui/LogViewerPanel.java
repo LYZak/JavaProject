@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.gui;
 
 import com.bigcomp.accesscontrol.core.AccessControlSystem;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * 日志查看面板
+ * Log Viewer Panel
  */
 public class LogViewerPanel extends JPanel {
     private AccessControlSystem accessControlSystem;
@@ -36,7 +37,7 @@ public class LogViewerPanel extends JPanel {
     }
     
     private void initializeComponents() {
-        String[] columnNames = {"时间", "徽章代码", "读卡器ID", "资源ID", "用户ID", "用户名", "状态"};
+        String[] columnNames = {"Time", "Badge Code", "Badge Reader ID", "Resource ID", "User ID", "User Name", "Status"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -46,7 +47,7 @@ public class LogViewerPanel extends JPanel {
         logTable = new JTable(tableModel);
         logTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         
-        // 搜索字段
+        // Search fields
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String today = LocalDateTime.now().format(formatter);
         
@@ -55,79 +56,79 @@ public class LogViewerPanel extends JPanel {
         badgeCodeField = new JTextField(15);
         resourceIdField = new JTextField(15);
         userIdField = new JTextField(15);
-        grantedCombo = new JComboBox<>(new String[]{"全部", "授权", "拒绝"});
+        grantedCombo = new JComboBox<>(new String[]{"All", "Granted", "Denied"});
     }
     
     private void setupLayout() {
         setLayout(new BorderLayout());
         
-        // 搜索面板
+        // Search panel
         JPanel searchPanel = new JPanel(new GridBagLayout());
-        searchPanel.setBorder(BorderFactory.createTitledBorder("搜索条件"));
+        searchPanel.setBorder(BorderFactory.createTitledBorder("Search Criteria"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
         
-        // 第一行：日期范围
+        // First row: Date range
         gbc.gridx = 0; gbc.gridy = 0;
-        searchPanel.add(new JLabel("开始日期 (yyyy-MM-dd):"), gbc);
+        searchPanel.add(new JLabel("Start Date (yyyy-MM-dd):"), gbc);
         gbc.gridx = 1;
         searchPanel.add(startDateField, gbc);
         
         gbc.gridx = 2;
-        searchPanel.add(new JLabel("结束日期 (yyyy-MM-dd):"), gbc);
+        searchPanel.add(new JLabel("End Date (yyyy-MM-dd):"), gbc);
         gbc.gridx = 3;
         searchPanel.add(endDateField, gbc);
         
-        // 第二行：徽章代码和资源ID
+        // Second row: Badge code and resource ID
         gbc.gridx = 0; gbc.gridy = 1;
-        searchPanel.add(new JLabel("徽章代码:"), gbc);
+        searchPanel.add(new JLabel("Badge Code:"), gbc);
         gbc.gridx = 1;
         searchPanel.add(badgeCodeField, gbc);
         
         gbc.gridx = 2;
-        searchPanel.add(new JLabel("资源ID:"), gbc);
+        searchPanel.add(new JLabel("Resource ID:"), gbc);
         gbc.gridx = 3;
         searchPanel.add(resourceIdField, gbc);
         
-        // 第三行：用户ID和状态
+        // Third row: User ID and status
         gbc.gridx = 0; gbc.gridy = 2;
-        searchPanel.add(new JLabel("用户ID:"), gbc);
+        searchPanel.add(new JLabel("User ID:"), gbc);
         gbc.gridx = 1;
         searchPanel.add(userIdField, gbc);
         
         gbc.gridx = 2;
-        searchPanel.add(new JLabel("状态:"), gbc);
+        searchPanel.add(new JLabel("Status:"), gbc);
         gbc.gridx = 3;
         searchPanel.add(grantedCombo, gbc);
         
-        // 按钮
+        // Buttons
         gbc.gridx = 0; gbc.gridy = 3;
         gbc.gridwidth = 4;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("搜索") {{
+        buttonPanel.add(new JButton("Search") {{
             addActionListener(e -> searchLogs());
         }});
-        buttonPanel.add(new JButton("清空条件") {{
+        buttonPanel.add(new JButton("Clear Criteria") {{
             addActionListener(e -> clearSearchFields());
         }});
-        buttonPanel.add(new JButton("导出日志") {{
+        buttonPanel.add(new JButton("Export Logs") {{
             addActionListener(e -> exportLogs());
         }});
-        buttonPanel.add(new JButton("清空日志") {{
+        buttonPanel.add(new JButton("Clear Logs") {{
             addActionListener(e -> clearLogs());
         }});
         searchPanel.add(buttonPanel, gbc);
         
-        // 表格
+        // Table
         JScrollPane scrollPane = new JScrollPane(logTable);
-        scrollPane.setBorder(BorderFactory.createTitledBorder("日志记录"));
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Log Records"));
         
         add(searchPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
         
-        // 默认加载今天的日志（静默模式，不显示提示）
+        // Default load today's logs (silent mode, no prompts)
         SwingUtilities.invokeLater(() -> {
             searchLogsSilent();
         });
@@ -143,13 +144,13 @@ public class LogViewerPanel extends JPanel {
     
     private void searchLogsInternal(boolean showMessage) {
         try {
-            // 解析日期
+            // Parse dates
             LocalDateTime startDate = LocalDateTime.parse(startDateField.getText().trim() + "T00:00:00", 
                 DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
             LocalDateTime endDate = LocalDateTime.parse(endDateField.getText().trim() + "T23:59:59", 
                 DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
             
-            // 创建搜索条件
+            // Create search criteria
             LogManager.LogSearchCriteria criteria = new LogManager.LogSearchCriteria();
             criteria.setStartDate(startDate);
             criteria.setEndDate(endDate);
@@ -170,16 +171,16 @@ public class LogViewerPanel extends JPanel {
             }
             
             String status = (String) grantedCombo.getSelectedItem();
-            if ("授权".equals(status)) {
+            if ("Granted".equals(status)) {
                 criteria.setGranted(true);
-            } else if ("拒绝".equals(status)) {
+            } else if ("Denied".equals(status)) {
                 criteria.setGranted(false);
             }
             
-            // 执行搜索
+            // Execute search
             List<LogManager.LogEntry> results = logManager.searchLogs(criteria);
             
-            // 更新表格
+            // Update table
             tableModel.setRowCount(0);
             DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             for (LogManager.LogEntry entry : results) {
@@ -190,21 +191,21 @@ public class LogViewerPanel extends JPanel {
                     entry.getResourceId(),
                     entry.getUserId(),
                     entry.getUserName(),
-                    entry.isGranted() ? "授权" : "拒绝"
+                    entry.isGranted() ? "Granted" : "Denied"
                 });
             }
             
-            // 只在手动搜索时显示消息
+            // Only show message when manually searching
             if (showMessage) {
                 if (results.isEmpty()) {
                     JOptionPane.showMessageDialog(this, 
-                        "未找到匹配的日志记录", 
-                        "搜索结果", 
+                        "No matching log records found", 
+                        "Search Results", 
                         JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     JOptionPane.showMessageDialog(this, 
-                        "找到 " + results.size() + " 条日志记录", 
-                        "搜索完成", 
+                        "Found " + results.size() + " log records", 
+                        "Search Complete", 
                         JOptionPane.INFORMATION_MESSAGE);
                 }
             }
@@ -212,15 +213,15 @@ public class LogViewerPanel extends JPanel {
         } catch (DateTimeParseException e) {
             if (showMessage) {
                 JOptionPane.showMessageDialog(this, 
-                    "日期格式错误，请使用 yyyy-MM-dd 格式", 
-                    "错误", 
+                    "Date format error, please use yyyy-MM-dd format", 
+                    "Error", 
                     JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception e) {
             if (showMessage) {
                 JOptionPane.showMessageDialog(this, 
-                    "搜索日志失败: " + e.getMessage(), 
-                    "错误", 
+                    "Failed to search logs: " + e.getMessage(), 
+                    "Error", 
                     JOptionPane.ERROR_MESSAGE);
             }
             e.printStackTrace();
@@ -239,7 +240,7 @@ public class LogViewerPanel extends JPanel {
     }
     
     private void exportLogs() {
-        // 先执行搜索获取当前显示的日志
+        // First execute search to get currently displayed logs
         List<LogManager.LogEntry> entries = new ArrayList<>();
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -268,31 +269,31 @@ public class LogViewerPanel extends JPanel {
             }
             
             String status = (String) grantedCombo.getSelectedItem();
-            if ("授权".equals(status)) {
+            if ("Granted".equals(status)) {
                 criteria.setGranted(true);
-            } else if ("拒绝".equals(status)) {
+            } else if ("Denied".equals(status)) {
                 criteria.setGranted(false);
             }
             
             entries = logManager.searchLogs(criteria);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, 
-                "获取日志数据失败: " + e.getMessage(), 
-                "错误", 
+                "Failed to get log data: " + e.getMessage(), 
+                "Error", 
                 JOptionPane.ERROR_MESSAGE);
             return;
         }
         
         if (entries.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
-                "没有可导出的日志数据", 
-                "提示", 
+                "No log data to export", 
+                "Info", 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("导出日志");
+        fileChooser.setDialogTitle("Export Logs");
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fileChooser.setSelectedFile(new java.io.File("access_logs_" + 
             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv"));
@@ -301,22 +302,22 @@ public class LogViewerPanel extends JPanel {
         if (result == JFileChooser.APPROVE_OPTION) {
             java.io.File file = fileChooser.getSelectedFile();
             try {
-                // 确保文件扩展名是.csv
+                // Ensure file extension is .csv
                 String filePath = file.getAbsolutePath();
                 if (!filePath.toLowerCase().endsWith(".csv")) {
                     filePath += ".csv";
                     file = new java.io.File(filePath);
                 }
                 
-                // 写入CSV文件
+                // Write CSV file
                 try (java.io.FileWriter writer = new java.io.FileWriter(file, java.nio.charset.StandardCharsets.UTF_8)) {
-                    // 写入BOM以支持Excel正确显示中文
+                    // Write BOM to support Excel displaying correctly
                     writer.write('\ufeff');
                     
-                    // 写入表头
-                    writer.write("时间,徽章代码,读卡器ID,资源ID,用户ID,用户名,状态\n");
+                    // Write header
+                    writer.write("Time,Badge Code,Badge Reader ID,Resource ID,User ID,User Name,Status\n");
                     
-                    // 写入数据
+                    // Write data
                     DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                     for (LogManager.LogEntry entry : entries) {
                         writer.write(String.format("%s,%s,%s,%s,%s,%s,%s\n",
@@ -326,19 +327,19 @@ public class LogViewerPanel extends JPanel {
                             entry.getResourceId(),
                             entry.getUserId(),
                             entry.getUserName(),
-                            entry.isGranted() ? "授权" : "拒绝"
+                            entry.isGranted() ? "Granted" : "Denied"
                         ));
                     }
                 }
                 
                 JOptionPane.showMessageDialog(this, 
-                    "成功导出 " + entries.size() + " 条日志记录到:\n" + file.getAbsolutePath(), 
-                    "导出成功", 
+                    "Successfully exported " + entries.size() + " log records to:\n" + file.getAbsolutePath(), 
+                    "Export Successful", 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, 
-                    "导出日志失败: " + e.getMessage(), 
-                    "错误", 
+                    "Failed to export logs: " + e.getMessage(), 
+                    "Error", 
                     JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
@@ -346,30 +347,30 @@ public class LogViewerPanel extends JPanel {
     }
     
     /**
-     * 诊断选中的日志记录
+     * Diagnose selected log record
      */
     private void diagnoseSelectedRecord() {
         int selectedRow = logTable.getSelectedRow();
         if (selectedRow < 0) {
             JOptionPane.showMessageDialog(this, 
-                "请先选择一条日志记录", "提示", 
+                "Please select a log record first", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
-        // 获取选中行的数据
+        // Get selected row data
         String badgeCode = (String) tableModel.getValueAt(selectedRow, 1);
         String resourceId = (String) tableModel.getValueAt(selectedRow, 3);
         String status = (String) tableModel.getValueAt(selectedRow, 6);
         
-        // 执行诊断
+        // Execute diagnosis
         AccessDiagnostic diagnostic = new AccessDiagnostic(accessControlSystem);
         String report = diagnostic.diagnoseAccessIssue(badgeCode, resourceId);
         
-        // 显示诊断结果
+        // Display diagnosis results
         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         JDialog dialog = new JDialog(parentFrame, 
-            "访问控制诊断 - " + status, true);
+            "Access Control Diagnosis - " + status, true);
         dialog.setSize(700, 600);
         dialog.setLocationRelativeTo(this);
         
@@ -382,7 +383,7 @@ public class LogViewerPanel extends JPanel {
         scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("关闭") {{
+        buttonPanel.add(new JButton("Close") {{
             addActionListener(e -> dialog.dispose());
         }});
         
@@ -392,7 +393,7 @@ public class LogViewerPanel extends JPanel {
     }
     
     /**
-     * 显示系统状态报告
+     * Show system status report
      */
     private void showSystemStatusReport() {
         AccessDiagnostic diagnostic = new AccessDiagnostic(accessControlSystem);
@@ -400,7 +401,7 @@ public class LogViewerPanel extends JPanel {
         
         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         JDialog dialog = new JDialog(parentFrame, 
-            "系统状态报告", true);
+            "System Status Report", true);
         dialog.setSize(600, 500);
         dialog.setLocationRelativeTo(this);
         
@@ -413,7 +414,7 @@ public class LogViewerPanel extends JPanel {
         scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("关闭") {{
+        buttonPanel.add(new JButton("Close") {{
             addActionListener(e -> dialog.dispose());
         }});
         
@@ -423,16 +424,16 @@ public class LogViewerPanel extends JPanel {
     }
     
     /**
-     * 清空日志文件
+     * Clear log files
      */
     private void clearLogs() {
         int confirm = JOptionPane.showConfirmDialog(this,
-            "确定要清空所有日志文件吗？\n\n" +
-            "此操作将：\n" +
-            "• 删除 data/logs/ 目录下的所有日志文件\n" +
-            "• 此操作不可恢复！\n\n" +
-            "是否继续？",
-            "确认清空日志",
+            "Are you sure you want to clear all log files?\n\n" +
+            "This operation will:\n" +
+            "• Delete all log files in data/logs/ directory\n" +
+            "• This operation cannot be undone!\n\n" +
+            "Continue?",
+            "Confirm Clear Logs",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
         
@@ -444,12 +445,12 @@ public class LogViewerPanel extends JPanel {
             java.nio.file.Path logsDir = java.nio.file.Paths.get("data/logs");
             if (!java.nio.file.Files.exists(logsDir)) {
                 JOptionPane.showMessageDialog(this, 
-                    "日志目录不存在，无需清空", "提示", 
+                    "Log directory does not exist, no need to clear", "Info", 
                     JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
             
-            // 统计要删除的文件
+            // Count files to delete
             int fileCount = 0;
             final long[] totalSize = {0};
             java.util.List<java.nio.file.Path> filesToDelete = new java.util.ArrayList<>();
@@ -462,7 +463,7 @@ public class LogViewerPanel extends JPanel {
                         totalSize[0] += java.nio.file.Files.size(path);
                         filesToDelete.add(path);
                     } catch (Exception e) {
-                        // 忽略统计错误
+                        // Ignore counting errors
                     }
                 });
             
@@ -470,21 +471,21 @@ public class LogViewerPanel extends JPanel {
             
             if (fileCount == 0) {
                 JOptionPane.showMessageDialog(this, 
-                    "没有找到日志文件", "提示", 
+                    "No log files found", "Info", 
                     JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
             
-            // 再次确认
+            // Confirm again
             long totalSizeValue = totalSize[0];
             String sizeStr = totalSizeValue > 1024 * 1024 ? 
                 String.format("%.2f MB", totalSizeValue / (1024.0 * 1024.0)) :
                 String.format("%.2f KB", totalSizeValue / 1024.0);
             
             int finalConfirm = JOptionPane.showConfirmDialog(this,
-                "即将删除 " + fileCount + " 个日志文件（总大小: " + sizeStr + "）\n\n" +
-                "确定要继续吗？",
-                "最终确认",
+                "About to delete " + fileCount + " log files (Total size: " + sizeStr + ")\n\n" +
+                "Are you sure you want to continue?",
+                "Final Confirmation",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
             
@@ -492,7 +493,7 @@ public class LogViewerPanel extends JPanel {
                 return;
             }
             
-            // 删除所有日志文件
+            // Delete all log files
             int deletedCount = 0;
             int errorCount = 0;
             
@@ -502,30 +503,30 @@ public class LogViewerPanel extends JPanel {
                     deletedCount++;
                 } catch (Exception e) {
                     errorCount++;
-                    System.err.println("删除日志文件失败: " + file + " - " + e.getMessage());
+                    System.err.println("Failed to delete log file: " + file + " - " + e.getMessage());
                 }
             }
             
-            // 清空表格
+            // Clear table
             tableModel.setRowCount(0);
             
-            // 显示结果
+            // Display results
             String message = String.format(
-                "日志清空完成！\n\n" +
-                "统计信息：\n" +
-                "• 成功删除: %d 个文件\n" +
-                "• 失败: %d 个文件",
+                "Log clearing completed!\n\n" +
+                "Statistics:\n" +
+                "• Successfully deleted: %d files\n" +
+                "• Failed: %d files",
                 deletedCount, errorCount
             );
             
             JOptionPane.showMessageDialog(this, message, 
-                "清空完成", 
+                "Clear Complete", 
                 deletedCount > 0 ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE);
             
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, 
-                "清空日志失败: " + e.getMessage(), 
-                "错误", 
+                "Failed to clear logs: " + e.getMessage(), 
+                "Error", 
                 JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }

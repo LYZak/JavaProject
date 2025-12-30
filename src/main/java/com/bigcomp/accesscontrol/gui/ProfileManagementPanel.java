@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.gui;
 
 import com.bigcomp.accesscontrol.core.AccessControlSystem;
@@ -15,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 配置文件管理面板
+ * Profile Management Panel
  */
 public class ProfileManagementPanel extends JPanel {
     private AccessControlSystem accessControlSystem;
@@ -36,7 +37,7 @@ public class ProfileManagementPanel extends JPanel {
     }
     
     private void initializeComponents() {
-        // 配置文件列表
+        // Profile list
         profileListModel = new DefaultListModel<>();
         profileList = new JList<>(profileListModel);
         profileList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -46,8 +47,8 @@ public class ProfileManagementPanel extends JPanel {
             }
         });
         
-        // 访问权限表格
-        String[] columnNames = {"资源组", "时间过滤器"};
+        // Access rights table
+        String[] columnNames = {"Resource Group", "Time Filter"};
         accessRightsModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -56,7 +57,7 @@ public class ProfileManagementPanel extends JPanel {
         };
         accessRightsTable = new JTable(accessRightsModel);
         
-        // 输入字段
+        // Input fields
         profileNameField = new JTextField(20);
         groupCombo = new JComboBox<>();
         profileInfoArea = new JTextArea(5, 30);
@@ -66,82 +67,82 @@ public class ProfileManagementPanel extends JPanel {
     private void setupLayout() {
         setLayout(new BorderLayout());
         
-        // 左侧：配置文件列表和操作
+        // Left: Profile list and operations
         JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setBorder(BorderFactory.createTitledBorder("配置文件列表"));
+        leftPanel.setBorder(BorderFactory.createTitledBorder("Profile List"));
         leftPanel.add(new JScrollPane(profileList), BorderLayout.CENTER);
         
         JPanel leftButtonPanel = new JPanel(new FlowLayout());
-        leftButtonPanel.add(new JButton("新建配置文件") {{
+        leftButtonPanel.add(new JButton("New Profile") {{
             addActionListener(e -> createNewProfile());
         }});
-        leftButtonPanel.add(new JButton("修改配置文件") {{
+        leftButtonPanel.add(new JButton("Modify Profile") {{
             addActionListener(e -> modifyProfile());
         }});
-        leftButtonPanel.add(new JButton("删除配置文件") {{
+        leftButtonPanel.add(new JButton("Delete Profile") {{
             addActionListener(e -> deleteProfile());
         }});
-        leftButtonPanel.add(new JButton("恢复配置文件") {{
+        leftButtonPanel.add(new JButton("Restore Profile") {{
             addActionListener(e -> restoreProfile());
         }});
         leftPanel.add(leftButtonPanel, BorderLayout.SOUTH);
         
-        // 中间：访问权限管理
+        // Center: Access rights management
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setBorder(BorderFactory.createTitledBorder("访问权限"));
+        centerPanel.setBorder(BorderFactory.createTitledBorder("Access Rights"));
         
-        // 顶部：添加访问权限
+        // Top: Add access rights
         JPanel addPanel = new JPanel(new FlowLayout());
-        addPanel.add(new JLabel("资源组:"));
+        addPanel.add(new JLabel("Resource Group:"));
         addPanel.add(groupCombo);
-        addPanel.add(new JButton("刷新资源组") {{
+        addPanel.add(new JButton("Refresh Groups") {{
             addActionListener(e -> {
                 loadGroups();
                 JOptionPane.showMessageDialog(ProfileManagementPanel.this, 
-                    "资源组列表已刷新", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    "Resource group list refreshed", "Info", JOptionPane.INFORMATION_MESSAGE);
             });
         }});
-        addPanel.add(new JButton("添加访问权限") {{
+        addPanel.add(new JButton("Add Access Right") {{
             addActionListener(e -> addAccessRight());
         }});
-        addPanel.add(new JButton("删除访问权限") {{
+        addPanel.add(new JButton("Remove Access Right") {{
             addActionListener(e -> removeAccessRight());
         }});
         centerPanel.add(addPanel, BorderLayout.NORTH);
         
-        // 中间：访问权限表格
+        // Center: Access rights table
         centerPanel.add(new JScrollPane(accessRightsTable), BorderLayout.CENTER);
         
-        // 底部：时间过滤器编辑
+        // Bottom: Time filter editing
         JPanel timeFilterPanel = new JPanel(new BorderLayout());
-        timeFilterPanel.setBorder(BorderFactory.createTitledBorder("时间过滤器编辑"));
+        timeFilterPanel.setBorder(BorderFactory.createTitledBorder("Time Filter Editor"));
         timeFilterPanel.add(new JScrollPane(profileInfoArea), BorderLayout.CENTER);
         JPanel timeFilterButtonPanel = new JPanel(new FlowLayout());
-        timeFilterButtonPanel.add(new JButton("编辑时间过滤器") {{
+        timeFilterButtonPanel.add(new JButton("Edit Time Filter") {{
             addActionListener(e -> editTimeFilter());
         }});
         timeFilterPanel.add(timeFilterButtonPanel, BorderLayout.SOUTH);
         centerPanel.add(timeFilterPanel, BorderLayout.SOUTH);
         
-        // 右侧：配置文件信息
+        // Right: Profile information
         JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBorder(BorderFactory.createTitledBorder("配置文件信息"));
+        rightPanel.setBorder(BorderFactory.createTitledBorder("Profile Information"));
         JPanel infoPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
         
         gbc.gridx = 0; gbc.gridy = 0;
-        infoPanel.add(new JLabel("配置文件名称:"), gbc);
+        infoPanel.add(new JLabel("Profile Name:"), gbc);
         gbc.gridx = 1;
         infoPanel.add(profileNameField, gbc);
         
         rightPanel.add(infoPanel, BorderLayout.NORTH);
-        rightPanel.add(new JButton("保存配置文件") {{
+        rightPanel.add(new JButton("Save Profile") {{
             addActionListener(e -> saveProfile());
         }}, BorderLayout.SOUTH);
         
-        // 主布局
+        // Main layout
         JSplitPane leftSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, centerPanel);
         leftSplit.setDividerLocation(200);
         leftSplit.setResizeWeight(0.2);
@@ -168,8 +169,8 @@ public class ProfileManagementPanel extends JPanel {
         Map<String, ResourceGroup> groups = groupManager.getAllGroups();
         
         if (groups.isEmpty()) {
-            // 如果没有资源组，提示用户
-            groupCombo.addItem("（无资源组，请在data/groups/目录创建）");
+            // If no resource groups, prompt user
+            groupCombo.addItem("(No resource groups, please create in data/groups/ directory)");
             groupCombo.setEnabled(false);
         } else {
             for (String name : groups.keySet()) {
@@ -191,7 +192,7 @@ public class ProfileManagementPanel extends JPanel {
         if (profile != null) {
             profileNameField.setText(profile.getName());
             
-            // 加载访问权限
+            // Load access rights
             accessRightsModel.setRowCount(0);
             Map<String, TimeFilter> accessRights = profile.getAccessRights();
             for (Map.Entry<String, TimeFilter> entry : accessRights.entrySet()) {
@@ -207,13 +208,13 @@ public class ProfileManagementPanel extends JPanel {
         List<String> parts = new ArrayList<>();
         
         if (filter.getDaysOfWeek() != null && !filter.getDaysOfWeek().isEmpty()) {
-            parts.add("星期: " + filter.getDaysOfWeek());
+            parts.add("Days: " + filter.getDaysOfWeek());
         }
         if (filter.getTimeRanges() != null && !filter.getTimeRanges().isEmpty()) {
-            parts.add("时间范围: " + filter.getTimeRanges().size() + "个");
+            parts.add("Time Ranges: " + filter.getTimeRanges().size() + " range(s)");
         }
         
-        return parts.isEmpty() ? "无限制" : String.join(", ", parts);
+        return parts.isEmpty() ? "No restrictions" : String.join(", ", parts);
     }
     
     private void clearProfileInfo() {
@@ -223,7 +224,7 @@ public class ProfileManagementPanel extends JPanel {
     }
     
     private void createNewProfile() {
-        String name = JOptionPane.showInputDialog(this, "请输入配置文件名称:", "新建配置文件", 
+        String name = JOptionPane.showInputDialog(this, "Please enter profile name:", "New Profile", 
             JOptionPane.QUESTION_MESSAGE);
         if (name != null && !name.trim().isEmpty()) {
             Profile profile = new Profile(name.trim());
@@ -233,8 +234,8 @@ public class ProfileManagementPanel extends JPanel {
                 loadProfiles();
                 profileList.setSelectedValue(name.trim(), true);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "创建配置文件失败: " + e.getMessage(), 
-                    "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to create profile: " + e.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -242,13 +243,13 @@ public class ProfileManagementPanel extends JPanel {
     private void deleteProfile() {
         String selected = profileList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "请选择要删除的配置文件", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select a profile to delete", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "确定要删除配置文件 \"" + selected + "\" 吗？", "确认删除", 
+            "Are you sure you want to delete profile \"" + selected + "\"?", "Confirm Delete", 
             JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             ProfileManager profileManager = accessControlSystem.getProfileManager();
@@ -256,9 +257,11 @@ public class ProfileManagementPanel extends JPanel {
                 profileManager.deleteProfile(selected);
                 loadProfiles();
                 clearProfileInfo();
+                JOptionPane.showMessageDialog(this, "Profile deleted successfully", "Success", 
+                    JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "删除配置文件失败: " + e.getMessage(), 
-                    "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to delete profile: " + e.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -266,48 +269,48 @@ public class ProfileManagementPanel extends JPanel {
     private void addAccessRight() {
         String selected = profileList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "请先选择或创建一个配置文件", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select or create a profile first", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         String groupName = (String) groupCombo.getSelectedItem();
-        if (groupName == null || groupName.startsWith("（无资源组")) {
+        if (groupName == null || groupName.startsWith("(No resource groups")) {
             JOptionPane.showMessageDialog(this, 
-                "请先创建资源组。\n\n资源组文件应放在 data/groups/ 目录下，格式为JSON文件。\n" +
-                "示例：{\"name\": \"办公室区域\", \"securityLevel\": 1, \"resources\": [\"resource-id\"]}\n\n" +
-                "创建后请点击\"刷新\"按钮重新加载。", 
-                "提示", 
+                "Please create resource groups first.\n\nResource group files should be placed in data/groups/ directory, in JSON format.\n" +
+                "Example: {\"name\": \"Office Area\", \"securityLevel\": 1, \"resources\": [\"resource-id\"]}\n\n" +
+                "After creating, please click the \"Refresh\" button to reload.", 
+                "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
-        // 检查是否已存在该资源组的权限
+        // Check if access right for this resource group already exists
         ProfileManager profileManager = accessControlSystem.getProfileManager();
         Profile profile = profileManager.getProfile(selected);
         if (profile != null) {
             if (profile.getAccessRights().containsKey(groupName)) {
                 int confirm = JOptionPane.showConfirmDialog(this, 
-                    "该资源组的访问权限已存在，是否要覆盖？", 
-                    "确认", 
+                    "Access right for this resource group already exists. Overwrite?", 
+                    "Confirm", 
                     JOptionPane.YES_NO_OPTION);
                 if (confirm != JOptionPane.YES_OPTION) {
                     return;
                 }
             }
             
-            // 创建默认时间过滤器（允许所有时间）
+            // Create default time filter (allows all times)
             TimeFilter timeFilter = new TimeFilter();
             profile.addAccessRight(groupName, timeFilter);
             
             try {
                 profileManager.saveProfile(profile);
                 loadSelectedProfile();
-                JOptionPane.showMessageDialog(this, "访问权限已添加", "成功", 
+                JOptionPane.showMessageDialog(this, "Access right added", "Success", 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "保存配置文件失败: " + e.getMessage(), 
-                    "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to save profile: " + e.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -315,14 +318,14 @@ public class ProfileManagementPanel extends JPanel {
     private void removeAccessRight() {
         int selectedRow = accessRightsTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "请选择要删除的访问权限", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select an access right to delete", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         String selected = profileList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "请先选择配置文件", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select a profile first", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -330,8 +333,8 @@ public class ProfileManagementPanel extends JPanel {
         String groupName = (String) accessRightsTable.getValueAt(selectedRow, 0);
         
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "确定要删除资源组 \"" + groupName + "\" 的访问权限吗？", 
-            "确认删除", 
+            "Are you sure you want to delete access right for resource group \"" + groupName + "\"?", 
+            "Confirm Delete", 
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
         
@@ -343,11 +346,11 @@ public class ProfileManagementPanel extends JPanel {
                 try {
                     profileManager.saveProfile(profile);
                     loadSelectedProfile();
-                    JOptionPane.showMessageDialog(this, "访问权限已删除", "成功", 
+                    JOptionPane.showMessageDialog(this, "Access right deleted", "Success", 
                         JOptionPane.INFORMATION_MESSAGE);
                 } catch (Exception e) {
-                    JOptionPane.showMessageDialog(this, "保存配置文件失败: " + e.getMessage(), 
-                        "错误", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Failed to save profile: " + e.getMessage(), 
+                        "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         }
@@ -356,7 +359,7 @@ public class ProfileManagementPanel extends JPanel {
     private void editTimeFilter() {
         int selectedRow = accessRightsTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "请选择要编辑的访问权限", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select an access right to edit", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -383,7 +386,7 @@ public class ProfileManagementPanel extends JPanel {
     private void modifyProfile() {
         String selected = profileList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "请选择要修改的配置文件", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select a profile to modify", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -391,23 +394,23 @@ public class ProfileManagementPanel extends JPanel {
         ProfileManager profileManager = accessControlSystem.getProfileManager();
         Profile profile = profileManager.getProfile(selected);
         if (profile == null) {
-            JOptionPane.showMessageDialog(this, "配置文件不存在", "错误", 
+            JOptionPane.showMessageDialog(this, "Profile does not exist", "Error", 
                 JOptionPane.ERROR_MESSAGE);
             return;
         }
         
-        // 创建备份
+        // Create backup
         try {
             backupProfile(selected);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "创建备份失败: " + e.getMessage(), 
-                "警告", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Failed to create backup: " + e.getMessage(), 
+                "Warning", JOptionPane.WARNING_MESSAGE);
         }
         
-        // 允许用户修改名称和访问权限
+        // Allow user to modify name and access rights
         String newName = JOptionPane.showInputDialog(this, 
-            "请输入新的配置文件名称（留空保持原名称）:", 
-            "修改配置文件", 
+            "Please enter new profile name (leave empty to keep original name):", 
+            "Modify Profile", 
             JOptionPane.QUESTION_MESSAGE);
         
         if (newName != null) {
@@ -416,7 +419,7 @@ public class ProfileManagementPanel extends JPanel {
                 try {
                     profileManager.deleteProfile(selected);
                 } catch (Exception e) {
-                    // 忽略删除错误
+                    // Ignore delete error
                 }
             }
             
@@ -424,11 +427,11 @@ public class ProfileManagementPanel extends JPanel {
                 profileManager.saveProfile(profile);
                 loadProfiles();
                 profileList.setSelectedValue(profile.getName(), true);
-                JOptionPane.showMessageDialog(this, "配置文件修改成功", "成功", 
+                JOptionPane.showMessageDialog(this, "Profile modified successfully", "Success", 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "修改配置文件失败: " + e.getMessage(), 
-                    "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to modify profile: " + e.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -436,41 +439,41 @@ public class ProfileManagementPanel extends JPanel {
     private void restoreProfile() {
         String selected = profileList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "请选择要恢复的配置文件", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select a profile to restore", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
-        // 查找备份文件
+        // Find backup files
         java.io.File backupDir = new java.io.File("data/profiles/backup");
         if (!backupDir.exists() || !backupDir.isDirectory()) {
-            JOptionPane.showMessageDialog(this, "没有找到备份目录", "提示", 
+            JOptionPane.showMessageDialog(this, "Backup directory not found", "Info", 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
-        // 查找该配置文件的备份
+        // Find backups for this profile
         java.io.File[] backupFiles = backupDir.listFiles((dir, name) -> 
             name.startsWith(selected + "_") && name.endsWith(".json"));
         
         if (backupFiles == null || backupFiles.length == 0) {
-            JOptionPane.showMessageDialog(this, "没有找到该配置文件的备份", "提示", 
+            JOptionPane.showMessageDialog(this, "No backups found for this profile", "Info", 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
-        // 显示备份列表供用户选择
+        // Display backup list for user selection
         String[] backupNames = new String[backupFiles.length];
         for (int i = 0; i < backupFiles.length; i++) {
             String name = backupFiles[i].getName();
-            // 提取时间戳
+            // Extract timestamp
             String timestamp = name.substring(selected.length() + 1, name.length() - 5);
-            backupNames[i] = "备份时间: " + timestamp;
+            backupNames[i] = "Backup time: " + timestamp;
         }
         
         String selectedBackup = (String) JOptionPane.showInputDialog(this,
-            "选择要恢复的备份:",
-            "恢复配置文件",
+            "Select backup to restore:",
+            "Restore Profile",
             JOptionPane.QUESTION_MESSAGE,
             null,
             backupNames,
@@ -481,31 +484,31 @@ public class ProfileManagementPanel extends JPanel {
             java.io.File backupFile = backupFiles[index];
             
             int confirm = JOptionPane.showConfirmDialog(this, 
-                "确定要恢复此备份吗？当前配置将被覆盖。", 
-                "确认恢复", 
+                "Are you sure you want to restore this backup? Current configuration will be overwritten.", 
+                "Confirm Restore", 
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
             
             if (confirm == JOptionPane.YES_OPTION) {
                 try {
-                    // 读取备份文件
+                    // Read backup file
                     ProfileManager profileManager = accessControlSystem.getProfileManager();
                     Profile backupProfile = profileManager.loadProfileFromFile(backupFile);
                     
                     if (backupProfile != null) {
-                        // 恢复配置文件
+                        // Restore profile
                         profileManager.saveProfile(backupProfile);
                         loadProfiles();
                         profileList.setSelectedValue(backupProfile.getName(), true);
-                        JOptionPane.showMessageDialog(this, "配置文件恢复成功", "成功", 
+                        JOptionPane.showMessageDialog(this, "Profile restored successfully", "Success", 
                             JOptionPane.INFORMATION_MESSAGE);
                     } else {
-                        JOptionPane.showMessageDialog(this, "恢复失败：无法读取备份文件", "错误", 
+                        JOptionPane.showMessageDialog(this, "Restore failed: Unable to read backup file", "Error", 
                             JOptionPane.ERROR_MESSAGE);
                     }
                 } catch (Exception e) {
-                    JOptionPane.showMessageDialog(this, "恢复配置文件失败: " + e.getMessage(), 
-                        "错误", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Failed to restore profile: " + e.getMessage(), 
+                        "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         }
@@ -530,35 +533,35 @@ public class ProfileManagementPanel extends JPanel {
     private void saveProfile() {
         String selected = profileList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "请选择要保存的配置文件", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select a profile to save", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         String newName = profileNameField.getText().trim();
         if (newName.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "配置文件名称不能为空", "错误", 
+            JOptionPane.showMessageDialog(this, "Profile name cannot be empty", "Error", 
                 JOptionPane.ERROR_MESSAGE);
             return;
         }
         
-        // 创建备份
+        // Create backup
         try {
             backupProfile(selected);
         } catch (Exception e) {
-            // 忽略备份错误
+            // Ignore backup error
         }
         
         ProfileManager profileManager = accessControlSystem.getProfileManager();
         Profile profile = profileManager.getProfile(selected);
         if (profile != null) {
             if (!selected.equals(newName)) {
-                // 重命名配置文件
+                // Rename profile
                 profile.setName(newName);
                 try {
                     profileManager.deleteProfile(selected);
                 } catch (Exception e) {
-                    // 忽略删除错误
+                    // Ignore delete error
                 }
             }
             
@@ -566,24 +569,24 @@ public class ProfileManagementPanel extends JPanel {
                 profileManager.saveProfile(profile);
                 loadProfiles();
                 profileList.setSelectedValue(newName, true);
-                JOptionPane.showMessageDialog(this, "配置文件保存成功", "成功", 
+                JOptionPane.showMessageDialog(this, "Profile saved successfully", "Success", 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "保存配置文件失败: " + e.getMessage(), 
-                    "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to save profile: " + e.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
     
     /**
-     * 时间过滤器编辑对话框（完整版）
+     * Time filter editing dialog (full version)
      */
     private class TimeFilterDialog extends JDialog {
         private TimeFilter timeFilter;
         private TimeFilter originalFilter;
         private boolean confirmed = false;
         
-        // UI组件
+        // UI components
         private JCheckBox[] dayOfWeekCheckboxes;
         private JSpinner startHourSpinner;
         private JSpinner startMinuteSpinner;
@@ -593,9 +596,9 @@ public class ProfileManagementPanel extends JPanel {
         private JCheckBox excludeTimeRangeCheckbox;
         
         public TimeFilterDialog(JFrame parent, TimeFilter filter) {
-            super(parent, "编辑时间过滤器", true);
+            super(parent, "Edit Time Filter", true);
             this.originalFilter = filter;
-            // 创建副本以避免直接修改原对象
+            // Create a copy to avoid directly modifying the original object
             this.timeFilter = new TimeFilter();
             if (filter != null) {
                 copyFilter(filter, this.timeFilter);
@@ -615,20 +618,20 @@ public class ProfileManagementPanel extends JPanel {
         }
         
         private void initializeDialog() {
-            setLayout(new BorderLayout());
+        setLayout(new BorderLayout());
             
             JPanel mainPanel = new JPanel(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.insets = new Insets(5, 5, 5, 5);
             gbc.anchor = GridBagConstraints.WEST;
             
-            // 星期选择
+            // Day of week selection
             gbc.gridx = 0; gbc.gridy = 0;
             gbc.gridwidth = 7;
-            mainPanel.add(new JLabel("允许的星期:"), gbc);
+            mainPanel.add(new JLabel("Allowed Days of Week:"), gbc);
             
             dayOfWeekCheckboxes = new JCheckBox[7];
-            String[] dayNames = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
+            String[] dayNames = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
             java.time.DayOfWeek[] days = {
                 java.time.DayOfWeek.MONDAY, java.time.DayOfWeek.TUESDAY, 
                 java.time.DayOfWeek.WEDNESDAY, java.time.DayOfWeek.THURSDAY,
@@ -648,17 +651,17 @@ public class ProfileManagementPanel extends JPanel {
                 mainPanel.add(dayOfWeekCheckboxes[i], gbc);
             }
             
-            // 排除星期选项
+            // Exclude days of week option
             gbc.gridx = 0; gbc.gridy = 2;
             gbc.gridwidth = 7;
-            excludeDaysCheckbox = new JCheckBox("排除选中的星期（而不是允许）");
+            excludeDaysCheckbox = new JCheckBox("Exclude selected days (instead of allowing)");
             excludeDaysCheckbox.setSelected(timeFilter.isExcludeDaysOfWeek());
             mainPanel.add(excludeDaysCheckbox, gbc);
             
-            // 时间范围
+            // Time range
             gbc.gridx = 0; gbc.gridy = 3;
             gbc.gridwidth = 1;
-            mainPanel.add(new JLabel("时间范围:"), gbc);
+            mainPanel.add(new JLabel("Time Range:"), gbc);
             
             gbc.gridx = 1;
             startHourSpinner = new JSpinner(new SpinnerNumberModel(8, 0, 23, 1));
@@ -672,7 +675,7 @@ public class ProfileManagementPanel extends JPanel {
             mainPanel.add(startMinuteSpinner, gbc);
             
             gbc.gridx = 4;
-            mainPanel.add(new JLabel(" 至 "), gbc);
+            mainPanel.add(new JLabel(" to "), gbc);
             
             gbc.gridx = 5;
             endHourSpinner = new JSpinner(new SpinnerNumberModel(18, 0, 23, 1));
@@ -685,7 +688,7 @@ public class ProfileManagementPanel extends JPanel {
             endMinuteSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
             mainPanel.add(endMinuteSpinner, gbc);
             
-            // 如果有现有的时间范围，加载它
+            // If there is an existing time range, load it
             if (timeFilter.getTimeRanges() != null && !timeFilter.getTimeRanges().isEmpty()) {
                 TimeFilter.TimeRange range = timeFilter.getTimeRanges().get(0);
                 int startMinutes = range.getStartMinutes();
@@ -696,33 +699,33 @@ public class ProfileManagementPanel extends JPanel {
                 endMinuteSpinner.setValue(endMinutes % 60);
             }
             
-            // 排除时间范围选项
+            // Exclude time range option
             gbc.gridx = 0; gbc.gridy = 4;
             gbc.gridwidth = 8;
-            excludeTimeRangeCheckbox = new JCheckBox("排除时间范围（而不是允许）");
+            excludeTimeRangeCheckbox = new JCheckBox("Exclude time range (instead of allowing)");
             excludeTimeRangeCheckbox.setSelected(timeFilter.isExcludeTimeRanges());
             mainPanel.add(excludeTimeRangeCheckbox, gbc);
             
-            // 说明文本
+            // Help text
             gbc.gridx = 0; gbc.gridy = 5;
             gbc.gridwidth = 8;
             gbc.fill = GridBagConstraints.BOTH;
             JTextArea infoArea = new JTextArea(3, 40);
             infoArea.setEditable(false);
-            infoArea.setText("提示：如果不选择任何星期，则允许所有星期。如果不设置时间范围，则允许所有时间。");
+            infoArea.setText("Note: If no days are selected, all days are allowed. If no time range is set, all times are allowed.");
             infoArea.setBackground(getBackground());
             mainPanel.add(infoArea, gbc);
             
-            // 按钮
+            // Buttons
             JPanel buttonPanel = new JPanel(new FlowLayout());
-            buttonPanel.add(new JButton("确定") {{
+            buttonPanel.add(new JButton("OK") {{
                 addActionListener(e -> {
                     applyChanges();
                     confirmed = true;
                     dispose();
                 });
             }});
-            buttonPanel.add(new JButton("取消") {{
+            buttonPanel.add(new JButton("Cancel") {{
                 addActionListener(e -> dispose());
             }});
             
@@ -734,7 +737,7 @@ public class ProfileManagementPanel extends JPanel {
         }
         
         private void applyChanges() {
-            // 更新星期
+            // Update days of week
             java.util.Set<java.time.DayOfWeek> selectedDays = new java.util.HashSet<>();
             java.time.DayOfWeek[] days = {
                 java.time.DayOfWeek.MONDAY, java.time.DayOfWeek.TUESDAY, 
@@ -756,7 +759,7 @@ public class ProfileManagementPanel extends JPanel {
             }
             timeFilter.setExcludeDaysOfWeek(excludeDaysCheckbox.isSelected());
             
-            // 更新时间范围
+            // Update time range
             int startHour = (Integer) startHourSpinner.getValue();
             int startMinute = (Integer) startMinuteSpinner.getValue();
             int endHour = (Integer) endHourSpinner.getValue();
@@ -768,7 +771,7 @@ public class ProfileManagementPanel extends JPanel {
             timeFilter.setTimeRanges(ranges);
             timeFilter.setExcludeTimeRanges(excludeTimeRangeCheckbox.isSelected());
             
-            // 将更改应用到原始过滤器
+            // Apply changes to original filter
             copyFilter(timeFilter, originalFilter);
         }
         

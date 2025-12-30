@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.logging;
 
 import com.bigcomp.accesscontrol.model.AccessRequest;
@@ -15,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 日志管理器 - 负责记录和搜索访问日志
+ * Log Manager - Responsible for recording and searching access logs
  */
 public class LogManager {
     private static final String LOGS_BASE_DIR = "data/logs";
@@ -24,13 +25,13 @@ public class LogManager {
     private static final DateTimeFormatter FILE_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     /**
-     * 记录访问日志
+     * Log access event
      */
     public void logAccess(AccessRequest request, User user, Resource resource, boolean granted) {
         LocalDateTime timestamp = request.getTimestamp();
         String status = granted ? "GRANTED" : "DENIED";
 
-        // 构建日志行
+        // Build log line
         String logLine = String.format("%s,%s,%s,%s,%s,%s:%s,%s%n",
             DATE_FORMATTER.format(timestamp),
             TIME_FORMATTER.format(timestamp),
@@ -42,22 +43,22 @@ public class LogManager {
             status
         );
 
-        // 确定日志文件路径
+        // Determine log file path
         Path logFile = getLogFilePath(timestamp);
 
         try {
-            // 确保目录存在
+            // Ensure directory exists
             Files.createDirectories(logFile.getParent());
 
-            // 写入日志（追加模式）
+            // Write log (append mode)
             Files.writeString(logFile, logLine, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e) {
-            System.err.println("写入日志失败: " + e.getMessage());
+            System.err.println("Failed to write log: " + e.getMessage());
         }
     }
 
     /**
-     * 获取日志文件路径（按年/月/日组织）
+     * Get log file path (organized by year/month/day)
      */
     private Path getLogFilePath(LocalDateTime dateTime) {
         int year = dateTime.getYear();
@@ -68,12 +69,12 @@ public class LogManager {
     }
 
     /**
-     * 搜索日志
+     * Search logs
      */
     public List<LogEntry> searchLogs(LogSearchCriteria criteria) throws IOException {
         List<LogEntry> results = new ArrayList<>();
 
-        // 确定要搜索的日期范围
+        // Determine date range to search
         LocalDateTime startDate = criteria.getStartDate();
         LocalDateTime endDate = criteria.getEndDate();
 
@@ -96,8 +97,8 @@ public class LogManager {
     }
 
     /**
-     * 解析日志行
-     * 日志格式：yyyy,MMM,dd,EEE,HH:mm:ss,badgeCode,badgeReaderId,resourceId,userId:userName,status
+     * Parse log line
+     * Log format: yyyy,MMM,dd,EEE,HH:mm:ss,badgeCode,badgeReaderId,resourceId,userId:userName,status
      */
     private LogEntry parseLogLine(String line) {
         try {
@@ -108,11 +109,11 @@ public class LogManager {
             
             String[] parts = line.split(",");
             if (parts.length >= 10) {
-                // 解析日期和时间
+                // Parse date and time
                 int year = Integer.parseInt(parts[0]);
                 String monthStr = parts[1];
                 int day = Integer.parseInt(parts[2]);
-                // parts[3] 是星期，跳过
+                // parts[3] is day of week, skip
                 String timeStr = parts[4];
                 String[] timeParts = timeStr.split(":");
                 if (timeParts.length < 3) {
@@ -125,7 +126,7 @@ public class LogManager {
                 LocalDateTime timestamp = LocalDateTime.of(year, 
                     parseMonth(monthStr), day, hour, minute, second);
 
-                // 解析用户ID和用户名（格式：userId:userName）
+                // Parse user ID and user name (format: userId:userName)
                 String userIdAndName = parts[8];
                 String userId;
                 String userName;
@@ -149,14 +150,14 @@ public class LogManager {
                 );
             }
         } catch (Exception e) {
-            System.err.println("解析日志行失败: " + line + " - " + e.getMessage());
+            System.err.println("Failed to parse log line: " + line + " - " + e.getMessage());
             e.printStackTrace();
         }
         return null;
     }
 
     /**
-     * 解析月份字符串
+     * Parse month string
      */
     private int parseMonth(String monthStr) {
         String[] months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -170,7 +171,7 @@ public class LogManager {
     }
 
     /**
-     * 检查日志条目是否匹配搜索条件
+     * Check if log entry matches search criteria
      */
     private boolean matchesCriteria(LogEntry entry, LogSearchCriteria criteria) {
         if (criteria.getBadgeCode() != null && 
@@ -193,7 +194,7 @@ public class LogManager {
     }
 
     /**
-     * 日志条目类
+     * Log entry class
      */
     public static class LogEntry {
         private LocalDateTime timestamp;
@@ -226,7 +227,7 @@ public class LogManager {
     }
 
     /**
-     * 日志搜索条件类
+     * Log search criteria class
      */
     public static class LogSearchCriteria {
         private LocalDateTime startDate;

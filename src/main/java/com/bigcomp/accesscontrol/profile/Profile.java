@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.profile;
 
 import java.time.LocalDateTime;
@@ -5,12 +6,12 @@ import java.util.Map;
 import java.util.HashMap;
 
 /**
- * 配置文件类 - 定义用户的访问权限
- * 包含多个访问权限（组 + 时间过滤器）
+ * Profile class - Defines user access permissions
+ * Contains multiple access rights (group + time filter)
  */
 public class Profile {
-    private String name; // 配置文件名称
-    private Map<String, TimeFilter> accessRights; // 组名称 -> 时间过滤器
+    private String name; // Profile name
+    private Map<String, TimeFilter> accessRights; // Group name -> Time filter
 
     public Profile(String name) {
         this.name = name;
@@ -18,26 +19,26 @@ public class Profile {
     }
 
     /**
-     * 添加访问权限
-     * @param groupName 组名称
-     * @param timeFilter 时间过滤器
+     * Add access right
+     * @param groupName Group name
+     * @param timeFilter Time filter
      */
     public void addAccessRight(String groupName, TimeFilter timeFilter) {
         accessRights.put(groupName, timeFilter);
     }
 
     /**
-     * 移除访问权限
+     * Remove access right
      */
     public void removeAccessRight(String groupName) {
         accessRights.remove(groupName);
     }
 
     /**
-     * 检查是否有访问权限
-     * @param groupName 组名称
-     * @param dateTime 访问时间
-     * @return 是否有权限
+     * Check if has access permission
+     * @param groupName Group name
+     * @param dateTime Access time
+     * @return Whether has permission
      */
     public boolean hasAccess(String groupName, LocalDateTime dateTime) {
         TimeFilter filter = accessRights.get(groupName);
@@ -48,7 +49,7 @@ public class Profile {
     }
 
     /**
-     * 获取所有访问权限
+     * Get all access rights
      */
     public Map<String, TimeFilter> getAccessRights() {
         return accessRights;

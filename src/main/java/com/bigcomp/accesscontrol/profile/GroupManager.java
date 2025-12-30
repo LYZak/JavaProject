@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.profile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,11 +13,11 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * 资源组管理器 - 负责加载、保存和管理资源组
+ * Resource Group Manager - Responsible for loading, saving and managing resource groups
  */
 public class GroupManager {
     private static final String GROUPS_DIR = "data/groups";
-    private Map<String, ResourceGroup> groups; // 组名称 -> 资源组对象
+    private Map<String, ResourceGroup> groups; // Group name -> Resource group object
     private ObjectMapper objectMapper;
 
     public GroupManager() {
@@ -26,7 +27,7 @@ public class GroupManager {
     }
 
     /**
-     * 从文件加载所有资源组
+     * Load all resource groups from files
      */
     private void loadGroups() {
         try {
@@ -45,16 +46,16 @@ public class GroupManager {
                             groups.put(group.getName(), group);
                         }
                     } catch (Exception e) {
-                        System.err.println("加载资源组失败: " + path + " - " + e.getMessage());
+                        System.err.println("Failed to load resource group: " + path + " - " + e.getMessage());
                     }
                 });
         } catch (IOException e) {
-            System.err.println("加载资源组目录失败: " + e.getMessage());
+            System.err.println("Failed to load resource group directory: " + e.getMessage());
         }
     }
 
     /**
-     * 从文件加载单个资源组
+     * Load single resource group from file
      */
     private ResourceGroup loadGroupFromFile(File file) throws IOException {
         String content = Files.readString(file.toPath());
@@ -72,7 +73,7 @@ public class GroupManager {
     }
 
     /**
-     * 保存资源组到文件
+     * Save resource group to file
      */
     public void saveGroup(ResourceGroup group) throws IOException {
         Path groupsPath = Paths.get(GROUPS_DIR);
@@ -92,21 +93,21 @@ public class GroupManager {
     }
 
     /**
-     * 获取资源组
+     * Get resource group
      */
     public ResourceGroup getGroup(String name) {
         return groups.get(name);
     }
 
     /**
-     * 获取所有资源组
+     * Get all resource groups
      */
     public Map<String, ResourceGroup> getAllGroups() {
         return new HashMap<>(groups);
     }
 
     /**
-     * 删除资源组
+     * Delete resource group
      */
     public void deleteGroup(String name) throws IOException {
         groups.remove(name);
@@ -116,7 +117,7 @@ public class GroupManager {
         }
     }
 
-    // 内部数据类用于JSON序列化
+    // Internal data class for JSON serialization
     private static class GroupData {
         public String name;
         public int securityLevel;

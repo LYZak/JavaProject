@@ -1,0 +1,5 @@
+{
+  "name" : "Parking Area",
+  "securityLevel" : 1,
+  "resources" : [ "RES021", "RES022", "RES023" ]
+}

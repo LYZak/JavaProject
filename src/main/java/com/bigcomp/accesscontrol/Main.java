@@ -1,10 +1,11 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol;
 
 import com.bigcomp.accesscontrol.gui.MainWindow;
 import javax.swing.SwingUtilities;
 
 /**
- * 主程序入口
+ * Main program entry point
  */
 public class Main {
     public static void main(String[] args) {

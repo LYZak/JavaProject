@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.database;
 
 import com.bigcomp.accesscontrol.model.*;
@@ -7,7 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
- * 数据库管理器 - 负责所有数据库操作
+ * Database Manager - Handles all database operations
  */
 public class DatabaseManager {
     private static final String DB_URL = "jdbc:sqlite:data/access_control.db";
@@ -15,26 +16,67 @@ public class DatabaseManager {
 
     public DatabaseManager() {
         initializeDatabase();
+        updateResourceGroupNames();
+    }
+    
+    /**
+     * Update resource group names from Chinese to English in database
+     */
+    private void updateResourceGroupNames() {
+        Map<String, String> nameMapping = new HashMap<>();
+        nameMapping.put("设备资源", "Equipment Resources");
+        nameMapping.put("公共区域", "Public Area");
+        nameMapping.put("办公区域", "Office Area");
+        nameMapping.put("高安全区域", "High Security Area");
+        nameMapping.put("停车场区域", "Parking Area");
+        nameMapping.put("楼梯区域", "Stairway Area");
+        
+        try {
+            for (Map.Entry<String, String> entry : nameMapping.entrySet()) {
+                String chineseName = entry.getKey();
+                String englishName = entry.getValue();
+                
+                // Check if Chinese name exists
+                String checkSql = "SELECT COUNT(*) FROM resource_group_members WHERE group_name = ?";
+                try (PreparedStatement checkStmt = connection.prepareStatement(checkSql)) {
+                    checkStmt.setString(1, chineseName);
+                    try (ResultSet rs = checkStmt.executeQuery()) {
+                        if (rs.next() && rs.getInt(1) > 0) {
+                            // Update to English name
+                            String updateSql = "UPDATE resource_group_members SET group_name = ? WHERE group_name = ?";
+                            try (PreparedStatement updateStmt = connection.prepareStatement(updateSql)) {
+                                updateStmt.setString(1, englishName);
+                                updateStmt.setString(2, chineseName);
+                                updateStmt.executeUpdate();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            // Ignore errors, table may not exist or already updated
+            System.err.println("Note: Could not update resource group names: " + e.getMessage());
+        }
     }
 
     /**
-     * 初始化数据库，创建所有必要的表
+     * Initialize database, create all necessary tables
      */
     private void initializeDatabase() {
         try {
             connection = DriverManager.getConnection(DB_URL);
             createTables();
         } catch (SQLException e) {
-            System.err.println("数据库初始化失败: " + e.getMessage());
+            System.err.println("Database initialization failed: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     /**
-     * 创建所有数据库表
+     * Create all database tables
      */
     private void createTables() throws SQLException {
-        // 用户表
+        // Users table
         executeUpdate("CREATE TABLE IF NOT EXISTS users (" +
             "id TEXT PRIMARY KEY, " +
             "gender TEXT, " +
@@ -44,7 +86,7 @@ public class DatabaseManager {
             "badge_id TEXT" +
             ")");
 
-        // 徽章表
+        // Badges table
         executeUpdate("CREATE TABLE IF NOT EXISTS badges (" +
             "id TEXT PRIMARY KEY, " +
             "code TEXT UNIQUE, " +
@@ -56,7 +98,7 @@ public class DatabaseManager {
             "FOREIGN KEY (user_id) REFERENCES users(id)" +
             ")");
 
-        // 资源表
+        // Resources table
         executeUpdate("CREATE TABLE IF NOT EXISTS resources (" +
             "id TEXT PRIMARY KEY, " +
             "name TEXT, " +
@@ -68,27 +110,27 @@ public class DatabaseManager {
             "badge_reader_id TEXT" +
             ")");
 
-        // 读卡器表
+        // Badge readers table
         executeUpdate("CREATE TABLE IF NOT EXISTS badge_readers (" +
             "id TEXT PRIMARY KEY, " +
             "resource_id TEXT, " +
             "FOREIGN KEY (resource_id) REFERENCES resources(id)" +
             ")");
 
-        // 资源组表
+        // Resource groups table
         executeUpdate("CREATE TABLE IF NOT EXISTS resource_groups (" +
             "name TEXT PRIMARY KEY, " +
             "security_level INTEGER, " +
             "file_path TEXT" +
             ")");
 
-        // 配置文件表
+        // Profiles table
         executeUpdate("CREATE TABLE IF NOT EXISTS profiles (" +
             "name TEXT PRIMARY KEY, " +
             "file_path TEXT" +
             ")");
 
-        // 徽章-配置文件关联表（多对多）
+        // Badge-Profile association table (many-to-many)
         executeUpdate("CREATE TABLE IF NOT EXISTS badge_profiles (" +
             "badge_id TEXT, " +
             "profile_name TEXT, " +
@@ -97,7 +139,7 @@ public class DatabaseManager {
             "FOREIGN KEY (profile_name) REFERENCES profiles(name)" +
             ")");
 
-        // 资源-组关联表（多对多）
+        // Resource-Group association table (many-to-many)
         executeUpdate("CREATE TABLE IF NOT EXISTS resource_group_members (" +
             "resource_id TEXT, " +
             "group_name TEXT, " +
@@ -108,7 +150,7 @@ public class DatabaseManager {
     }
 
     /**
-     * 执行更新操作
+     * Execute update operation
      */
     private void executeUpdate(String sql) throws SQLException {
         try (Statement stmt = connection.createStatement()) {
@@ -117,7 +159,7 @@ public class DatabaseManager {
     }
 
     /**
-     * 添加用户
+     * Add user
      */
     public void addUser(User user) throws SQLException {
         String sql = "INSERT OR REPLACE INTO users (id, gender, first_name, last_name, user_type, badge_id) " +
@@ -134,7 +176,7 @@ public class DatabaseManager {
     }
 
     /**
-     * 添加徽章
+     * Add badge
      */
     public void addBadge(Badge badge, String badgeId) throws SQLException {
         String sql = "INSERT OR REPLACE INTO badges (id, code, user_id, creation_date, expiration_date, last_update_date, valid) " +
@@ -152,7 +194,7 @@ public class DatabaseManager {
     }
 
     /**
-     * 添加资源
+     * Add resource
      */
     public void addResource(Resource resource) throws SQLException {
         String sql = "INSERT OR REPLACE INTO resources (id, name, type, location, building, floor, state, badge_reader_id) " +
@@ -171,7 +213,7 @@ public class DatabaseManager {
     }
 
     /**
-     * 添加读卡器
+     * Add badge reader
      */
     public void addBadgeReader(BadgeReader reader) throws SQLException {
         String sql = "INSERT OR REPLACE INTO badge_readers (id, resource_id) VALUES (?, ?)";
@@ -183,8 +225,8 @@ public class DatabaseManager {
     }
 
     /**
-     * 加载所有用户（通过徽章代码索引）
-     * 只返回有徽章的用户
+     * Load all users (indexed by badge code)
+     * Only returns users with badges
      */
     public Map<String, User> loadUsersByBadgeCode() {
         Map<String, User> result = new HashMap<>();
@@ -206,14 +248,14 @@ public class DatabaseManager {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("加载用户失败: " + e.getMessage());
+            System.err.println("Failed to load users: " + e.getMessage());
         }
         return result;
     }
     
     /**
-     * 加载所有用户（包括没有徽章的用户）
-     * @return 用户ID -> 用户对象的映射
+     * Load all users (including users without badges)
+     * @return Map of user ID -> User object
      */
     public Map<String, User> loadAllUsers() {
         Map<String, User> result = new HashMap<>();
@@ -234,13 +276,13 @@ public class DatabaseManager {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("加载所有用户失败: " + e.getMessage());
+            System.err.println("Failed to load all users: " + e.getMessage());
         }
         return result;
     }
     
     /**
-     * 根据徽章ID加载徽章
+     * Load badge by badge ID
      */
     public Badge loadBadgeById(String badgeId) {
         try {
@@ -262,13 +304,13 @@ public class DatabaseManager {
                 }
             }
         } catch (Exception e) {
-            System.err.println("加载徽章失败: " + e.getMessage());
+            System.err.println("Failed to load badge: " + e.getMessage());
         }
         return null;
     }
     
     /**
-     * 根据用户ID加载徽章
+     * Load badge by user ID
      */
     public Badge loadBadgeByUserId(String userId) {
         try {
@@ -291,13 +333,13 @@ public class DatabaseManager {
                 }
             }
         } catch (Exception e) {
-            System.err.println("加载用户徽章失败: " + e.getMessage());
+            System.err.println("Failed to load user badge: " + e.getMessage());
         }
         return null;
     }
     
     /**
-     * 加载所有徽章（通过用户ID索引）
+     * Load all badges (indexed by user ID)
      */
     public Map<String, Badge> loadAllBadges() {
         Map<String, Badge> result = new HashMap<>();
@@ -318,13 +360,13 @@ public class DatabaseManager {
                 }
             }
         } catch (Exception e) {
-            System.err.println("加载所有徽章失败: " + e.getMessage());
+            System.err.println("Failed to load all badges: " + e.getMessage());
         }
         return result;
     }
 
     /**
-     * 加载用户配置文件映射
+     * Load user profile mapping
      */
     public Map<String, Set<String>> loadUserProfiles() {
         Map<String, Set<String>> result = new HashMap<>();
@@ -340,13 +382,13 @@ public class DatabaseManager {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("加载用户配置文件失败: " + e.getMessage());
+            System.err.println("Failed to load user profiles: " + e.getMessage());
         }
         return result;
     }
 
     /**
-     * 加载所有资源
+     * Load all resources
      */
     public Map<String, Resource> loadAllResources() {
         Map<String, Resource> result = new HashMap<>();
@@ -369,13 +411,13 @@ public class DatabaseManager {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("加载资源失败: " + e.getMessage());
+            System.err.println("Failed to load resources: " + e.getMessage());
         }
         return result;
     }
 
     /**
-     * 加载资源组映射
+     * Load resource group mapping
      */
     public Map<String, String> loadResourceGroups() {
         Map<String, String> result = new HashMap<>();
@@ -388,21 +430,21 @@ public class DatabaseManager {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("加载资源组失败: " + e.getMessage());
+            System.err.println("Failed to load resource groups: " + e.getMessage());
         }
         return result;
     }
 
     /**
-     * 记录访问日志
-     * 注意：实际日志记录由LogManager处理，此方法保留用于兼容性
+     * Log access event
+     * Note: Actual logging is handled by LogManager, this method is kept for compatibility
      */
     public void logAccess(AccessRequest request, User user, Resource resource, boolean granted) {
-        // 日志记录由LogManager处理，这里只是占位
+        // Logging is handled by LogManager, this is just a placeholder
     }
 
     /**
-     * 关联徽章和配置文件
+     * Link badge to profile
      */
     public void linkBadgeToProfile(String badgeId, String profileName) throws SQLException {
         String sql = "INSERT OR IGNORE INTO badge_profiles (badge_id, profile_name) VALUES (?, ?)";
@@ -414,7 +456,7 @@ public class DatabaseManager {
     }
 
     /**
-     * 关联资源和组
+     * Link resource to group
      */
     public void linkResourceToGroup(String resourceId, String groupName) throws SQLException {
         String sql = "INSERT OR IGNORE INTO resource_group_members (resource_id, group_name) VALUES (?, ?)";
@@ -426,11 +468,11 @@ public class DatabaseManager {
     }
     
     /**
-     * 删除用户
-     * 会同时删除关联的徽章和配置文件关联
+     * Delete user
+     * Also deletes associated badges and profile associations
      */
     public void deleteUser(String userId) throws SQLException {
-        // 先获取用户的徽章ID
+        // First get the user's badge ID
         String badgeId = null;
         String sql = "SELECT badge_id FROM users WHERE id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -442,16 +484,16 @@ public class DatabaseManager {
             }
         }
         
-        // 如果用户有徽章，先删除徽章相关的关联
+        // If user has badge, first delete badge-related associations
         if (badgeId != null) {
-            // 删除徽章-配置文件关联
+            // Delete badge-profile associations
             sql = "DELETE FROM badge_profiles WHERE badge_id = ?";
             try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
                 pstmt.setString(1, badgeId);
                 pstmt.executeUpdate();
             }
             
-            // 删除徽章
+            // Delete badge
             sql = "DELETE FROM badges WHERE id = ?";
             try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
                 pstmt.setString(1, badgeId);
@@ -459,7 +501,7 @@ public class DatabaseManager {
             }
         }
         
-        // 最后删除用户
+        // Finally delete user
         sql = "DELETE FROM users WHERE id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, userId);
@@ -468,18 +510,18 @@ public class DatabaseManager {
     }
     
     /**
-     * 删除资源
-     * 会同时删除关联的读卡器和资源组关联
+     * Delete resource
+     * Also deletes associated badge readers and resource group associations
      */
     public void deleteResource(String resourceId) throws SQLException {
-        // 先删除资源-组关联
+        // First delete resource-group associations
         String sql = "DELETE FROM resource_group_members WHERE resource_id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, resourceId);
             pstmt.executeUpdate();
         }
         
-        // 获取关联的读卡器ID
+        // Get associated badge reader ID
         String badgeReaderId = null;
         sql = "SELECT badge_reader_id FROM resources WHERE id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -491,7 +533,7 @@ public class DatabaseManager {
             }
         }
         
-        // 删除读卡器
+        // Delete badge reader
         if (badgeReaderId != null) {
             sql = "DELETE FROM badge_readers WHERE id = ?";
             try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -500,7 +542,7 @@ public class DatabaseManager {
             }
         }
         
-        // 最后删除资源
+        // Finally delete resource
         sql = "DELETE FROM resources WHERE id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, resourceId);
@@ -509,14 +551,14 @@ public class DatabaseManager {
     }
 
     /**
-     * 获取连接（用于复杂查询）
+     * Get connection (for complex queries)
      */
     public Connection getConnection() {
         return connection;
     }
 
     /**
-     * 关闭数据库连接
+     * Close database connection
      */
     public void close() throws SQLException {
         if (connection != null) {

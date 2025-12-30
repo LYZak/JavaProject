@@ -1,28 +1,28 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.profile;
 
-import java.time.LocalDateTime;
 import java.time.DayOfWeek;
+import java.time.LocalDateTime;
 import java.time.Month;
-import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Set;
 
 /**
- * 时间过滤器 - 定义资源访问的时间规则
+ * Time Filter - Defines time rules for resource access
  */
 public class TimeFilter {
-    private Set<Integer> years; // 允许的年份集合，null表示所有年份
-    private Set<Month> months; // 允许的月份集合，null表示所有月份
-    private Set<Integer> daysOfMonth; // 允许的日期集合，null表示所有日期
-    private Set<DayOfWeek> daysOfWeek; // 允许的星期集合，null表示所有星期
-    private List<TimeRange> timeRanges; // 允许的时间范围列表，null表示所有时间
+    private Set<Integer> years; // Allowed year set, null means all years
+    private Set<Month> months; // Allowed month set, null means all months
+    private Set<Integer> daysOfMonth; // Allowed day set, null means all days
+    private Set<DayOfWeek> daysOfWeek; // Allowed day of week set, null means all days
+    private List<TimeRange> timeRanges; // Allowed time range list, null means all times
 
-    private boolean excludeYears; // 是否排除指定的年份
-    private boolean excludeMonths; // 是否排除指定的月份
-    private boolean excludeDaysOfMonth; // 是否排除指定的日期
-    private boolean excludeDaysOfWeek; // 是否排除指定的星期
-    private boolean excludeTimeRanges; // 是否排除指定的时间范围
+    private boolean excludeYears; // Whether to exclude specified years
+    private boolean excludeMonths; // Whether to exclude specified months
+    private boolean excludeDaysOfMonth; // Whether to exclude specified days
+    private boolean excludeDaysOfWeek; // Whether to exclude specified days of week
+    private boolean excludeTimeRanges; // Whether to exclude specified time ranges
 
     public TimeFilter() {
         this.years = null;
@@ -38,10 +38,10 @@ public class TimeFilter {
     }
 
     /**
-     * 检查给定的时间是否匹配过滤器
+     * Check if given time matches the filter
      */
     public boolean matches(LocalDateTime dateTime) {
-        // 检查年份
+        // Check year
         if (years != null) {
             boolean yearMatch = years.contains(dateTime.getYear());
             if (excludeYears ? yearMatch : !yearMatch) {
@@ -49,7 +49,7 @@ public class TimeFilter {
             }
         }
 
-        // 检查月份
+        // Check month
         if (months != null) {
             boolean monthMatch = months.contains(dateTime.getMonth());
             if (excludeMonths ? monthMatch : !monthMatch) {
@@ -57,7 +57,7 @@ public class TimeFilter {
             }
         }
 
-        // 检查日期
+        // Check day of month
         if (daysOfMonth != null) {
             boolean dayMatch = daysOfMonth.contains(dateTime.getDayOfMonth());
             if (excludeDaysOfMonth ? dayMatch : !dayMatch) {
@@ -65,7 +65,7 @@ public class TimeFilter {
             }
         }
 
-        // 检查星期
+        // Check day of week
         if (daysOfWeek != null && !daysOfWeek.isEmpty()) {
             boolean weekDayMatch = daysOfWeek.contains(dateTime.getDayOfWeek());
             if (excludeDaysOfWeek ? weekDayMatch : !weekDayMatch) {
@@ -73,7 +73,7 @@ public class TimeFilter {
             }
         }
 
-        // 检查时间范围
+        // Check time range
         if (timeRanges != null && !timeRanges.isEmpty()) {
             int hour = dateTime.getHour();
             int minute = dateTime.getMinute();
@@ -176,11 +176,11 @@ public class TimeFilter {
     }
 
     /**
-     * 时间范围内部类
+     * Time range inner class
      */
     public static class TimeRange {
-        private int startMinutes; // 开始时间（分钟）
-        private int endMinutes; // 结束时间（分钟）
+        private int startMinutes; // Start time (in minutes)
+        private int endMinutes; // End time (in minutes)
 
         public TimeRange(int startHour, int startMinute, int endHour, int endMinute) {
             this.startMinutes = startHour * 60 + startMinute;

@@ -1,32 +1,33 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.model;
 
 /**
- * 资源类 - 表示需要控制的资源（门、电梯、打印机等）
+ * Resource class - Represents resources that need to be controlled (doors, elevators, printers, etc.)
  */
 public class Resource {
     public enum ResourceType {
-        DOOR,           // 门
-        GATE,           // 大门
-        ELEVATOR,       // 电梯
-        STAIRWAY,       // 楼梯
-        PRINTER,        // 打印机
-        BEVERAGE_DISPENSER, // 饮料机
-        PARKING         // 停车场
+        DOOR,           // Door
+        GATE,           // Gate
+        ELEVATOR,       // Elevator
+        STAIRWAY,       // Stairway
+        PRINTER,        // Printer
+        BEVERAGE_DISPENSER, // Beverage dispenser
+        PARKING         // Parking
     }
 
     public enum ResourceState {
-        CONTROLLED,     // 受控状态
-        UNCONTROLLED    // 非受控状态
+        CONTROLLED,     // Controlled state
+        UNCONTROLLED    // Uncontrolled state
     }
 
-    private String id; // 资源唯一标识
-    private String name; // 资源名称
-    private ResourceType type; // 资源类型
-    private String location; // 位置（建筑、楼层等）
-    private String building; // 所属建筑
-    private String floor; // 所在楼层
-    private ResourceState state; // 资源状态
-    private String badgeReaderId; // 关联的读卡器ID
+    private String id; // Resource unique identifier
+    private String name; // Resource name
+    private ResourceType type; // Resource type
+    private String location; // Location (building, floor, etc.)
+    private String building; // Building
+    private String floor; // Floor
+    private ResourceState state; // Resource state
+    private String badgeReaderId; // Associated badge reader ID
 
     public Resource(String id, String name, ResourceType type, String location, 
                    String building, String floor) {

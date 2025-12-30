@@ -1,0 +1,29 @@
+{
+  "name" : "Exclude Weekend",
+  "accessRights" : {
+    "Office Area" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : [ "Sat", "Sun" ],
+      "timeRanges" : [ "8:00-18:00" ],
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : true,
+      "excludeTimeRanges" : false
+    },
+    "Public Area" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : [ "Sat", "Sun" ],
+      "timeRanges" : [ "8:00-18:00" ],
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : true,
+      "excludeTimeRanges" : false
+    }
+  }
+}

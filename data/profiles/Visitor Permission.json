@@ -1,0 +1,17 @@
+{
+  "name" : "Visitor Permission",
+  "accessRights" : {
+    "Public Area" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : [ "Fri", "Thu", "Wed", "Tue", "Mon" ],
+      "timeRanges" : [ "10:00-16:00" ],
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : false,
+      "excludeTimeRanges" : false
+    }
+  }
+}

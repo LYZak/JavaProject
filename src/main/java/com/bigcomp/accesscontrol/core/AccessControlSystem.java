@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.core;
 
 import com.bigcomp.accesscontrol.database.DatabaseManager;
@@ -10,8 +11,8 @@ import com.bigcomp.accesscontrol.model.Resource;
 import java.util.Map;
 
 /**
- * 访问控制系统 - 系统主控制器
- * 整合所有组件
+ * Access Control System - Main system controller
+ * Integrates all components
  */
 public class AccessControlSystem {
     private DatabaseManager dbManager;
@@ -30,22 +31,22 @@ public class AccessControlSystem {
     }
 
     /**
-     * 处理访问请求并记录日志
+     * Process access request and log event
      */
     public void processAccessRequest(AccessRequest request, User user, Resource resource, boolean granted) {
-        // 记录日志
+        // Log event
         logManager.logAccess(request, user, resource, granted);
     }
     
     /**
-     * 获取用户和资源信息并记录日志
+     * Get user and resource information and log event
      */
     public void logAccessEvent(AccessRequest request, AccessResponse response) {
-        // 从请求中获取信息
+        // Get information from request
         String badgeCode = request.getBadgeCode();
         String resourceId = request.getResourceId();
         
-        // 从内存中获取用户和资源信息
+        // Get user and resource information from memory
         Map<String, User> usersByBadgeCode = arp.getUsersByBadgeCode();
         Map<String, Resource> resources = arp.getResources();
         
@@ -58,7 +59,7 @@ public class AccessControlSystem {
     }
     
     /**
-     * 初始化路由器的事件监听，用于记录日志
+     * Initialize router event listeners for logging
      */
     public void initializeEventLogging() {
         router.addAccessEventListener((request, response) -> {

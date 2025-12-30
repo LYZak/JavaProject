@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.gui;
 
 import com.bigcomp.accesscontrol.core.AccessControlSystem;
@@ -16,7 +17,7 @@ import java.util.Set;
 import java.util.List;
 
 /**
- * 用户管理面板
+ * User Management Panel
  */
 public class UserManagementPanel extends JPanel {
     private AccessControlSystem accessControlSystem;
@@ -37,8 +38,8 @@ public class UserManagementPanel extends JPanel {
     }
 
     private void initializeComponents() {
-        // 表格
-        String[] columnNames = {"ID", "姓名", "性别", "类型", "徽章ID"};
+        // Table
+        String[] columnNames = {"ID", "Name", "Gender", "Type", "Badge ID"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -48,73 +49,73 @@ public class UserManagementPanel extends JPanel {
         userTable = new JTable(tableModel);
         userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // 输入字段
+        // Input fields
         firstNameField = new JTextField(15);
         lastNameField = new JTextField(15);
         genderCombo = new JComboBox<>(User.Gender.values());
         userTypeCombo = new JComboBox<>(User.UserType.values());
 
-        // 按钮
-        JButton addButton = new JButton("添加用户");
+        // Buttons
+        JButton addButton = new JButton("Add User");
         addButton.addActionListener(e -> addUser());
 
-        JButton deleteButton = new JButton("删除用户");
+        JButton deleteButton = new JButton("Delete User");
         deleteButton.addActionListener(e -> deleteUser());
 
-        JButton createBadgeButton = new JButton("创建徽章");
+        JButton createBadgeButton = new JButton("Create Badge");
         createBadgeButton.addActionListener(e -> createBadge());
     }
-
+    
     private void setupLayout() {
         setLayout(new BorderLayout());
 
-        // 顶部：输入表单
+        // Top: Input form
         JPanel formPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
 
         gbc.gridx = 0; gbc.gridy = 0;
-        formPanel.add(new JLabel("名:"), gbc);
+        formPanel.add(new JLabel("First Name:"), gbc);
         gbc.gridx = 1;
         formPanel.add(firstNameField, gbc);
 
         gbc.gridx = 0; gbc.gridy = 1;
-        formPanel.add(new JLabel("姓:"), gbc);
+        formPanel.add(new JLabel("Last Name:"), gbc);
         gbc.gridx = 1;
         formPanel.add(lastNameField, gbc);
 
         gbc.gridx = 0; gbc.gridy = 2;
-        formPanel.add(new JLabel("性别:"), gbc);
+        formPanel.add(new JLabel("Gender:"), gbc);
         gbc.gridx = 1;
         formPanel.add(genderCombo, gbc);
 
         gbc.gridx = 0; gbc.gridy = 3;
-        formPanel.add(new JLabel("类型:"), gbc);
+        formPanel.add(new JLabel("Type:"), gbc);
         gbc.gridx = 1;
         formPanel.add(userTypeCombo, gbc);
 
         gbc.gridx = 0; gbc.gridy = 4;
         gbc.gridwidth = 2;
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("添加用户") {{
+        buttonPanel.add(new JButton("Add User") {{
             addActionListener(e -> addUser());
         }});
-        buttonPanel.add(new JButton("删除用户") {{
+        buttonPanel.add(new JButton("Delete User") {{
             addActionListener(e -> deleteUser());
         }});
-        buttonPanel.add(new JButton("创建徽章") {{
+        buttonPanel.add(new JButton("Create Badge") {{
             addActionListener(e -> createBadge());
         }});
-        buttonPanel.add(new JButton("分配配置文件") {{
+        buttonPanel.add(new JButton("Assign Profile") {{
             addActionListener(e -> assignProfile());
         }});
-        buttonPanel.add(new JButton("自动分配配置文件") {{
+        buttonPanel.add(new JButton("Auto-assign Profiles") {{
             addActionListener(e -> autoAssignProfilesForAll());
         }});
         formPanel.add(buttonPanel, gbc);
 
-        // 中间：表格
+        // Center: Table
         JScrollPane scrollPane = new JScrollPane(userTable);
 
         add(formPanel, BorderLayout.NORTH);
@@ -127,7 +128,7 @@ public class UserManagementPanel extends JPanel {
             String lastName = lastNameField.getText().trim();
             
             if (firstName.isEmpty() || lastName.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "请输入姓名", "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Please enter name", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -143,21 +144,21 @@ public class UserManagementPanel extends JPanel {
             dbManager.addUser(user);
             loadUsers();
             
-            // 清空输入字段
+            // Clear input fields
             firstNameField.setText("");
             lastNameField.setText("");
             
-            JOptionPane.showMessageDialog(this, "用户添加成功", "成功", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "User added successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "添加用户失败: " + e.getMessage(), 
-                "错误", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Failed to add user: " + e.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void deleteUser() {
         int selectedRow = userTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "请选择要删除的用户", "提示", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select a user to delete", "Warning", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -165,18 +166,18 @@ public class UserManagementPanel extends JPanel {
         String userName = (String) tableModel.getValueAt(selectedRow, 1);
         
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "确定要删除用户 \"" + userName + "\" 吗？\n此操作将同时删除该用户的徽章和相关配置。", 
-            "确认删除", 
+            "Are you sure you want to delete user \"" + userName + "\"?\nThis operation will also delete the user's badge and related configurations.", 
+            "Confirm Delete", 
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 dbManager.deleteUser(userId);
                 loadUsers();
-                JOptionPane.showMessageDialog(this, "用户删除成功", "成功", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "User deleted successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "删除用户失败: " + e.getMessage(), 
-                    "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to delete user: " + e.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
         }
@@ -185,17 +186,17 @@ public class UserManagementPanel extends JPanel {
     private void createBadge() {
         int selectedRow = userTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "请选择用户", "提示", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select a user", "Warning", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         String userId = (String) tableModel.getValueAt(selectedRow, 0);
         try {
-            // 获取用户信息
+            // Get user information
             Map<String, User> allUsers = dbManager.loadAllUsers();
             User user = allUsers.get(userId);
             if (user == null) {
-                JOptionPane.showMessageDialog(this, "用户不存在", "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "User does not exist", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
             
@@ -203,28 +204,28 @@ public class UserManagementPanel extends JPanel {
             String badgeId = UUID.randomUUID().toString();
             dbManager.addBadge(badge, badgeId);
             
-            // 更新用户的徽章ID
+            // Update user's badge ID
             user.setBadgeId(badgeId);
             dbManager.addUser(user);
             
-            // 自动根据用户类型分配配置文件
+            // Automatically assign profile based on user type
             autoAssignProfileByUserType(user, badgeId);
             
-            // 重新加载内存数据
+            // Reload in-memory data
             accessControlSystem.getAccessRequestProcessor().reloadData();
             
             loadUsers();
-            JOptionPane.showMessageDialog(this, "徽章创建成功，已自动分配配置文件", "成功", 
+            JOptionPane.showMessageDialog(this, "Badge created successfully, profile automatically assigned", "Success", 
                 JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "创建徽章失败: " + e.getMessage(), 
-                "错误", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Failed to create badge: " + e.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }
     
     /**
-     * 根据用户类型自动分配配置文件
+     * Automatically assign profile based on user type
      */
     private void autoAssignProfileByUserType(User user, String badgeId) {
         try {
@@ -232,52 +233,52 @@ public class UserManagementPanel extends JPanel {
             String profileName = getDefaultProfileName(user.getUserType());
             
             if (profileName == null) {
-                // 没有对应的默认配置文件，不自动分配
+                // No corresponding default profile, do not auto-assign
                 return;
             }
             
-            // 检查配置文件是否存在，如果不存在则创建默认配置文件
+            // Check if profile exists, if not create default profile
             Profile profile = profileManager.getProfile(profileName);
             if (profile == null) {
-                // 创建默认配置文件
+                // Create default profile
                 createDefaultProfile(profileName, user.getUserType());
                 profile = profileManager.getProfile(profileName);
             }
             
             if (profile != null) {
-                // 分配配置文件
+                // Assign profile
                 dbManager.linkBadgeToProfile(badgeId, profileName);
-                System.out.println("自动分配配置文件: " + user.getFullName() + " (" + 
+                System.out.println("Auto-assigned profile: " + user.getFullName() + " (" + 
                     user.getUserType() + ") -> " + profileName);
             }
         } catch (Exception e) {
-            System.err.println("自动分配配置文件失败: " + e.getMessage());
+            System.err.println("Failed to auto-assign profile: " + e.getMessage());
             e.printStackTrace();
         }
     }
     
     /**
-     * 根据用户类型获取默认配置文件名称
+     * Get default profile name based on user type
      */
     private String getDefaultProfileName(User.UserType userType) {
         switch (userType) {
             case EMPLOYEE:
-                return "员工权限";
+                return "Employee Permission";
             case CONTRACTOR:
-                return "承包商权限";
+                return "Contractor Permission";
             case INTERN:
-                return "实习生权限";
+                return "Intern Permission";
             case VISITOR:
-                return "访客权限";
+                return "Visitor Permission";
             case PROJECT_MANAGER:
-                return "项目经理权限";
+                return "Project Manager Permission";
             default:
                 return null;
         }
     }
     
     /**
-     * 创建默认配置文件（如果不存在）
+     * Create default profile (if it doesn't exist)
      */
     private void createDefaultProfile(String profileName, User.UserType userType) {
         try {
@@ -285,10 +286,10 @@ public class UserManagementPanel extends JPanel {
             Profile profile = new Profile(profileName);
             TimeFilter filter = new TimeFilter();
             
-            // 根据用户类型设置默认时间过滤器
+            // Set default time filter based on user type
             switch (userType) {
                 case EMPLOYEE:
-                    // 员工：工作日 8:00-18:00
+                    // Employee: Weekdays 8:00-18:00
                     filter.setDaysOfWeek(Set.of(
                         java.time.DayOfWeek.MONDAY,
                         java.time.DayOfWeek.TUESDAY,
@@ -299,13 +300,13 @@ public class UserManagementPanel extends JPanel {
                     filter.setTimeRanges(List.of(
                         new TimeFilter.TimeRange(8, 0, 18, 0)
                     ));
-                    profile.addAccessRight("公共区域", filter);
-                    profile.addAccessRight("办公区域", filter);
-                    profile.addAccessRight("设备资源", filter);
+                    profile.addAccessRight("Public Area", filter);
+                    profile.addAccessRight("Office Area", filter);
+                    profile.addAccessRight("Equipment Resources", filter);
                     break;
                     
                 case CONTRACTOR:
-                    // 承包商：工作日 9:00-17:00
+                    // Contractor: Weekdays 9:00-17:00
                     filter.setDaysOfWeek(Set.of(
                         java.time.DayOfWeek.MONDAY,
                         java.time.DayOfWeek.TUESDAY,
@@ -316,12 +317,12 @@ public class UserManagementPanel extends JPanel {
                     filter.setTimeRanges(List.of(
                         new TimeFilter.TimeRange(9, 0, 17, 0)
                     ));
-                    profile.addAccessRight("公共区域", filter);
-                    profile.addAccessRight("办公区域", filter);
+                    profile.addAccessRight("Public Area", filter);
+                    profile.addAccessRight("Office Area", filter);
                     break;
                     
                 case INTERN:
-                    // 实习生：工作日 9:00-17:00
+                    // Intern: Weekdays 9:00-17:00
                     filter.setDaysOfWeek(Set.of(
                         java.time.DayOfWeek.MONDAY,
                         java.time.DayOfWeek.TUESDAY,
@@ -332,12 +333,12 @@ public class UserManagementPanel extends JPanel {
                     filter.setTimeRanges(List.of(
                         new TimeFilter.TimeRange(9, 0, 17, 0)
                     ));
-                    profile.addAccessRight("公共区域", filter);
-                    profile.addAccessRight("办公区域", filter);
+                    profile.addAccessRight("Public Area", filter);
+                    profile.addAccessRight("Office Area", filter);
                     break;
                     
                 case VISITOR:
-                    // 访客：工作日 10:00-16:00
+                    // Visitor: Weekdays 10:00-16:00
                     filter.setDaysOfWeek(Set.of(
                         java.time.DayOfWeek.MONDAY,
                         java.time.DayOfWeek.TUESDAY,
@@ -348,11 +349,11 @@ public class UserManagementPanel extends JPanel {
                     filter.setTimeRanges(List.of(
                         new TimeFilter.TimeRange(10, 0, 16, 0)
                     ));
-                    profile.addAccessRight("公共区域", filter);
+                    profile.addAccessRight("Public Area", filter);
                     break;
                     
                 case PROJECT_MANAGER:
-                    // 项目经理：工作日 7:00-20:00，可访问高安全区域
+                    // Project Manager: Weekdays 7:00-20:00, can access high security area
                     filter.setDaysOfWeek(Set.of(
                         java.time.DayOfWeek.MONDAY,
                         java.time.DayOfWeek.TUESDAY,
@@ -363,23 +364,23 @@ public class UserManagementPanel extends JPanel {
                     filter.setTimeRanges(List.of(
                         new TimeFilter.TimeRange(7, 0, 20, 0)
                     ));
-                    profile.addAccessRight("公共区域", filter);
-                    profile.addAccessRight("办公区域", filter);
-                    profile.addAccessRight("设备资源", filter);
-                    profile.addAccessRight("高安全区域", filter);
+                    profile.addAccessRight("Public Area", filter);
+                    profile.addAccessRight("Office Area", filter);
+                    profile.addAccessRight("Equipment Resources", filter);
+                    profile.addAccessRight("High Security Area", filter);
                     break;
                     
                 default:
-                    // 默认：全天候访问公共区域
-                    profile.addAccessRight("公共区域", filter);
+                    // Default: Full-time access to public area
+                    profile.addAccessRight("Public Area", filter);
                     break;
             }
             
-            // 保存配置文件
+            // Save profile
             profileManager.saveProfile(profile);
-            System.out.println("创建默认配置文件: " + profileName);
+            System.out.println("Created default profile: " + profileName);
         } catch (Exception e) {
-            System.err.println("创建默认配置文件失败: " + e.getMessage());
+            System.err.println("Failed to create default profile: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -387,7 +388,7 @@ public class UserManagementPanel extends JPanel {
     private void assignProfile() {
         int selectedRow = userTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "请选择用户", "提示", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select a user", "Warning", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -395,32 +396,32 @@ public class UserManagementPanel extends JPanel {
         User user = dbManager.loadAllUsers().get(userId);
         
         if (user == null) {
-            JOptionPane.showMessageDialog(this, "用户不存在", "错误", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "User does not exist", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         
         if (user.getBadgeId() == null) {
-            JOptionPane.showMessageDialog(this, "该用户还没有徽章，请先创建徽章", "提示", 
+            JOptionPane.showMessageDialog(this, "This user does not have a badge yet, please create a badge first", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
-        // 获取所有可用的配置文件
+        // Get all available profiles
         var profileManager = accessControlSystem.getProfileManager();
         Map<String, Profile> profiles = profileManager.getAllProfiles();
         
         if (profiles.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "没有可用的配置文件，请先在配置文件管理中创建", 
-                "提示", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "No available profiles, please create profiles in Profile Management first", 
+                "Warning", JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         String[] profileNames = profiles.keySet().toArray(new String[0]);
         
-        // 显示选择对话框
+        // Show selection dialog
         String selectedProfile = (String) JOptionPane.showInputDialog(this,
-            "选择要分配给用户的配置文件:",
-            "分配配置文件",
+            "Select profile to assign to user:",
+            "Assign Profile",
             JOptionPane.QUESTION_MESSAGE,
             null,
             profileNames,
@@ -428,21 +429,21 @@ public class UserManagementPanel extends JPanel {
         
         if (selectedProfile != null) {
             try {
-                // 检查用户是否已有该配置文件
+                // Check if user already has this profile
                 Map<String, Set<String>> userProfiles = dbManager.loadUserProfiles();
                 Set<String> existingProfiles = userProfiles.get(user.getId());
                 if (existingProfiles != null && existingProfiles.contains(selectedProfile)) {
                     JOptionPane.showMessageDialog(this, 
-                        "用户已拥有配置文件 \"" + selectedProfile + "\"", 
-                        "提示", JOptionPane.INFORMATION_MESSAGE);
+                        "User already has profile \"" + selectedProfile + "\"", 
+                        "Info", JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
                 
-                // 分配配置文件（会添加到已有的配置文件中，不会覆盖）
+                // Assign profile (will be added to existing profiles, not overwritten)
                 dbManager.linkBadgeToProfile(user.getBadgeId(), selectedProfile);
                 accessControlSystem.getAccessRequestProcessor().reloadData();
                 
-                // 显示用户当前的所有配置文件
+                // Display all current profiles for user
                 userProfiles = dbManager.loadUserProfiles();
                 existingProfiles = userProfiles.get(user.getId());
                 StringBuilder profileList = new StringBuilder();
@@ -456,12 +457,12 @@ public class UserManagementPanel extends JPanel {
                 }
                 
                 JOptionPane.showMessageDialog(this, 
-                    "配置文件 \"" + selectedProfile + "\" 已分配给用户\n\n" +
-                    "用户当前拥有的配置文件：\n" + profileList.toString(), 
-                    "成功", JOptionPane.INFORMATION_MESSAGE);
+                    "Profile \"" + selectedProfile + "\" has been assigned to user\n\n" +
+                    "User's current profiles:\n" + profileList.toString(), 
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "分配配置文件失败: " + e.getMessage(), 
-                    "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to assign profile: " + e.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
         }
@@ -470,7 +471,7 @@ public class UserManagementPanel extends JPanel {
     private void loadUsers() {
         tableModel.setRowCount(0);
         try {
-            // 使用loadAllUsers()来加载所有用户，包括没有徽章的用户
+            // Use loadAllUsers() to load all users, including those without badges
             Map<String, User> users = dbManager.loadAllUsers();
             for (User user : users.values()) {
                 tableModel.addRow(new Object[]{
@@ -478,21 +479,21 @@ public class UserManagementPanel extends JPanel {
                     user.getFullName(),
                     user.getGender().toString(),
                     user.getUserType().toString(),
-                    user.getBadgeId() != null ? user.getBadgeId() : "无"
+                    user.getBadgeId() != null ? user.getBadgeId() : "None"
                 });
             }
             
-            // 重新加载内存数据（用于访问控制，只需要有徽章的用户）
+            // Reload in-memory data (for access control, only users with badges are needed)
             accessControlSystem.getAccessRequestProcessor().reloadData();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "加载用户失败: " + e.getMessage(), 
-                "错误", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Failed to load users: " + e.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }
     
     /**
-     * 为所有有徽章但没有配置文件的用户自动分配配置文件
+     * Automatically assign profiles to all users with badges but without profiles
      */
     private void autoAssignProfilesForAll() {
         try {
@@ -506,31 +507,31 @@ public class UserManagementPanel extends JPanel {
             StringBuilder details = new StringBuilder();
             
             for (User user : allUsers.values()) {
-                // 检查用户是否有徽章
+                // Check if user has badge
                 if (user.getBadgeId() == null || user.getBadgeId().isEmpty()) {
                     skippedNoBadge++;
                     continue;
                 }
                 
-                // 检查用户是否已有配置文件
+                // Check if user already has profiles
                 Set<String> existingProfiles = userProfiles.get(user.getId());
                 if (existingProfiles != null && !existingProfiles.isEmpty()) {
                     skippedWithProfile++;
                     continue;
                 }
                 
-                // 自动分配配置文件
+                // Automatically assign profile
                 try {
                     String profileName = getDefaultProfileName(user.getUserType());
                     if (profileName != null) {
-                        // 检查配置文件是否存在，如果不存在则创建
+                        // Check if profile exists, create if not
                         var profileManager = accessControlSystem.getProfileManager();
                         Profile profile = profileManager.getProfile(profileName);
                         if (profile == null) {
                             createDefaultProfile(profileName, user.getUserType());
                         }
                         
-                        // 分配配置文件
+                        // Assign profile
                         dbManager.linkBadgeToProfile(user.getBadgeId(), profileName);
                         assignedCount++;
                         details.append("  ✓ ").append(user.getFullName())
@@ -540,36 +541,36 @@ public class UserManagementPanel extends JPanel {
                 } catch (Exception e) {
                     errorCount++;
                     details.append("  ✗ ").append(user.getFullName())
-                           .append(" -> 失败: ").append(e.getMessage()).append("\n");
+                           .append(" -> Failed: ").append(e.getMessage()).append("\n");
                 }
             }
             
-            // 重新加载内存数据
+            // Reload in-memory data
             accessControlSystem.getAccessRequestProcessor().reloadData();
             
-            // 显示结果
+            // Display results
             String message = String.format(
-                "自动分配配置文件完成！\n\n" +
-                "统计信息：\n" +
-                "• 成功分配: %d 个用户\n" +
-                "• 跳过（已有配置文件）: %d 个用户\n" +
-                "• 跳过（无徽章）: %d 个用户\n" +
-                "• 失败: %d 个用户\n\n" +
-                "详细信息：\n%s",
+                "Auto-assign profiles completed!\n\n" +
+                "Statistics:\n" +
+                "• Successfully assigned: %d users\n" +
+                "• Skipped (already has profile): %d users\n" +
+                "• Skipped (no badge): %d users\n" +
+                "• Failed: %d users\n\n" +
+                "Details:\n%s",
                 assignedCount, skippedWithProfile, skippedNoBadge, errorCount, 
-                details.length() > 0 ? details.toString() : "无"
+                details.length() > 0 ? details.toString() : "None"
             );
             
             JOptionPane.showMessageDialog(this, message, 
-                "自动分配完成", 
+                "Auto-assign Complete", 
                 assignedCount > 0 ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE);
             
-            // 刷新用户列表
+            // Refresh user list
             loadUsers();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, 
-                "自动分配配置文件失败: " + e.getMessage(), 
-                "错误", 
+                "Failed to auto-assign profiles: " + e.getMessage(), 
+                "Error", 
                 JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }

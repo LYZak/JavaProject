@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.gui;
 
 import com.bigcomp.accesscontrol.core.AccessControlSystem;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.sql.PreparedStatement;
 
 /**
- * 资源组管理面板
+ * Resource Group Management Panel
  */
 public class ResourceGroupManagementPanel extends JPanel {
     private AccessControlSystem accessControlSystem;
@@ -38,19 +39,19 @@ public class ResourceGroupManagementPanel extends JPanel {
     }
     
     private void initializeComponents() {
-        // 资源组列表
+        // Resource group list
         groupListModel = new DefaultListModel<>();
         groupList = new JList<>(groupListModel);
         groupList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         groupList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 loadSelectedGroup();
-                refreshAvailableResourceTable(); // 刷新可用资源列表
+                refreshAvailableResourceTable(); // Refresh available resource list
             }
         });
         
-        // 资源表格
-        String[] columnNames = {"资源ID", "资源名称", "类型", "位置"};
+        // Resource table
+        String[] columnNames = {"Resource ID", "Resource Name", "Type", "Location"};
         resourceTableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -60,7 +61,7 @@ public class ResourceGroupManagementPanel extends JPanel {
         resourceTable = new JTable(resourceTableModel);
         resourceTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         
-        // 输入字段
+        // Input fields
         groupNameField = new JTextField(20);
         securityLevelSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 10, 1));
         groupInfoArea = new JTextArea(5, 30);
@@ -70,23 +71,23 @@ public class ResourceGroupManagementPanel extends JPanel {
     private void setupLayout() {
         setLayout(new BorderLayout());
         
-        // 左侧：资源组列表
+        // Left: Resource group list
         JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setBorder(BorderFactory.createTitledBorder("资源组列表"));
+        leftPanel.setBorder(BorderFactory.createTitledBorder("Resource Group List"));
         leftPanel.add(new JScrollPane(groupList), BorderLayout.CENTER);
         
         JPanel leftButtonPanel = new JPanel(new GridLayout(2, 2, 5, 5));
-        leftButtonPanel.add(new JButton("新建资源组") {{
+        leftButtonPanel.add(new JButton("New Resource Group") {{
             addActionListener(e -> createNewGroup());
         }});
-        leftButtonPanel.add(new JButton("自动创建资源组") {{
+        leftButtonPanel.add(new JButton("Auto-create Resource Groups") {{
             addActionListener(e -> autoCreateGroups());
         }});
-        JButton deleteButton = new JButton("删除资源组");
+        JButton deleteButton = new JButton("Delete Resource Group");
         deleteButton.setForeground(Color.RED);
         deleteButton.addActionListener(e -> deleteGroup());
         leftButtonPanel.add(deleteButton);
-        leftButtonPanel.add(new JButton("刷新列表") {{
+        leftButtonPanel.add(new JButton("Refresh List") {{
             addActionListener(e -> {
                 loadGroups();
                 if (groupList.getSelectedValue() != null) {
@@ -97,36 +98,36 @@ public class ResourceGroupManagementPanel extends JPanel {
         }});
         leftPanel.add(leftButtonPanel, BorderLayout.SOUTH);
         
-        // 中间：资源列表
+        // Center: Resource list
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setBorder(BorderFactory.createTitledBorder("资源列表"));
+        centerPanel.setBorder(BorderFactory.createTitledBorder("Resource List"));
         
-        // 顶部：资源组信息
+        // Top: Resource group information
         JPanel infoPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
         
         gbc.gridx = 0; gbc.gridy = 0;
-        infoPanel.add(new JLabel("资源组名称:"), gbc);
+        infoPanel.add(new JLabel("Resource Group Name:"), gbc);
         gbc.gridx = 1;
         infoPanel.add(groupNameField, gbc);
         
         gbc.gridx = 0; gbc.gridy = 1;
-        infoPanel.add(new JLabel("安全级别:"), gbc);
+        infoPanel.add(new JLabel("Security Level:"), gbc);
         gbc.gridx = 1;
         infoPanel.add(securityLevelSpinner, gbc);
         
         gbc.gridx = 0; gbc.gridy = 2;
         gbc.gridwidth = 2;
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("添加资源") {{
+        buttonPanel.add(new JButton("Add Resource") {{
             addActionListener(e -> addResourceToGroup());
         }});
-        buttonPanel.add(new JButton("移除资源") {{
+        buttonPanel.add(new JButton("Remove Resource") {{
             addActionListener(e -> removeResourceFromGroup());
         }});
-        buttonPanel.add(new JButton("保存资源组") {{
+        buttonPanel.add(new JButton("Save Resource Group") {{
             addActionListener(e -> saveGroup());
         }});
         infoPanel.add(buttonPanel, gbc);
@@ -135,13 +136,13 @@ public class ResourceGroupManagementPanel extends JPanel {
         centerPanel.add(new JScrollPane(resourceTable), BorderLayout.CENTER);
         centerPanel.add(new JScrollPane(groupInfoArea), BorderLayout.SOUTH);
         
-        // 右侧：可用资源列表
+        // Right: Available resource list
         JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBorder(BorderFactory.createTitledBorder("可用资源（双击或使用按钮添加到资源组）"));
+        rightPanel.setBorder(BorderFactory.createTitledBorder("Available Resources (Double-click or use button to add to resource group)"));
         
         JTable availableResourceTable = createAvailableResourceTable();
         
-        // 添加双击事件：双击资源行直接添加到资源组
+        // Add double-click event: double-click resource row to directly add to resource group
         availableResourceTable.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -150,11 +151,11 @@ public class ResourceGroupManagementPanel extends JPanel {
                     if (row >= 0) {
                         String resourceId = (String) availableResourceTableModel.getValueAt(row, 0);
                         String status = (String) availableResourceTableModel.getValueAt(row, 4);
-                        if ("未添加".equals(status)) {
+                        if ("Not Added".equals(status)) {
                             addResourceToGroupById(resourceId);
                         } else {
                             JOptionPane.showMessageDialog(ResourceGroupManagementPanel.this,
-                                "该资源已添加到当前资源组", "提示",
+                                "This resource has already been added to the current resource group", "Info",
                                 JOptionPane.INFORMATION_MESSAGE);
                         }
                     }
@@ -164,17 +165,17 @@ public class ResourceGroupManagementPanel extends JPanel {
         
         rightPanel.add(new JScrollPane(availableResourceTable), BorderLayout.CENTER);
         
-        // 添加按钮面板
+        // Add button panel
         JPanel rightButtonPanel = new JPanel(new FlowLayout());
-        rightButtonPanel.add(new JButton("添加到资源组") {{
+        rightButtonPanel.add(new JButton("Add to Resource Group") {{
             addActionListener(e -> addSelectedResourcesFromTable());
         }});
-        rightButtonPanel.add(new JButton("刷新列表") {{
+        rightButtonPanel.add(new JButton("Refresh List") {{
             addActionListener(e -> refreshAvailableResourceTable());
         }});
         rightPanel.add(rightButtonPanel, BorderLayout.SOUTH);
         
-        // 主布局
+        // Main layout
         JSplitPane leftSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, centerPanel);
         leftSplit.setDividerLocation(200);
         leftSplit.setResizeWeight(0.2);
@@ -190,7 +191,7 @@ public class ResourceGroupManagementPanel extends JPanel {
     private DefaultTableModel availableResourceTableModel;
     
     private JTable createAvailableResourceTable() {
-        String[] columnNames = {"资源ID", "资源名称", "类型", "位置", "状态"};
+        String[] columnNames = {"Resource ID", "Resource Name", "Type", "Location", "Status"};
         availableResourceTableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -206,7 +207,7 @@ public class ResourceGroupManagementPanel extends JPanel {
     }
     
     /**
-     * 刷新可用资源表格（显示未添加到当前选中资源组的资源）
+     * Refresh available resource table (show resources not added to currently selected resource group)
      */
     private void refreshAvailableResourceTable() {
         if (availableResourceTableModel == null) {
@@ -218,7 +219,7 @@ public class ResourceGroupManagementPanel extends JPanel {
         DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
         Map<String, Resource> allResources = dbManager.loadAllResources();
         
-        // 获取当前选中资源组已包含的资源ID
+        // Get resource IDs already included in currently selected resource group
         Set<String> groupResourceIds = new HashSet<>();
         String selected = groupList.getSelectedValue();
         if (selected != null) {
@@ -236,7 +237,7 @@ public class ResourceGroupManagementPanel extends JPanel {
                 resource.getName(),
                 resource.getType().toString(),
                 resource.getLocation(),
-                inGroup ? "已添加" : "未添加"
+                inGroup ? "Added" : "Not Added"
             });
         }
     }
@@ -263,7 +264,7 @@ public class ResourceGroupManagementPanel extends JPanel {
             groupNameField.setText(group.getName());
             securityLevelSpinner.setValue(group.getSecurityLevel());
             
-            // 加载资源列表
+            // Load resource list
             resourceTableModel.setRowCount(0);
             DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
             Map<String, Resource> allResources = dbManager.loadAllResources();
@@ -280,13 +281,13 @@ public class ResourceGroupManagementPanel extends JPanel {
                 }
             }
             
-            // 显示资源组信息
+            // Display resource group information
             groupInfoArea.setText(String.format(
-                "资源组: %s\n安全级别: %d\n资源数量: %d\n文件路径: %s",
+                "Resource Group: %s\nSecurity Level: %d\nResource Count: %d\nFile Path: %s",
                 group.getName(),
                 group.getSecurityLevel(),
                 group.getResourceIds().size(),
-                group.getFilePath() != null ? group.getFilePath() : "未保存"
+                group.getFilePath() != null ? group.getFilePath() : "Not saved"
             ));
         }
     }
@@ -299,7 +300,7 @@ public class ResourceGroupManagementPanel extends JPanel {
     }
     
     private void createNewGroup() {
-        String name = JOptionPane.showInputDialog(this, "请输入资源组名称:", "新建资源组", 
+        String name = JOptionPane.showInputDialog(this, "Please enter resource group name:", "New Resource Group", 
             JOptionPane.QUESTION_MESSAGE);
         if (name != null && !name.trim().isEmpty()) {
             int securityLevel = (Integer) securityLevelSpinner.getValue();
@@ -309,11 +310,11 @@ public class ResourceGroupManagementPanel extends JPanel {
                 groupManager.saveGroup(group);
                 loadGroups();
                 groupList.setSelectedValue(name.trim(), true);
-                JOptionPane.showMessageDialog(this, "资源组创建成功", "成功", 
+                JOptionPane.showMessageDialog(this, "Resource group created successfully", "Success", 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "创建资源组失败: " + e.getMessage(), 
-                    "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to create resource group: " + e.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -322,26 +323,26 @@ public class ResourceGroupManagementPanel extends JPanel {
         String selected = groupList.getSelectedValue();
         if (selected == null) {
             JOptionPane.showMessageDialog(this, 
-                "请先在左侧列表中选择要删除的资源组", "提示", 
+                "Please select a resource group from the left list to delete", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
-        // 获取资源组信息
+        // Get resource group information
         GroupManager groupManager = new GroupManager();
         ResourceGroup group = groupManager.getGroup(selected);
         int resourceCount = group != null ? group.getResourceIds().size() : 0;
         
         String message = String.format(
-            "确定要删除资源组 \"%s\" 吗？\n\n" +
-            "资源组信息：\n" +
-            "• 名称: %s\n" +
-            "• 安全级别: %d\n" +
-            "• 包含资源数: %d\n\n" +
-            "警告：此操作将：\n" +
-            "• 删除资源组JSON文件\n" +
-            "• 删除数据库中的关联记录\n" +
-            "• 此操作不可恢复！",
+            "Are you sure you want to delete resource group \"%s\"?\n\n" +
+            "Resource Group Information:\n" +
+            "• Name: %s\n" +
+            "• Security Level: %d\n" +
+            "• Resource Count: %d\n\n" +
+            "Warning: This operation will:\n" +
+            "• Delete resource group JSON file\n" +
+            "• Delete associated records in database\n" +
+            "• This operation cannot be undone!",
             selected, 
             selected,
             group != null ? group.getSecurityLevel() : 0,
@@ -350,34 +351,34 @@ public class ResourceGroupManagementPanel extends JPanel {
         
         int confirm = JOptionPane.showConfirmDialog(this, 
             message, 
-            "确认删除资源组", 
+            "Confirm Delete Resource Group", 
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
             
         if (confirm == JOptionPane.YES_OPTION) {
             try {
-                // 在删除资源组之前，先从所有配置文件中移除对该资源组的引用
+                // Before deleting resource group, remove references to this resource group from all profiles
                 ProfileManager profileManager = accessControlSystem.getProfileManager();
                 Map<String, Profile> allProfiles = profileManager.getAllProfiles();
                 int updatedProfileCount = 0;
                 
                 for (Profile profile : allProfiles.values()) {
                     if (profile.getAccessRights().containsKey(selected)) {
-                        // 从配置文件中移除该资源组的引用
+                        // Remove reference to this resource group from profile
                         profile.removeAccessRight(selected);
                         try {
                             profileManager.saveProfile(profile);
                             updatedProfileCount++;
                         } catch (Exception e) {
-                            System.err.println("更新配置文件失败: " + profile.getName() + " - " + e.getMessage());
+                            System.err.println("Failed to update profile: " + profile.getName() + " - " + e.getMessage());
                         }
                     }
                 }
                 
-                // 删除资源组
+                // Delete resource group
                 groupManager.deleteGroup(selected);
                 
-                // 从数据库中删除关联记录
+                // Delete associated records from database
                 try {
                     String sql = "DELETE FROM resource_group_members WHERE group_name = ?";
                     try (PreparedStatement pstmt = dbManager.getConnection().prepareStatement(sql)) {
@@ -385,27 +386,27 @@ public class ResourceGroupManagementPanel extends JPanel {
                         pstmt.executeUpdate();
                     }
                 } catch (Exception e) {
-                    // 忽略数据库删除错误，可能表不存在或已删除
+                    // Ignore database delete errors, table may not exist or already deleted
                 }
                 
-                // 重新加载数据
+                // Reload data
                 accessControlSystem.getAccessRequestProcessor().reloadData();
                 loadGroups();
                 clearGroupInfo();
                 refreshAvailableResourceTable();
                 
-                String successMessage = "资源组 \"" + selected + "\" 已成功删除";
+                String successMessage = "Resource group \"" + selected + "\" has been successfully deleted";
                 if (updatedProfileCount > 0) {
-                    successMessage += "\n\n已从 " + updatedProfileCount + " 个配置文件中移除了对该资源组的引用";
+                    successMessage += "\n\nRemoved references to this resource group from " + updatedProfileCount + " profiles";
                 }
                 
                 JOptionPane.showMessageDialog(this, 
-                    successMessage, "删除成功", 
+                    successMessage, "Delete Successful", 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, 
-                    "删除资源组失败: " + e.getMessage() + "\n\n请检查文件权限和数据库连接。", 
-                    "删除失败", 
+                    "Failed to delete resource group: " + e.getMessage() + "\n\nPlease check file permissions and database connection.", 
+                    "Delete Failed", 
                     JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
@@ -415,12 +416,12 @@ public class ResourceGroupManagementPanel extends JPanel {
     private void addResourceToGroup() {
         String selected = groupList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "请先选择或创建一个资源组", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select or create a resource group first", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
-        // 显示可用资源选择对话框
+        // Show available resource selection dialog
         DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
         Map<String, Resource> allResources = dbManager.loadAllResources();
         GroupManager groupManager = new GroupManager();
@@ -430,7 +431,7 @@ public class ResourceGroupManagementPanel extends JPanel {
             return;
         }
         
-        // 获取未添加到该组的资源
+        // Get resources not added to this group
         List<String> availableResourceIds = new ArrayList<>();
         List<String> availableResourceNames = new ArrayList<>();
         
@@ -442,14 +443,14 @@ public class ResourceGroupManagementPanel extends JPanel {
         }
         
         if (availableResourceIds.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "没有可添加的资源", "提示", 
+            JOptionPane.showMessageDialog(this, "No resources available to add", "Info", 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
         String selectedResourceName = (String) JOptionPane.showInputDialog(this,
-            "选择要添加到资源组的资源:",
-            "添加资源",
+            "Select resource to add to resource group:",
+            "Add Resource",
             JOptionPane.QUESTION_MESSAGE,
             null,
             availableResourceNames.toArray(),
@@ -465,23 +466,23 @@ public class ResourceGroupManagementPanel extends JPanel {
                 dbManager.linkResourceToGroup(resourceId, selected);
                 accessControlSystem.getAccessRequestProcessor().reloadData();
                 loadSelectedGroup();
-                refreshAvailableResourceTable(); // 刷新可用资源列表
-                JOptionPane.showMessageDialog(this, "资源已添加到资源组", "成功", 
+                refreshAvailableResourceTable(); // Refresh available resource list
+                JOptionPane.showMessageDialog(this, "Resource added to resource group", "Success", 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "添加资源失败: " + e.getMessage(), 
-                    "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to add resource: " + e.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
     
     /**
-     * 通过资源ID直接添加资源到资源组
+     * Add resource to resource group directly by resource ID
      */
     private void addResourceToGroupById(String resourceId) {
         String selected = groupList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "请先选择或创建一个资源组", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select or create a resource group first", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -493,9 +494,9 @@ public class ResourceGroupManagementPanel extends JPanel {
             return;
         }
         
-        // 检查资源是否已在组中
+        // Check if resource is already in group
         if (group.getResourceIds().contains(resourceId)) {
-            JOptionPane.showMessageDialog(this, "该资源已在此资源组中", "提示", 
+            JOptionPane.showMessageDialog(this, "This resource is already in this resource group", "Info", 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
@@ -507,28 +508,28 @@ public class ResourceGroupManagementPanel extends JPanel {
             accessControlSystem.getAccessRequestProcessor().reloadData();
             loadSelectedGroup();
             refreshAvailableResourceTable();
-            JOptionPane.showMessageDialog(this, "资源已添加到资源组", "成功", 
+            JOptionPane.showMessageDialog(this, "Resource added to resource group", "Success", 
                 JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "添加资源失败: " + e.getMessage(), 
-                "错误", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Failed to add resource: " + e.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     
     /**
-     * 从右侧表格添加选中的资源到资源组
+     * Add selected resources from right table to resource group
      */
     private void addSelectedResourcesFromTable() {
         String selected = groupList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "请先选择或创建一个资源组", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select or create a resource group first", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         int[] selectedRows = availableResourceTable.getSelectedRows();
         if (selectedRows.length == 0) {
-            JOptionPane.showMessageDialog(this, "请先选择要添加的资源", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select resources to add first", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -547,7 +548,7 @@ public class ResourceGroupManagementPanel extends JPanel {
             String resourceId = (String) availableResourceTableModel.getValueAt(row, 0);
             String status = (String) availableResourceTableModel.getValueAt(row, 4);
             
-            if ("已添加".equals(status)) {
+            if ("Added".equals(status)) {
                 skippedCount++;
                 continue;
             }
@@ -558,7 +559,7 @@ public class ResourceGroupManagementPanel extends JPanel {
                     dbManager.linkResourceToGroup(resourceId, selected);
                     addedCount++;
                 } catch (Exception e) {
-                    // 忽略单个资源添加错误
+                    // Ignore single resource add errors
                 }
             }
         }
@@ -570,17 +571,17 @@ public class ResourceGroupManagementPanel extends JPanel {
                 loadSelectedGroup();
                 refreshAvailableResourceTable();
                 JOptionPane.showMessageDialog(this, 
-                    String.format("成功添加 %d 个资源到资源组\n跳过 %d 个已存在的资源", 
+                    String.format("Successfully added %d resources to resource group\nSkipped %d existing resources", 
                         addedCount, skippedCount), 
-                    "成功", 
+                    "Success", 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "保存资源组失败: " + e.getMessage(), 
-                    "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to save resource group: " + e.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
             }
         } else if (skippedCount > 0) {
             JOptionPane.showMessageDialog(this, 
-                "所选资源已全部添加到资源组中", "提示", 
+                "All selected resources have already been added to the resource group", "Info", 
                 JOptionPane.INFORMATION_MESSAGE);
         }
     }
@@ -588,7 +589,7 @@ public class ResourceGroupManagementPanel extends JPanel {
     private void removeResourceFromGroup() {
         int selectedRow = resourceTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "请选择要移除的资源", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select a resource to remove", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -602,8 +603,8 @@ public class ResourceGroupManagementPanel extends JPanel {
         String resourceName = (String) resourceTableModel.getValueAt(selectedRow, 1);
         
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "确定要从资源组中移除资源 \"" + resourceName + "\" 吗？", 
-            "确认移除", 
+            "Are you sure you want to remove resource \"" + resourceName + "\" from the resource group?", 
+            "Confirm Remove", 
             JOptionPane.YES_NO_OPTION);
         
         if (confirm == JOptionPane.YES_OPTION) {
@@ -613,7 +614,7 @@ public class ResourceGroupManagementPanel extends JPanel {
                 group.removeResource(resourceId);
                 try {
                     groupManager.saveGroup(group);
-                    // 从数据库中删除关联
+                    // Delete association from database
                     String sql = "DELETE FROM resource_group_members WHERE resource_id = ? AND group_name = ?";
                     try (PreparedStatement pstmt = accessControlSystem.getDatabaseManager().getConnection().prepareStatement(sql)) {
                         pstmt.setString(1, resourceId);
@@ -622,12 +623,12 @@ public class ResourceGroupManagementPanel extends JPanel {
                     }
                     accessControlSystem.getAccessRequestProcessor().reloadData();
                     loadSelectedGroup();
-                    refreshAvailableResourceTable(); // 刷新可用资源列表
-                    JOptionPane.showMessageDialog(this, "资源已从资源组中移除", "成功", 
+                    refreshAvailableResourceTable(); // Refresh available resource list
+                    JOptionPane.showMessageDialog(this, "Resource removed from resource group", "Success", 
                         JOptionPane.INFORMATION_MESSAGE);
                 } catch (Exception e) {
-                    JOptionPane.showMessageDialog(this, "移除资源失败: " + e.getMessage(), 
-                        "错误", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Failed to remove resource: " + e.getMessage(), 
+                        "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         }
@@ -636,14 +637,14 @@ public class ResourceGroupManagementPanel extends JPanel {
     private void saveGroup() {
         String selected = groupList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "请选择要保存的资源组", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select a resource group to save", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         String newName = groupNameField.getText().trim();
         if (newName.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "资源组名称不能为空", "错误", 
+            JOptionPane.showMessageDialog(this, "Resource group name cannot be empty", "Error", 
                 JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -653,13 +654,13 @@ public class ResourceGroupManagementPanel extends JPanel {
         GroupManager groupManager = new GroupManager();
         ResourceGroup group = groupManager.getGroup(selected);
         if (group != null) {
-            // 如果名称改变，需要重命名
+            // If name changed, need to rename
             if (!selected.equals(newName)) {
                 group.setName(newName);
                 try {
                     groupManager.deleteGroup(selected);
                 } catch (Exception e) {
-                    // 忽略删除错误
+                    // Ignore delete error
                 }
             }
             
@@ -669,18 +670,18 @@ public class ResourceGroupManagementPanel extends JPanel {
                 groupManager.saveGroup(group);
                 loadGroups();
                 groupList.setSelectedValue(newName, true);
-                JOptionPane.showMessageDialog(this, "资源组保存成功", "成功", 
+                JOptionPane.showMessageDialog(this, "Resource group saved successfully", "Success", 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "保存资源组失败: " + e.getMessage(), 
-                    "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to save resource group: " + e.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
     
     /**
-     * 根据现有资源自动创建资源组
-     * 根据建筑、楼层、类型等属性自动分组
+     * Automatically create resource groups based on existing resources
+     * Automatically group by building, floor, type and other attributes
      */
     private void autoCreateGroups() {
         DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
@@ -688,30 +689,30 @@ public class ResourceGroupManagementPanel extends JPanel {
         
         if (allResources.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
-                "没有可用的资源，请先在资源管理中创建资源", 
-                "提示", 
+                "No available resources, please create resources in Resource Management first", 
+                "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
-        // 显示分组策略选择对话框
+        // Show grouping strategy selection dialog
         String[] strategies = {
-            "按建筑分组",
-            "按楼层分组", 
-            "按资源类型分组",
-            "按建筑+楼层分组",
-            "按建筑+类型分组",
-            "按楼层+类型分组",
-            "创建所有可能的组合"
+            "Group by Building",
+            "Group by Floor", 
+            "Group by Resource Type",
+            "Group by Building + Floor",
+            "Group by Building + Type",
+            "Group by Floor + Type",
+            "Create All Possible Combinations"
         };
         
         String selectedStrategy = (String) JOptionPane.showInputDialog(this,
-            "选择资源组创建策略:",
-            "自动创建资源组",
+            "Select resource group creation strategy:",
+            "Auto-create Resource Groups",
             JOptionPane.QUESTION_MESSAGE,
             null,
             strategies,
-            strategies[6]); // 默认选择"创建所有可能的组合"
+            strategies[6]); // Default to "Create All Possible Combinations"
         
         if (selectedStrategy == null) {
             return;
@@ -722,26 +723,26 @@ public class ResourceGroupManagementPanel extends JPanel {
         int skippedCount = 0;
         
         try {
-            if ("创建所有可能的组合".equals(selectedStrategy)) {
-                // 创建所有可能的组合
+            if ("Create All Possible Combinations".equals(selectedStrategy)) {
+                // Create all possible combinations
                 createdCount = createAllPossibleGroups(allResources, groupManager);
             } else {
-                // 根据选择的策略创建
+                // Create based on selected strategy
                 createdCount = createGroupsByStrategy(allResources, groupManager, selectedStrategy);
             }
             
-            // 刷新列表
+            // Refresh list
             loadGroups();
             
             JOptionPane.showMessageDialog(this, 
-                String.format("成功创建 %d 个资源组\n跳过 %d 个已存在的资源组", 
+                String.format("Successfully created %d resource groups\nSkipped %d existing resource groups", 
                     createdCount, skippedCount), 
-                "完成", 
+                "Complete", 
                 JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, 
-                "创建资源组时出错: " + e.getMessage(), 
-                "错误", 
+                "Error creating resource groups: " + e.getMessage(), 
+                "Error", 
                 JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -764,10 +765,10 @@ public class ResourceGroupManagementPanel extends JPanel {
             String groupName = entry.getKey();
             List<String> resourceIds = entry.getValue();
             
-            // 检查是否已存在
+            // Check if already exists
             ResourceGroup existingGroup = groupManager.getGroup(groupName);
             if (existingGroup != null) {
-                // 如果已存在，检查是否需要添加新资源
+                // If exists, check if new resources need to be added
                 boolean hasNewResources = false;
                 for (String resourceId : resourceIds) {
                     if (!existingGroup.getResourceIds().contains(resourceId)) {
@@ -776,7 +777,7 @@ public class ResourceGroupManagementPanel extends JPanel {
                         try {
                             dbManager.linkResourceToGroup(resourceId, groupName);
                         } catch (Exception e) {
-                            // 忽略关联错误
+                            // Ignore association errors
                         }
                     }
                 }
@@ -786,7 +787,7 @@ public class ResourceGroupManagementPanel extends JPanel {
                 continue;
             }
             
-            // 创建新资源组
+            // Create new resource group
             ResourceGroup group = new ResourceGroup(groupName, calculateSecurityLevel(resourceIds, resources));
             for (String resourceId : resourceIds) {
                 group.addResource(resourceId);
@@ -794,12 +795,12 @@ public class ResourceGroupManagementPanel extends JPanel {
             
             groupManager.saveGroup(group);
             
-            // 关联到数据库
+            // Link to database
             for (String resourceId : resourceIds) {
                 try {
                     dbManager.linkResourceToGroup(resourceId, groupName);
                 } catch (Exception e) {
-                    // 忽略关联错误
+                    // Ignore association errors
                 }
             }
             
@@ -813,44 +814,44 @@ public class ResourceGroupManagementPanel extends JPanel {
                                        GroupManager groupManager) throws Exception {
         int created = 0;
         
-        // 1. 按建筑分组
-        created += createGroupsByStrategy(resources, groupManager, "按建筑分组");
+        // 1. Group by building
+        created += createGroupsByStrategy(resources, groupManager, "Group by Building");
         
-        // 2. 按楼层分组
-        created += createGroupsByStrategy(resources, groupManager, "按楼层分组");
+        // 2. Group by floor
+        created += createGroupsByStrategy(resources, groupManager, "Group by Floor");
         
-        // 3. 按类型分组
-        created += createGroupsByStrategy(resources, groupManager, "按资源类型分组");
+        // 3. Group by type
+        created += createGroupsByStrategy(resources, groupManager, "Group by Resource Type");
         
-        // 4. 按建筑+楼层分组
-        created += createGroupsByStrategy(resources, groupManager, "按建筑+楼层分组");
+        // 4. Group by building + floor
+        created += createGroupsByStrategy(resources, groupManager, "Group by Building + Floor");
         
-        // 5. 按建筑+类型分组
-        created += createGroupsByStrategy(resources, groupManager, "按建筑+类型分组");
+        // 5. Group by building + type
+        created += createGroupsByStrategy(resources, groupManager, "Group by Building + Type");
         
-        // 6. 按楼层+类型分组
-        created += createGroupsByStrategy(resources, groupManager, "按楼层+类型分组");
+        // 6. Group by floor + type
+        created += createGroupsByStrategy(resources, groupManager, "Group by Floor + Type");
         
         return created;
     }
     
     private String getGroupKey(Resource resource, String strategy) {
-        String building = resource.getBuilding() != null ? resource.getBuilding() : "未指定建筑";
-        String floor = resource.getFloor() != null ? resource.getFloor() : "未指定楼层";
-        String type = resource.getType() != null ? resource.getType().toString() : "未指定类型";
+        String building = resource.getBuilding() != null ? resource.getBuilding() : "Unspecified Building";
+        String floor = resource.getFloor() != null ? resource.getFloor() : "Unspecified Floor";
+        String type = resource.getType() != null ? resource.getType().toString() : "Unspecified Type";
         
         switch (strategy) {
-            case "按建筑分组":
-                return building + "区域";
-            case "按楼层分组":
-                return floor + "楼层";
-            case "按资源类型分组":
-                return type + "资源组";
-            case "按建筑+楼层分组":
+            case "Group by Building":
+                return building + " Area";
+            case "Group by Floor":
+                return floor + " Floor";
+            case "Group by Resource Type":
+                return type + " Resource Group";
+            case "Group by Building + Floor":
                 return building + "-" + floor;
-            case "按建筑+类型分组":
+            case "Group by Building + Type":
                 return building + "-" + type;
-            case "按楼层+类型分组":
+            case "Group by Floor + Type":
                 return floor + "-" + type;
             default:
                 return null;
@@ -858,29 +859,29 @@ public class ResourceGroupManagementPanel extends JPanel {
     }
     
     /**
-     * 根据资源列表计算安全级别
-     * 简单策略：根据资源类型和数量计算
+     * Calculate security level based on resource list
+     * Simple strategy: calculate based on resource type and count
      */
     private int calculateSecurityLevel(List<String> resourceIds, Map<String, Resource> allResources) {
         if (resourceIds.isEmpty()) {
             return 1;
         }
         
-        // 检查是否有高安全级别的资源类型
+        // Check if there are high security level resource types
         int maxLevel = 1;
         for (String resourceId : resourceIds) {
             Resource resource = allResources.get(resourceId);
             if (resource != null) {
                 Resource.ResourceType type = resource.getType();
-                // 根据类型设置安全级别
+                // Set security level based on type
                 if (type == Resource.ResourceType.GATE || 
                     type == Resource.ResourceType.PARKING) {
-                    maxLevel = Math.max(maxLevel, 1); // 公共区域
+                    maxLevel = Math.max(maxLevel, 1); // Public area
                 } else if (type == Resource.ResourceType.DOOR || 
                           type == Resource.ResourceType.STAIRWAY) {
-                    maxLevel = Math.max(maxLevel, 2); // 一般区域
+                    maxLevel = Math.max(maxLevel, 2); // General area
                 } else if (type == Resource.ResourceType.ELEVATOR) {
-                    maxLevel = Math.max(maxLevel, 3); // 重要区域
+                    maxLevel = Math.max(maxLevel, 3); // Important area
                 } else {
                     maxLevel = Math.max(maxLevel, 2);
                 }

@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.gui;
 
 import com.bigcomp.accesscontrol.core.AccessControlSystem;
@@ -19,7 +20,7 @@ import java.util.*;
 import java.util.List;
 
 /**
- * 事件模拟面板
+ * Event Simulation Panel
  */
 public class EventSimulationPanel extends JPanel {
     private AccessControlSystem accessControlSystem;
@@ -52,8 +53,8 @@ public class EventSimulationPanel extends JPanel {
     }
     
     private void initializeComponents() {
-        // 用户表格
-        String[] userColumns = {"用户ID", "姓名", "类型", "徽章代码"};
+        // User table
+        String[] userColumns = {"User ID", "Name", "Type", "Badge Code"};
         userTableModel = new DefaultTableModel(userColumns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -63,18 +64,18 @@ public class EventSimulationPanel extends JPanel {
         userTable = new JTable(userTableModel);
         userTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         
-        // 读卡器表格（状态列可编辑，添加选择列）
-        String[] readerColumns = {"参与模拟", "读卡器ID", "资源ID", "资源名称", "状态"};
+        // Badge reader table (status column editable, add selection column)
+        String[] readerColumns = {"Participate", "Badge Reader ID", "Resource ID", "Resource Name", "Status"};
         readerTableModel = new DefaultTableModel(readerColumns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 0 || column == 4; // 参与模拟列和状态列可编辑
+                return column == 0 || column == 4; // Participate column and status column are editable
             }
             
             @Override
             public Class<?> getColumnClass(int column) {
                 if (column == 0 || column == 4) {
-                    return Boolean.class; // 复选框列
+                    return Boolean.class; // Checkbox column
                 }
                 return String.class;
             }
@@ -82,21 +83,21 @@ public class EventSimulationPanel extends JPanel {
         readerTable = new JTable(readerTableModel);
         readerTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         
-        // 设置列宽
+        // Set column widths
         readerTable.getColumnModel().getColumn(0).setPreferredWidth(80);
         readerTable.getColumnModel().getColumn(1).setPreferredWidth(150);
         readerTable.getColumnModel().getColumn(2).setPreferredWidth(150);
         readerTable.getColumnModel().getColumn(3).setPreferredWidth(200);
         readerTable.getColumnModel().getColumn(4).setPreferredWidth(80);
         
-        // 为状态列添加复选框渲染器和编辑器
+        // Add checkbox renderer and editor for status column
         readerTable.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 JCheckBox checkBox = new JCheckBox();
                 if (value instanceof String) {
-                    checkBox.setSelected("激活".equals(value));
+                    checkBox.setSelected("Active".equals(value));
                 } else if (value instanceof Boolean) {
                     checkBox.setSelected((Boolean) value);
                 }
@@ -114,11 +115,11 @@ public class EventSimulationPanel extends JPanel {
             @Override
             public Object getCellEditorValue() {
                 JCheckBox checkBox = (JCheckBox) getComponent();
-                return checkBox.isSelected() ? "激活" : "停用";
+                return checkBox.isSelected() ? "Active" : "Inactive";
             }
         });
         
-        // 为"参与模拟"列添加复选框渲染器和编辑器
+        // Add checkbox renderer and editor for "Participate" column
         readerTable.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -139,7 +140,7 @@ public class EventSimulationPanel extends JPanel {
         
         readerTable.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(new JCheckBox()));
         
-        // 为状态列添加复选框渲染器和编辑器
+        // Add checkbox renderer and editor for status column
         readerTable.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -148,7 +149,7 @@ public class EventSimulationPanel extends JPanel {
                 if (value instanceof Boolean) {
                     checkBox.setSelected((Boolean) value);
                 } else if (value instanceof String) {
-                    checkBox.setSelected("激活".equals(value));
+                    checkBox.setSelected("Active".equals(value));
                 }
                 checkBox.setHorizontalAlignment(JCheckBox.CENTER);
                 if (isSelected) {
@@ -168,36 +169,36 @@ public class EventSimulationPanel extends JPanel {
             }
         });
         
-        // 添加表格变化监听器
+        // Add table change listener
         readerTable.getModel().addTableModelListener(e -> {
             int row = e.getFirstRow();
             int column = e.getColumn();
             
             if (column == 0) {
-                // 参与模拟列变化
+                // Participate column changed
                 String readerId = (String) readerTableModel.getValueAt(row, 1);
                 Boolean selected = (Boolean) readerTableModel.getValueAt(row, 0);
-                statusArea.append("读卡器 " + readerId + " " + (selected ? "已加入" : "已移除") + "模拟\n");
+                statusArea.append("Badge reader " + readerId + " " + (selected ? "added to" : "removed from") + " simulation\n");
             } else if (column == 4) {
-                // 状态列变化
+                // Status column changed
                 String readerId = (String) readerTableModel.getValueAt(row, 1);
                 Object statusValue = readerTableModel.getValueAt(row, 4);
                 boolean active = statusValue instanceof Boolean ? (Boolean) statusValue : 
-                                "激活".equals(statusValue);
+                                "Active".equals(statusValue);
                 
                 updateReaderStatus(readerId, active);
             }
         });
         
-        // 控制按钮
-        startButton = new JButton("开始模拟");
+        // Control buttons
+        startButton = new JButton("Start Simulation");
         startButton.addActionListener(e -> startSimulation());
         
-        stopButton = new JButton("停止模拟");
+        stopButton = new JButton("Stop Simulation");
         stopButton.addActionListener(e -> stopSimulation());
         stopButton.setEnabled(false);
         
-        // 状态区域
+        // Status area
         statusArea = new JTextArea(5, 40);
         statusArea.setEditable(false);
         statusArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
@@ -206,60 +207,69 @@ public class EventSimulationPanel extends JPanel {
     private void setupLayout() {
         setLayout(new BorderLayout());
         
-        // 左侧：用户列表
+        // Left: User list
         JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setBorder(BorderFactory.createTitledBorder("模拟用户列表"));
+        leftPanel.setBorder(BorderFactory.createTitledBorder("Simulated User List"));
         leftPanel.add(new JScrollPane(userTable), BorderLayout.CENTER);
         JPanel leftButtonPanel = new JPanel(new FlowLayout());
-        leftButtonPanel.add(new JButton("添加用户") {{
+        leftButtonPanel.add(new JButton("Select All") {{
+            addActionListener(e -> selectAllUsers());
+        }});
+        leftButtonPanel.add(new JButton("Deselect All") {{
+            addActionListener(e -> deselectAllUsers());
+        }});
+        leftButtonPanel.add(new JButton("Add User") {{
             addActionListener(e -> addSimulatedUser());
         }});
-        leftButtonPanel.add(new JButton("加入所有用户") {{
+        leftButtonPanel.add(new JButton("Add All Users") {{
             addActionListener(e -> addAllUsers());
         }});
-        leftButtonPanel.add(new JButton("移除用户") {{
+        leftButtonPanel.add(new JButton("Remove User") {{
             addActionListener(e -> removeSimulatedUser());
         }});
-        leftButtonPanel.add(new JButton("清空用户列表") {{
-            addActionListener(e -> clearAllSimulatedUsers());
-        }});
-        leftButtonPanel.add(new JButton("清空用户列表") {{
+        leftButtonPanel.add(new JButton("Clear All Users") {{
             addActionListener(e -> clearAllSimulatedUsers());
         }});
         leftPanel.add(leftButtonPanel, BorderLayout.SOUTH);
         
-        // 中间：读卡器列表
+        // Center: Badge reader list
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setBorder(BorderFactory.createTitledBorder("读卡器列表（可用于模拟）"));
+        centerPanel.setBorder(BorderFactory.createTitledBorder("Badge Reader List (Available for Simulation)"));
         centerPanel.add(new JScrollPane(readerTable), BorderLayout.CENTER);
         
-        // 在读卡器列表下方添加控制按钮和信息提示
+        // Add control buttons and info below badge reader list
         JPanel readerControlPanel = new JPanel(new BorderLayout());
         
         JPanel readerButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        readerButtonPanel.add(new JButton("全选读卡器") {{
+        readerButtonPanel.add(new JButton("Select All") {{
+            addActionListener(e -> selectAllReaders());
+        }});
+        readerButtonPanel.add(new JButton("Deselect All") {{
+            addActionListener(e -> deselectAllReaders());
+        }});
+        readerButtonPanel.add(new JButton("Select All Readers") {{
             addActionListener(e -> setAllReadersSelected(true));
         }});
-        readerButtonPanel.add(new JButton("取消全选") {{
+        readerButtonPanel.add(new JButton("Deselect All Readers") {{
             addActionListener(e -> setAllReadersSelected(false));
         }});
-        readerButtonPanel.add(new JButton("全部启用") {{
+        readerButtonPanel.add(new JButton("Enable All") {{
             addActionListener(e -> setAllReadersStatus(true));
         }});
-        readerButtonPanel.add(new JButton("全部禁用") {{
+        readerButtonPanel.add(new JButton("Disable All") {{
             addActionListener(e -> setAllReadersStatus(false));
         }});
-        readerButtonPanel.add(new JButton("刷新列表") {{
+        readerButtonPanel.add(new JButton("Refresh List") {{
             addActionListener(e -> loadReaders());
         }});
         readerControlPanel.add(readerButtonPanel, BorderLayout.NORTH);
         
         JPanel readerInfoPanel = new JPanel(new BorderLayout());
         JTextArea infoText = new JTextArea(
-            "使用说明：\n" +
-            "• '参与模拟'列：勾选后该读卡器会参与事件模拟\n" +
-            "• '状态'列：启用/禁用读卡器，停用的读卡器不会响应任何刷卡操作\n" +
-            "• 只有同时勾选'参与模拟'且'状态'为启用的读卡器才会在模拟中生成事件"
+            "Instructions:\n" +
+            "• 'Participate' column: Check to include this badge reader in event simulation\n" +
+            "• 'Status' column: Enable/disable badge reader, disabled readers won't respond to any badge operations\n" +
+            "• Only badge readers with both 'Participate' checked and 'Status' enabled will generate events in simulation"
         );
         infoText.setEditable(false);
         infoText.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
@@ -270,9 +280,9 @@ public class EventSimulationPanel extends JPanel {
         
         centerPanel.add(readerControlPanel, BorderLayout.SOUTH);
         
-        // 右侧：控制面板
+        // Right: Control panel
         JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBorder(BorderFactory.createTitledBorder("模拟控制"));
+        rightPanel.setBorder(BorderFactory.createTitledBorder("Simulation Control"));
         
         JPanel controlPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -288,21 +298,21 @@ public class EventSimulationPanel extends JPanel {
         
         gbc.gridy = 2;
         gbc.gridwidth = 1;
-        controlPanel.add(new JLabel("事件间隔(秒):"), gbc);
+        controlPanel.add(new JLabel("Event Interval (seconds):"), gbc);
         gbc.gridx = 1;
         intervalSpinner = new JSpinner(new SpinnerNumberModel(2, 1, 60, 1));
         controlPanel.add(intervalSpinner, gbc);
         
         gbc.gridx = 0; gbc.gridy = 3;
         gbc.gridwidth = 2;
-        statsLabel = new JLabel("统计: 总事件: 0 | 允许: 0 | 拒绝: 0");
+        statsLabel = new JLabel("Statistics: Total Events: 0 | Granted: 0 | Denied: 0");
         statsLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         controlPanel.add(statsLabel, gbc);
         
-        // 系统时间控制
+        // System time control
         gbc.gridy = 4;
         gbc.gridwidth = 1;
-        controlPanel.add(new JLabel("系统时间:"), gbc);
+        controlPanel.add(new JLabel("System Time:"), gbc);
         gbc.gridx = 1;
         timeLabel = new JLabel(getCurrentTimeString());
         timeLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
@@ -310,39 +320,39 @@ public class EventSimulationPanel extends JPanel {
         
         gbc.gridx = 0; gbc.gridy = 5;
         gbc.gridwidth = 1;
-        setTimeButton = new JButton("设置时间");
+        setTimeButton = new JButton("Set Time");
         setTimeButton.addActionListener(e -> setSystemTime());
         controlPanel.add(setTimeButton, gbc);
         
         gbc.gridx = 1;
-        resetTimeButton = new JButton("重置时间");
+        resetTimeButton = new JButton("Reset Time");
         resetTimeButton.addActionListener(e -> resetSystemTime());
         resetTimeButton.setEnabled(SystemClock.isUsingCustomTime());
         controlPanel.add(resetTimeButton, gbc);
         
-        // 更新时间显示
+        // Update time display
         javax.swing.Timer timeUpdateTimer = new javax.swing.Timer(1000, e -> updateTimeDisplay());
         timeUpdateTimer.start();
         
         gbc.gridx = 0; gbc.gridy = 6;
         gbc.gridwidth = 2;
-        controlPanel.add(new JButton("重置统计") {{
+        controlPanel.add(new JButton("Reset Statistics") {{
             addActionListener(e -> resetStatistics());
         }}, gbc);
         
         gbc.gridy = 7;
-        controlPanel.add(new JButton("刷新数据") {{
+        controlPanel.add(new JButton("Refresh Data") {{
             addActionListener(e -> {
                 loadData();
                 JOptionPane.showMessageDialog(EventSimulationPanel.this, 
-                    "数据已刷新", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    "Data refreshed", "Info", JOptionPane.INFORMATION_MESSAGE);
             });
         }}, gbc);
         
         rightPanel.add(controlPanel, BorderLayout.NORTH);
         rightPanel.add(new JScrollPane(statusArea), BorderLayout.CENTER);
         
-        // 主布局
+        // Main layout
         JSplitPane leftSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, centerPanel);
         leftSplit.setDividerLocation(300);
         leftSplit.setResizeWeight(0.3);
@@ -362,13 +372,13 @@ public class EventSimulationPanel extends JPanel {
     private void loadUsers() {
         userTableModel.setRowCount(0);
         DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
-        // 使用loadAllUsers()来加载所有用户，包括没有徽章的用户
+        // Use loadAllUsers() to load all users, including those without badges
         Map<String, User> users = dbManager.loadAllUsers();
-        // 加载所有徽章
+        // Load all badges
         Map<String, Badge> allBadges = dbManager.loadAllBadges();
         
         for (User user : users.values()) {
-            // 从数据库加载徽章，如果用户有徽章ID
+            // Load badge from database if user has badge ID
             Badge badge = null;
             if (user.getBadgeId() != null) {
                 badge = dbManager.loadBadgeById(user.getBadgeId());
@@ -376,12 +386,12 @@ public class EventSimulationPanel extends JPanel {
                 badge = allBadges.get(user.getId());
             }
             
-            // 如果找到了徽章，保存到userBadges中
+            // If badge found, save to userBadges
             if (badge != null) {
                 userBadges.put(user.getId(), badge);
             }
             
-            String badgeCode = badge != null ? badge.getCode() : "无";
+            String badgeCode = badge != null ? badge.getCode() : "None";
             userTableModel.addRow(new Object[]{
                 user.getId(),
                 user.getFullName(),
@@ -397,11 +407,11 @@ public class EventSimulationPanel extends JPanel {
         Map<String, BadgeReader> readers = router.getBadgeReaders();
         
         if (readers.isEmpty()) {
-            // 如果没有读卡器，显示提示信息
+            // If no badge readers, show prompt
             readerTableModel.addRow(new Object[]{
-                false, "无", "无", "没有可用的读卡器", false
+                false, "None", "None", "No available badge readers", false
             });
-            statusArea.append("提示: 没有可用的读卡器，请先在资源管理中创建资源和读卡器\n");
+            statusArea.append("Note: No available badge readers, please create resources and badge readers in Resource Management first\n");
             return;
         }
         
@@ -411,28 +421,28 @@ public class EventSimulationPanel extends JPanel {
         for (BadgeReader reader : readers.values()) {
             String resourceId = reader.getResourceId();
             Resource resource = resources.get(resourceId);
-            String resourceName = resource != null ? resource.getName() : "未知";
-            String resourceType = resource != null ? resource.getType().toString() : "未知";
-            Boolean status = reader.isActive(); // 使用Boolean类型以便复选框显示
-            Boolean selected = true; // 默认选中参与模拟
+            String resourceName = resource != null ? resource.getName() : "Unknown";
+            String resourceType = resource != null ? resource.getType().toString() : "Unknown";
+            Boolean status = reader.isActive(); // Use Boolean type for checkbox display
+            Boolean selected = true; // Default selected to participate in simulation
             
             readerTableModel.addRow(new Object[]{
-                selected,  // 参与模拟
+                selected,  // Participate in simulation
                 reader.getId(),
                 resourceId,
                 resourceName + " (" + resourceType + ")",
-                status  // 启用状态
+                status  // Enable status
             });
         }
         
-        // 在状态区域显示读卡器数量
-        statusArea.append("已加载 " + readers.size() + " 个读卡器（默认全部参与模拟）\n");
+        // Display badge reader count in status area
+        statusArea.append("Loaded " + readers.size() + " badge readers (all participate in simulation by default)\n");
     }
     
     private void addSimulatedUser() {
         int[] selectedRows = userTable.getSelectedRows();
         if (selectedRows.length == 0) {
-            JOptionPane.showMessageDialog(this, "请选择要添加的用户", "提示", 
+            JOptionPane.showMessageDialog(this, "Please select users to add", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -445,21 +455,21 @@ public class EventSimulationPanel extends JPanel {
             User user = allUsers.get(userId);
             
             if (user != null && !simulatedUsers.containsKey(userId)) {
-                // 从数据库加载徽章，如果用户有徽章
+                // Load badge from database if user has badge
                 Badge badge = userBadges.get(userId);
                 if (badge == null) {
                     if (user.getBadgeId() != null) {
                         badge = dbManager.loadBadgeById(user.getBadgeId());
                     } else {
-                        // 尝试通过用户ID加载
+                        // Try to load by user ID
                         badge = dbManager.loadBadgeByUserId(userId);
                     }
                     
-                    // 如果还是没有找到，创建一个新徽章（但不会保存到数据库）
+                    // If still not found, create a new badge (but won't save to database)
                     if (badge == null) {
                         JOptionPane.showMessageDialog(this, 
-                            "用户 \"" + user.getFullName() + "\" 没有徽章，无法添加到模拟。请先为用户创建徽章。", 
-                            "提示", 
+                            "User \"" + user.getFullName() + "\" has no badge, cannot add to simulation. Please create a badge for the user first.", 
+                            "Warning", 
                             JOptionPane.WARNING_MESSAGE);
                         continue;
                     }
@@ -468,35 +478,35 @@ public class EventSimulationPanel extends JPanel {
                 }
                 
                 simulatedUsers.put(userId, user);
-                statusArea.append("添加模拟用户: " + user.getFullName() + " (徽章: " + badge.getCode() + ")\n");
+                statusArea.append("Added simulated user: " + user.getFullName() + " (Badge: " + badge.getCode() + ")\n");
             } else if (simulatedUsers.containsKey(userId)) {
-                statusArea.append("用户 \"" + (user != null ? user.getFullName() : userId) + "\" 已在模拟列表中\n");
+                statusArea.append("User \"" + (user != null ? user.getFullName() : userId) + "\" is already in simulation list\n");
             }
         }
     }
     
     private void removeSimulatedUser() {
         if (simulatedUsers.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "没有可移除的模拟用户", "提示", 
+            JOptionPane.showMessageDialog(this, "No simulated users to remove", "Info", 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
-        // 显示选择对话框
+        // Show selection dialog
         String[] userNames = simulatedUsers.values().stream()
             .map(User::getFullName)
             .toArray(String[]::new);
         
         String selected = (String) JOptionPane.showInputDialog(this,
-            "选择要移除的模拟用户:",
-            "移除模拟用户",
+            "Select simulated user to remove:",
+            "Remove Simulated User",
             JOptionPane.QUESTION_MESSAGE,
             null,
             userNames,
             userNames[0]);
         
         if (selected != null) {
-            // 找到并移除选中的用户
+            // Find and remove selected user
             String userIdToRemove = null;
             for (Map.Entry<String, User> entry : simulatedUsers.entrySet()) {
                 if (entry.getValue().getFullName().equals(selected)) {
@@ -508,11 +518,11 @@ public class EventSimulationPanel extends JPanel {
             if (userIdToRemove != null) {
                 simulatedUsers.remove(userIdToRemove);
                 userBadges.remove(userIdToRemove);
-                statusArea.append("已移除模拟用户: " + selected + "\n");
+                statusArea.append("Removed simulated user: " + selected + "\n");
                 
-                // 如果模拟器正在运行，需要更新模拟器
+                // If simulator is running, need to update simulator
                 if (simulator != null && simulator.isRunning()) {
-                    // 重新创建模拟器以更新用户列表
+                    // Recreate simulator to update user list
                     var router = accessControlSystem.getRouter();
                     Map<String, BadgeReader> readers = router.getBadgeReaders();
                     List<BadgeReader> readerList = new ArrayList<>(readers.values());
@@ -528,7 +538,7 @@ public class EventSimulationPanel extends JPanel {
                     }
                     
                     simulator.start();
-                    statusArea.append("模拟器已更新\n");
+                    statusArea.append("Simulator updated\n");
                 }
             }
         }
@@ -536,14 +546,14 @@ public class EventSimulationPanel extends JPanel {
     
     private void startSimulation() {
         if (simulator != null && simulator.isRunning()) {
-            JOptionPane.showMessageDialog(this, "模拟已在运行中", "提示", 
+            JOptionPane.showMessageDialog(this, "Simulation is already running", "Info", 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
         if (simulatedUsers.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
-                "请先添加模拟用户", "提示", 
+                "Please add simulated users first", "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -551,7 +561,7 @@ public class EventSimulationPanel extends JPanel {
         var router = accessControlSystem.getRouter();
         Map<String, BadgeReader> allReaders = router.getBadgeReaders();
         
-        // 只选择勾选了"参与模拟"且状态为启用的读卡器
+        // Only select badge readers that are checked "Participate" and status is enabled
         List<BadgeReader> readerList = new ArrayList<>();
         int disabledCount = 0;
         
@@ -571,28 +581,28 @@ public class EventSimulationPanel extends JPanel {
         }
         
         if (readerList.isEmpty()) {
-            String message = "没有可用的读卡器参与模拟。\n\n";
+            String message = "No available badge readers to participate in simulation.\n\n";
             if (disabledCount > 0) {
-                message += "提示：有 " + disabledCount + " 个读卡器已勾选但未启用。\n";
-                message += "请先启用这些读卡器，或勾选其他已启用的读卡器。";
+                message += "Note: " + disabledCount + " badge readers are checked but not enabled.\n";
+                message += "Please enable these badge readers first, or check other enabled badge readers.";
             } else {
-                message += "请先：\n";
-                message += "1. 在'参与模拟'列勾选要使用的读卡器\n";
-                message += "2. 确保这些读卡器的'状态'为启用";
+                message += "Please:\n";
+                message += "1. Check badge readers in the 'Participate' column\n";
+                message += "2. Ensure these badge readers' 'Status' is enabled";
             }
-            JOptionPane.showMessageDialog(this, message, "提示", 
+            JOptionPane.showMessageDialog(this, message, "Warning", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
-        // 获取事件间隔
+        // Get event interval
         int interval = (Integer) intervalSpinner.getValue();
         
-        // 创建模拟器（只使用选中的读卡器）
+        // Create simulator (only use selected badge readers)
         simulator = new EventSimulator(readerList);
         simulator.setInterval(interval);
         
-        // 添加模拟用户
+        // Add simulated users
         for (User user : simulatedUsers.values()) {
             Badge badge = userBadges.get(user.getId());
             if (badge != null) {
@@ -600,14 +610,14 @@ public class EventSimulationPanel extends JPanel {
             }
         }
         
-        // 开始模拟
+        // Start simulation
         simulator.start();
         startButton.setEnabled(false);
         stopButton.setEnabled(true);
         intervalSpinner.setEnabled(false);
-        statusArea.append("模拟已开始 (间隔: " + interval + "秒, 使用 " + readerList.size() + " 个读卡器)\n");
+        statusArea.append("Simulation started (interval: " + interval + " seconds, using " + readerList.size() + " badge readers)\n");
         
-        // 启动统计更新线程
+        // Start statistics update thread
         startStatisticsUpdate();
     }
     
@@ -618,7 +628,7 @@ public class EventSimulationPanel extends JPanel {
             startButton.setEnabled(true);
             stopButton.setEnabled(true);
             intervalSpinner.setEnabled(true);
-            statusArea.append("模拟已停止\n");
+            statusArea.append("Simulation stopped\n");
         }
     }
     
@@ -627,22 +637,22 @@ public class EventSimulationPanel extends JPanel {
         grantedEvents = 0;
         deniedEvents = 0;
         updateStatistics();
-        statusArea.append("统计已重置\n");
+        statusArea.append("Statistics reset\n");
     }
     
     private void updateStatistics() {
-        statsLabel.setText(String.format("统计: 总事件: %d | 允许: %d | 拒绝: %d", 
+        statsLabel.setText(String.format("Statistics: Total Events: %d | Granted: %d | Denied: %d", 
             totalEvents, grantedEvents, deniedEvents));
     }
     
     private void startStatisticsUpdate() {
-        // 创建一个线程来定期更新统计信息
+        // Create a thread to periodically update statistics
         Thread statsThread = new Thread(() -> {
             while (simulator != null && simulator.isRunning()) {
                 try {
-                    // 从日志中读取统计信息（简化实现）
-                    // 实际应该从LogManager或AccessControlSystem获取
-                    Thread.sleep(2000); // 每2秒更新一次
+                    // Read statistics from logs (simplified implementation)
+                    // Should actually get from LogManager or AccessControlSystem
+                    Thread.sleep(2000); // Update every 2 seconds
                     SwingUtilities.invokeLater(() -> updateStatistics());
                 } catch (InterruptedException e) {
                     break;
@@ -654,11 +664,11 @@ public class EventSimulationPanel extends JPanel {
     }
     
     /**
-     * 设置系统时间（用于测试）
+     * Set system time (for testing)
      */
     private void setSystemTime() {
         JDialog dialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), 
-            "设置系统时间", true);
+            "Set System Time", true);
         dialog.setSize(400, 300);
         dialog.setLocationRelativeTo(this);
         
@@ -669,46 +679,46 @@ public class EventSimulationPanel extends JPanel {
         
         LocalDateTime currentTime = SystemClock.now();
         
-        // 年份
+        // Year
         gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("年份:"), gbc);
+        panel.add(new JLabel("Year:"), gbc);
         gbc.gridx = 1;
         JSpinner yearSpinner = new JSpinner(new SpinnerNumberModel(currentTime.getYear(), 2020, 2030, 1));
         panel.add(yearSpinner, gbc);
         
-        // 月份
+        // Month
         gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("月份:"), gbc);
+        panel.add(new JLabel("Month:"), gbc);
         gbc.gridx = 1;
         JSpinner monthSpinner = new JSpinner(new SpinnerNumberModel(currentTime.getMonthValue(), 1, 12, 1));
         panel.add(monthSpinner, gbc);
         
-        // 日期
+        // Day
         gbc.gridx = 0; gbc.gridy = 2;
-        panel.add(new JLabel("日期:"), gbc);
+        panel.add(new JLabel("Day:"), gbc);
         gbc.gridx = 1;
         JSpinner daySpinner = new JSpinner(new SpinnerNumberModel(currentTime.getDayOfMonth(), 1, 31, 1));
         panel.add(daySpinner, gbc);
         
-        // 小时
+        // Hour
         gbc.gridx = 0; gbc.gridy = 3;
-        panel.add(new JLabel("小时:"), gbc);
+        panel.add(new JLabel("Hour:"), gbc);
         gbc.gridx = 1;
         JSpinner hourSpinner = new JSpinner(new SpinnerNumberModel(currentTime.getHour(), 0, 23, 1));
         panel.add(hourSpinner, gbc);
         
-        // 分钟
+        // Minute
         gbc.gridx = 0; gbc.gridy = 4;
-        panel.add(new JLabel("分钟:"), gbc);
+        panel.add(new JLabel("Minute:"), gbc);
         gbc.gridx = 1;
         JSpinner minuteSpinner = new JSpinner(new SpinnerNumberModel(currentTime.getMinute(), 0, 59, 1));
         panel.add(minuteSpinner, gbc);
         
-        // 预设时间按钮
+        // Preset time buttons
         gbc.gridx = 0; gbc.gridy = 5;
         gbc.gridwidth = 2;
         JPanel presetPanel = new JPanel(new FlowLayout());
-        presetPanel.add(new JButton("工作日 8:00") {{
+        presetPanel.add(new JButton("Weekday 8:00") {{
             addActionListener(e -> {
                 LocalDateTime preset = LocalDateTime.now()
                     .withHour(8).withMinute(0).withSecond(0);
@@ -719,11 +729,11 @@ public class EventSimulationPanel extends JPanel {
                 minuteSpinner.setValue(0);
             });
         }});
-        presetPanel.add(new JButton("周末 10:00") {{
+        presetPanel.add(new JButton("Weekend 10:00") {{
             addActionListener(e -> {
                 LocalDateTime preset = LocalDateTime.now()
                     .withHour(10).withMinute(0).withSecond(0);
-                // 设置为最近的周六
+                // Set to nearest Saturday
                 int daysUntilSaturday = (java.time.DayOfWeek.SATURDAY.getValue() - 
                     preset.getDayOfWeek().getValue() + 7) % 7;
                 if (daysUntilSaturday == 0) daysUntilSaturday = 7;
@@ -737,10 +747,10 @@ public class EventSimulationPanel extends JPanel {
         }});
         panel.add(presetPanel, gbc);
         
-        // 按钮
+        // Buttons
         gbc.gridy = 6;
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("确定") {{
+        buttonPanel.add(new JButton("OK") {{
             addActionListener(e -> {
                 try {
                     int year = (Integer) yearSpinner.getValue();
@@ -753,15 +763,15 @@ public class EventSimulationPanel extends JPanel {
                     SystemClock.setCustomTime(customTime);
                     updateTimeDisplay();
                     resetTimeButton.setEnabled(true);
-                    statusArea.append("系统时间已设置为: " + customTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) + "\n");
+                    statusArea.append("System time set to: " + customTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) + "\n");
                     dialog.dispose();
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(dialog, "设置时间失败: " + ex.getMessage(), 
-                        "错误", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(dialog, "Failed to set time: " + ex.getMessage(), 
+                        "Error", JOptionPane.ERROR_MESSAGE);
                 }
             });
         }});
-        buttonPanel.add(new JButton("取消") {{
+        buttonPanel.add(new JButton("Cancel") {{
             addActionListener(e -> dialog.dispose());
         }});
         panel.add(buttonPanel, gbc);
@@ -771,24 +781,24 @@ public class EventSimulationPanel extends JPanel {
     }
     
     /**
-     * 重置系统时间
+     * Reset system time
      */
     private void resetSystemTime() {
         SystemClock.clearCustomTime();
         updateTimeDisplay();
         resetTimeButton.setEnabled(false);
-        statusArea.append("系统时间已重置为当前时间\n");
+        statusArea.append("System time reset to current time\n");
     }
     
     /**
-     * 更新时间显示
+     * Update time display
      */
     private void updateTimeDisplay() {
         if (timeLabel != null) {
             LocalDateTime now = SystemClock.now();
             String timeStr = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             if (SystemClock.isUsingCustomTime()) {
-                timeStr += " (自定义)";
+                timeStr += " (Custom)";
                 timeLabel.setForeground(Color.RED);
             } else {
                 timeLabel.setForeground(Color.BLACK);
@@ -798,31 +808,31 @@ public class EventSimulationPanel extends JPanel {
     }
     
     /**
-     * 获取当前时间字符串
+     * Get current time string
      */
     private String getCurrentTimeString() {
         LocalDateTime now = SystemClock.now();
         String timeStr = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         if (SystemClock.isUsingCustomTime()) {
-            timeStr += " (自定义)";
+            timeStr += " (Custom)";
         }
         return timeStr;
     }
     
     /**
-     * 更新读卡器状态
+     * Update badge reader status
      */
     private void updateReaderStatus(String readerId, boolean active) {
         var router = accessControlSystem.getRouter();
         BadgeReader reader = router.getBadgeReaders().get(readerId);
         if (reader != null) {
             reader.setActive(active);
-            statusArea.append("读卡器 " + readerId + " 已" + (active ? "启用" : "禁用") + "\n");
+            statusArea.append("Badge reader " + readerId + " " + (active ? "enabled" : "disabled") + "\n");
             
-            // 刷新表格显示
+            // Refresh table display
             for (int i = 0; i < readerTableModel.getRowCount(); i++) {
-                if (readerId.equals(readerTableModel.getValueAt(i, 0))) {
-                    readerTableModel.setValueAt(active, i, 3);
+                if (readerId.equals(readerTableModel.getValueAt(i, 1))) {
+                    readerTableModel.setValueAt(active, i, 4);
                     break;
                 }
             }
@@ -830,7 +840,7 @@ public class EventSimulationPanel extends JPanel {
     }
     
     /**
-     * 设置所有读卡器状态
+     * Set all badge reader status
      */
     private void setAllReadersStatus(boolean active) {
         var router = accessControlSystem.getRouter();
@@ -841,7 +851,7 @@ public class EventSimulationPanel extends JPanel {
             reader.setActive(active);
             count++;
             
-            // 更新表格显示（状态列在第4列，索引为4）
+            // Update table display (status column is at column 4, index 4)
             for (int i = 0; i < readerTableModel.getRowCount(); i++) {
                 if (reader.getId().equals(readerTableModel.getValueAt(i, 1))) {
                     readerTableModel.setValueAt(active, i, 4);
@@ -850,36 +860,88 @@ public class EventSimulationPanel extends JPanel {
             }
         }
         
-        statusArea.append("已" + (active ? "启用" : "禁用") + " " + count + " 个读卡器\n");
+        statusArea.append((active ? "Enabled" : "Disabled") + " " + count + " badge readers\n");
         readerTable.repaint();
     }
     
     /**
-     * 设置所有读卡器的参与模拟状态
+     * Select all rows in the badge reader table
+     */
+    private void selectAllReaders() {
+        readerTable.selectAll();
+        int selectedCount = readerTable.getSelectedRowCount();
+        statusArea.append("Selected " + selectedCount + " badge readers in the table\n");
+    }
+    
+    /**
+     * Deselect all rows in the badge reader table
+     */
+    private void deselectAllReaders() {
+        readerTable.clearSelection();
+        statusArea.append("Deselected all badge readers in the table\n");
+    }
+    
+    /**
+     * Set all badge readers' participation status
      */
     private void setAllReadersSelected(boolean selected) {
         int count = 0;
-        for (int i = 0; i < readerTableModel.getRowCount(); i++) {
-            String readerId = (String) readerTableModel.getValueAt(i, 1);
-            if (readerId != null && !"无".equals(readerId)) {
-                readerTableModel.setValueAt(selected, i, 0);
-                count++;
+        
+        // Temporarily remove table model listener to avoid multiple status messages
+        javax.swing.event.TableModelListener[] listeners = readerTableModel.getListeners(javax.swing.event.TableModelListener.class);
+        for (javax.swing.event.TableModelListener listener : listeners) {
+            readerTableModel.removeTableModelListener(listener);
+        }
+        
+        try {
+            for (int i = 0; i < readerTableModel.getRowCount(); i++) {
+                String readerId = (String) readerTableModel.getValueAt(i, 1);
+                if (readerId != null && !"None".equals(readerId)) {
+                    // Set the value directly
+                    readerTableModel.setValueAt(Boolean.valueOf(selected), i, 0);
+                    count++;
+                }
+            }
+        } finally {
+            // Restore table model listeners
+            for (javax.swing.event.TableModelListener listener : listeners) {
+                readerTableModel.addTableModelListener(listener);
             }
         }
         
-        statusArea.append((selected ? "已选择" : "已取消") + " " + count + " 个读卡器参与模拟\n");
+        // Force table repaint to ensure visual update
         readerTable.repaint();
+        readerTable.revalidate();
+        
+        statusArea.append((selected ? "Selected" : "Deselected") + " " + count + " badge readers for simulation\n");
     }
     
     /**
-     * 加入所有用户到模拟列表
+     * Select all users in the user table
+     */
+    private void selectAllUsers() {
+        userTable.selectAll();
+        int selectedCount = userTable.getSelectedRowCount();
+        statusArea.append("Selected " + selectedCount + " users in the table\n");
+    }
+    
+    /**
+     * Deselect all users in the user table
+     */
+    private void deselectAllUsers() {
+        userTable.clearSelection();
+        statusArea.append("Deselected all users in the table\n");
+    }
+    
+    /**
+     * Add all users to simulation list
      */
     private void addAllUsers() {
         DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
         Map<String, User> allUsers = dbManager.loadAllUsers();
         
         if (allUsers.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "没有可用的用户", "提示", 
+            JOptionPane.showMessageDialog(this, "No available users", "Info", 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
@@ -889,13 +951,13 @@ public class EventSimulationPanel extends JPanel {
         int noBadgeCount = 0;
         
         for (User user : allUsers.values()) {
-            // 跳过已经在模拟列表中的用户
+            // Skip users already in simulation list
             if (simulatedUsers.containsKey(user.getId())) {
                 skippedCount++;
                 continue;
             }
             
-            // 检查用户是否有徽章
+            // Check if user has badge
             Badge badge = userBadges.get(user.getId());
             if (badge == null) {
                 if (user.getBadgeId() != null) {
@@ -910,14 +972,14 @@ public class EventSimulationPanel extends JPanel {
                 continue;
             }
             
-            // 添加到模拟列表
+            // Add to simulation list
             simulatedUsers.put(user.getId(), user);
             userBadges.put(user.getId(), badge);
             addedCount++;
-            statusArea.append("添加模拟用户: " + user.getFullName() + " (徽章: " + badge.getCode() + ")\n");
+            statusArea.append("Added simulated user: " + user.getFullName() + " (Badge: " + badge.getCode() + ")\n");
         }
         
-        // 如果模拟器正在运行，需要更新模拟器
+        // If simulator is running, need to update simulator
         if (simulator != null && simulator.isRunning()) {
             var router = accessControlSystem.getRouter();
             Map<String, BadgeReader> readers = router.getBadgeReaders();
@@ -934,58 +996,58 @@ public class EventSimulationPanel extends JPanel {
             }
             
             simulator.start();
-            statusArea.append("模拟器已更新\n");
+            statusArea.append("Simulator updated\n");
         }
         
         String message = String.format(
-            "批量添加用户完成！\n\n" +
-            "统计信息：\n" +
-            "• 成功添加: %d 个用户\n" +
-            "• 跳过（已在列表中）: %d 个用户\n" +
-            "• 跳过（无徽章）: %d 个用户\n\n" +
-            "当前模拟用户总数: %d",
+            "Batch add users completed!\n\n" +
+            "Statistics:\n" +
+            "• Successfully added: %d users\n" +
+            "• Skipped (already in list): %d users\n" +
+            "• Skipped (no badge): %d users\n\n" +
+            "Current total simulated users: %d",
             addedCount, skippedCount, noBadgeCount, simulatedUsers.size()
         );
         
-        JOptionPane.showMessageDialog(this, message, "批量添加完成", 
+        JOptionPane.showMessageDialog(this, message, "Batch Add Complete", 
             JOptionPane.INFORMATION_MESSAGE);
     }
     
     /**
-     * 清空所有模拟用户
+     * Clear all simulated users
      */
     private void clearAllSimulatedUsers() {
         if (simulatedUsers.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "模拟用户列表已为空", "提示", 
+            JOptionPane.showMessageDialog(this, "Simulated user list is already empty", "Info", 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
         int count = simulatedUsers.size();
         int confirm = JOptionPane.showConfirmDialog(this,
-            "确定要清空所有模拟用户吗？\n\n" +
-            "当前有 " + count + " 个用户在模拟列表中\n" +
-            "如果模拟正在运行，将会停止模拟。",
-            "确认清空",
+            "Are you sure you want to clear all simulated users?\n\n" +
+            "Currently " + count + " users in simulation list\n" +
+            "If simulation is running, it will be stopped.",
+            "Confirm Clear",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
         
         if (confirm == JOptionPane.YES_OPTION) {
-            // 如果模拟正在运行，先停止
+            // If simulation is running, stop first
             if (simulator != null && simulator.isRunning()) {
                 simulator.stop();
                 startButton.setEnabled(true);
                 stopButton.setEnabled(false);
                 intervalSpinner.setEnabled(true);
-                statusArea.append("模拟已停止\n");
+                statusArea.append("Simulation stopped\n");
             }
             
             simulatedUsers.clear();
             userBadges.clear();
-            statusArea.append("已清空所有模拟用户（共 " + count + " 个）\n");
+            statusArea.append("Cleared all simulated users (total: " + count + ")\n");
             
             JOptionPane.showMessageDialog(this, 
-                "已清空所有模拟用户", "成功", 
+                "All simulated users cleared", "Success", 
                 JOptionPane.INFORMATION_MESSAGE);
         }
     }

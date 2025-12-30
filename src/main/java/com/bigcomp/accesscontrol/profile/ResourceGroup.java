@@ -1,16 +1,17 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.profile;
 
 import java.util.List;
 import java.util.ArrayList;
 
 /**
- * 资源组类 - 表示一组具有相同安全级别的资源
+ * Resource Group class - Represents a group of resources with the same security level
  */
 public class ResourceGroup {
-    private String name; // 组名称
-    private int securityLevel; // 安全级别
-    private String filePath; // 定义组的文件路径
-    private List<String> resourceIds; // 资源ID列表
+    private String name; // Group name
+    private int securityLevel; // Security level
+    private String filePath; // File path that defines the group
+    private List<String> resourceIds; // Resource ID list
 
     public ResourceGroup(String name, int securityLevel) {
         this.name = name;

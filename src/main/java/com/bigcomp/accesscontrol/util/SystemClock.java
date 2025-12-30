@@ -1,36 +1,37 @@
+// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.util;
 
 import java.time.LocalDateTime;
 
 /**
- * 系统时钟工具类 - 允许修改当前时间用于测试
+ * System Clock utility class - Allows modifying current time for testing
  */
 public class SystemClock {
     private static LocalDateTime customTime = null;
 
     /**
-     * 获取当前时间（如果设置了自定义时间则返回自定义时间）
+     * Get current time (returns custom time if set)
      */
     public static LocalDateTime now() {
         return customTime != null ? customTime : LocalDateTime.now();
     }
 
     /**
-     * 设置自定义时间（用于测试）
+     * Set custom time (for testing)
      */
     public static void setCustomTime(LocalDateTime time) {
         customTime = time;
     }
 
     /**
-     * 清除自定义时间，恢复使用系统时间
+     * Clear custom time, resume using system time
      */
     public static void clearCustomTime() {
         customTime = null;
     }
 
     /**
-     * 检查是否使用自定义时间
+     * Check if using custom time
      */
     public static boolean isUsingCustomTime() {
         return customTime != null;

@@ -1,0 +1,29 @@
+{
+  "name" : "Full-time Access",
+  "accessRights" : {
+    "Office Area" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : null,
+      "timeRanges" : null,
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : false,
+      "excludeTimeRanges" : false
+    },
+    "Public Area" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : null,
+      "timeRanges" : null,
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : false,
+      "excludeTimeRanges" : false
+    }
+  }
+}
