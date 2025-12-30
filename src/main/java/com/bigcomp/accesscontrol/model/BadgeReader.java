@@ -1,4 +1,3 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.model;
 
 import com.bigcomp.accesscontrol.util.SystemClock;
@@ -8,14 +7,14 @@ import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Badge Reader class - Simulates physical badge reader
- * Can read badge information and control resources
+ * 读卡器类 - 模拟物理读卡器
+ * 可以读取徽章信息并控制资源
  */
 public class BadgeReader {
-    private String id; // Badge reader unique identifier
-    private String resourceId; // Associated resource ID
-    private boolean active; // Whether badge reader is active
-    private PropertyChangeSupport pcs; // For event notification
+    private String id; // 读卡器唯一标识
+    private String resourceId; // 关联的资源ID
+    private boolean active; // 读卡器是否激活
+    private PropertyChangeSupport pcs; // 用于事件通知
 
     public BadgeReader(String id, String resourceId) {
         this.id = id;
@@ -25,19 +24,19 @@ public class BadgeReader {
     }
 
     /**
-     * Swipe badge operation
-     * @param badge Badge to swipe
-     * @return Access request object
+     * 刷卡操作
+     * @param badge 要刷的徽章
+     * @return 访问请求对象
      */
     public AccessRequest swipeBadge(Badge badge) {
         if (!active) {
-            return null; // Badge reader not active
+            return null; // 读卡器未激活
         }
 
-        // Read badge code
+        // 读取徽章代码
         String badgeCode = badge.getCode();
         
-        // Create access request
+        // 创建访问请求
         AccessRequest request = new AccessRequest(
             badgeCode,
             this.id,
@@ -45,16 +44,16 @@ public class BadgeReader {
             SystemClock.now()
         );
 
-        // Notify router
+        // 通知路由器
         pcs.firePropertyChange("accessRequest", null, request);
 
         return request;
     }
 
     /**
-     * Update badge code (bring badge near reader without swiping)
-     * @param badge Badge to update
-     * @return Whether update succeeded
+     * 更新徽章代码（将徽章靠近读卡器，不刷卡）
+     * @param badge 要更新的徽章
+     * @return 是否更新成功
      */
     public boolean updateBadge(Badge badge) {
         if (!active) {
@@ -69,24 +68,24 @@ public class BadgeReader {
     }
 
     /**
-     * Handle access response
-     * @param response Access response
+     * 处理访问响应
+     * @param response 访问响应
      */
     public void handleAccessResponse(AccessResponse response) {
-        this.active = false; // Temporarily disable badge reader
+        this.active = false; // 暂时停用读卡器
 
         if (response.isGranted()) {
-            // Access granted, activate resource
+            // 访问被授权，激活资源
             activateResource();
         } else {
-            // Access denied, display denial message
-            displayMessage("Access denied: " + response.getMessage());
+            // 访问被拒绝，显示拒绝消息
+            displayMessage("访问被拒绝: " + response.getMessage());
         }
 
-        // Reactivate badge reader after a few seconds
+        // 几秒后重新激活读卡器
         CompletableFuture.runAsync(() -> {
             try {
-                Thread.sleep(3000); // Reactivate after 3 seconds
+                Thread.sleep(3000); // 3秒后重新激活
                 this.active = true;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -95,17 +94,17 @@ public class BadgeReader {
     }
 
     /**
-     * Activate resource (e.g., open door)
+     * 激活资源（例如开门）
      */
     private void activateResource() {
-        displayMessage("Access granted");
-        // Notify resource is activated
+        displayMessage("访问已授权");
+        // 通知资源被激活
         pcs.firePropertyChange("resourceActivated", null, resourceId);
         
-        // Simulate resource operation time (e.g., door opens and closes)
+        // 模拟资源操作时间（例如门打开和关闭）
         CompletableFuture.runAsync(() -> {
             try {
-                Thread.sleep(5000); // Resource recovers after 5 seconds
+                Thread.sleep(5000); // 5秒后资源恢复
                 pcs.firePropertyChange("resourceDeactivated", null, resourceId);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -114,15 +113,15 @@ public class BadgeReader {
     }
 
     /**
-     * Display message (simulate badge reader display)
+     * 显示消息（模拟读卡器显示屏）
      */
     private void displayMessage(String message) {
-        System.out.println("Badge Reader " + id + ": " + message);
+        System.out.println("读卡器 " + id + ": " + message);
         pcs.firePropertyChange("message", null, message);
     }
 
     /**
-     * Add property change listener
+     * 添加属性变化监听器
      */
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         pcs.addPropertyChangeListener(listener);

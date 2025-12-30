@@ -1,6 +1,5 @@
 C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\model\BadgeReader.java
 C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\model\AccessRequest.java
-C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\util\DatabaseExporter.java
 C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\gui\ResourceManagementPanel.java
 C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\simulation\EventSimulator.java
 C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\profile\ProfileManager.java
@@ -15,7 +14,6 @@ C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\core\Acce
 C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\database\DatabaseManager.java
 C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\model\Badge.java
 C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\profile\GroupManager.java
-C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\util\AccessDiagnostic.java
 C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\model\Resource.java
 C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\Main.java
 C:\Users\29223\Desktop\chenlab\src\main\java\com\bigcomp\accesscontrol\test\SystemTestRunner.java

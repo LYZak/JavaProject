@@ -1,8 +1,7 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.model;
 
 /**
- * User class - Represents a user in the system
+ * 用户类 - 表示系统中的用户
  */
 public class User {
     public enum Gender {
@@ -10,19 +9,19 @@ public class User {
     }
 
     public enum UserType {
-        EMPLOYEE,        // Full-time employee
-        CONTRACTOR,      // Contractor
-        INTERN,          // Intern
-        VISITOR,         // Visitor
-        PROJECT_MANAGER  // Project manager
+        EMPLOYEE,        // 正式员工
+        CONTRACTOR,      // 承包商
+        INTERN,          // 实习生
+        VISITOR,         // 访客
+        PROJECT_MANAGER  // 项目经理
     }
 
-    private String id; // User ID
+    private String id; // 用户ID
     private Gender gender;
     private String firstName;
     private String lastName;
     private UserType userType;
-    private String badgeId; // Associated badge ID
+    private String badgeId; // 关联的徽章ID
 
     public User(String id, Gender gender, String firstName, String lastName, UserType userType) {
         this.id = id;

@@ -1,13 +1,12 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.model;
 
 /**
- * Access Response class - Represents access control system response
+ * 访问响应类 - 表示访问控制系统的响应
  */
 public class AccessResponse {
-    private String badgeReaderId; // Badge reader ID
-    private boolean granted; // Whether granted
-    private String message; // Response message
+    private String badgeReaderId; // 读卡器ID
+    private boolean granted; // 是否授权
+    private String message; // 响应消息
 
     public AccessResponse(String badgeReaderId, boolean granted, String message) {
         this.badgeReaderId = badgeReaderId;

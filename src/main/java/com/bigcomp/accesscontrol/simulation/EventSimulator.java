@@ -1,4 +1,3 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.simulation;
 
 import com.bigcomp.accesscontrol.model.Badge;
@@ -19,17 +18,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Event Simulator - Simulates user system activities
+ * 事件模拟器 - 模拟用户使用系统的活动
  */
 public class EventSimulator {
     private List<SimulatedUser> simulatedUsers;
     private List<BadgeReader> badgeReaders;
-    private Map<String, Resource> resourceMap; // Resource ID -> Resource object
+    private Map<String, Resource> resourceMap; // 资源ID -> 资源对象
     private ScheduledExecutorService executor;
     private Random random;
     private boolean running;
-    private int intervalSeconds = 2; // Default interval 2 seconds
-    private boolean consistentBehavior = true; // Whether to enable consistent behavior pattern
+    private int intervalSeconds = 2; // 默认间隔2秒
+    private boolean consistentBehavior = true; // 是否启用一致的行为模式
 
     public EventSimulator(List<BadgeReader> badgeReaders) {
         this.badgeReaders = badgeReaders;
@@ -39,45 +38,45 @@ public class EventSimulator {
         this.random = new Random();
         this.running = false;
         
-        // Load resource map
+        // 加载资源映射
         loadResourceMap();
     }
     
     /**
-     * Load resource map
+     * 加载资源映射
      */
     private void loadResourceMap() {
         try {
             DatabaseManager dbManager = new DatabaseManager();
             resourceMap = dbManager.loadAllResources();
         } catch (Exception e) {
-            System.err.println("Failed to load resource map: " + e.getMessage());
+            System.err.println("加载资源映射失败: " + e.getMessage());
         }
     }
     
     /**
-     * Set whether to enable consistent behavior pattern
+     * 设置是否启用一致的行为模式
      */
     public void setConsistentBehavior(boolean enabled) {
         this.consistentBehavior = enabled;
     }
     
     /**
-     * Set event generation interval (seconds)
+     * 设置事件生成间隔（秒）
      */
     public void setInterval(int seconds) {
-        this.intervalSeconds = Math.max(1, Math.min(60, seconds)); // Limit between 1-60 seconds
+        this.intervalSeconds = Math.max(1, Math.min(60, seconds)); // 限制在1-60秒之间
     }
 
     /**
-     * Add simulated user
+     * 添加模拟用户
      */
     public void addSimulatedUser(User user, Badge badge) {
         simulatedUsers.add(new SimulatedUser(user, badge));
     }
 
     /**
-     * Start simulation
+     * 开始模拟
      */
     public void start() {
         if (running) {
@@ -85,17 +84,17 @@ public class EventSimulator {
         }
         running = true;
 
-        // Periodically generate access events
+        // 定期生成访问事件
         executor.scheduleAtFixedRate(() -> {
             if (!running) {
                 return;
             }
             generateAccessEvent();
-        }, 0, intervalSeconds, TimeUnit.SECONDS); // Use configurable interval
+        }, 0, intervalSeconds, TimeUnit.SECONDS); // 使用可配置的间隔
     }
 
     /**
-     * Stop simulation
+     * 停止模拟
      */
     public void stop() {
         running = false;
@@ -112,14 +111,14 @@ public class EventSimulator {
     }
     
     /**
-     * Check if simulation is running
+     * 检查模拟是否正在运行
      */
     public boolean isRunning() {
         return running;
     }
 
     /**
-     * Generate access event (supports consistent behavior pattern)
+     * 生成访问事件（支持一致的行为模式）
      */
     private void generateAccessEvent() {
         if (simulatedUsers.isEmpty() || badgeReaders.isEmpty()) {
@@ -130,35 +129,35 @@ public class EventSimulator {
         BadgeReader reader;
         
         if (consistentBehavior && simUser.getLastLocation() != null) {
-            // Consistent behavior pattern: select next reasonable badge reader based on user's current location
+            // 一致的行为模式：根据用户当前位置选择下一个合理的读卡器
             reader = selectNextReader(simUser);
         } else {
-            // Random mode
+            // 随机模式
             reader = badgeReaders.get(random.nextInt(badgeReaders.size()));
         }
         
         if (reader != null) {
-            // Update user location
+            // 更新用户位置
             Resource resource = resourceMap.get(reader.getResourceId());
             if (resource != null) {
                 simUser.setLastLocation(resource.getLocation());
                 simUser.setLastAccessTime(SystemClock.now());
             }
             
-            // Simulate badge swipe
+            // 模拟刷卡
             reader.swipeBadge(simUser.getBadge());
         }
     }
     
     /**
-     * Select next reasonable badge reader based on user's current location
-     * Implements consistent behavior: first enter site entrance, then building, finally office
+     * 根据用户当前位置选择下一个合理的读卡器
+     * 实现一致的行为：先进入场地入口，再进入建筑，最后进入办公室
      */
     private BadgeReader selectNextReader(SimulatedUser simUser) {
         String lastLocation = simUser.getLastLocation();
         List<BadgeReader> candidates = new ArrayList<>();
         
-        // If user has no access record yet, prioritize site entrance (GATE type)
+        // 如果用户还没有访问记录，优先选择场地入口（GATE类型）
         if (lastLocation == null || lastLocation.isEmpty()) {
             for (BadgeReader reader : badgeReaders) {
                 Resource res = resourceMap.get(reader.getResourceId());
@@ -171,8 +170,8 @@ public class EventSimulator {
             }
         }
         
-        // If user is already on site, prioritize building entrance (DOOR type, 1st floor)
-        if (lastLocation != null && (lastLocation.contains("Site") || lastLocation.contains("Parking"))) {
+        // 如果用户已经在场地，优先选择建筑入口（DOOR类型，1楼）
+        if (lastLocation != null && (lastLocation.contains("场地") || lastLocation.contains("停车场"))) {
             for (BadgeReader reader : badgeReaders) {
                 Resource res = resourceMap.get(reader.getResourceId());
                 if (res != null && 
@@ -186,13 +185,13 @@ public class EventSimulator {
             }
         }
         
-        // If user is already in building, can choose office, elevator, stairway, etc.
-        if (lastLocation != null && lastLocation.contains("Main Office Building")) {
+        // 如果用户已经在建筑内，可以选择办公室、电梯、楼梯等
+        if (lastLocation != null && lastLocation.contains("主办公楼")) {
             for (BadgeReader reader : badgeReaders) {
                 Resource res = resourceMap.get(reader.getResourceId());
                 if (res != null && 
-                    (res.getName().contains("Office") || 
-                     res.getName().contains("Meeting Room") ||
+                    (res.getName().contains("办公室") || 
+                     res.getName().contains("会议室") ||
                      res.getType() == Resource.ResourceType.ELEVATOR ||
                      res.getType() == Resource.ResourceType.STAIRWAY ||
                      res.getType() == Resource.ResourceType.PRINTER ||
@@ -205,12 +204,12 @@ public class EventSimulator {
             }
         }
         
-        // If no suitable one found, randomly select one
+        // 如果没有找到合适的，随机选择一个
         return badgeReaders.get(random.nextInt(badgeReaders.size()));
     }
 
     /**
-     * Simulated user class
+     * 模拟用户类
      */
     private static class SimulatedUser {
         private User user;

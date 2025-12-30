@@ -1,4 +1,3 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.profile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,11 +17,11 @@ import java.util.Set;
 import java.util.HashSet;
 
 /**
- * Profile Manager - Responsible for loading, saving and managing profiles
+ * 配置文件管理器 - 负责加载、保存和管理配置文件
  */
 public class ProfileManager {
     private static final String PROFILES_DIR = "data/profiles";
-    private Map<String, Profile> profiles; // Profile name -> Profile object
+    private Map<String, Profile> profiles; // 配置文件名称 -> 配置文件对象
     private ObjectMapper objectMapper;
 
     public ProfileManager() {
@@ -32,7 +31,7 @@ public class ProfileManager {
     }
 
     /**
-     * Load all profiles from files
+     * 从文件加载所有配置文件
      */
     private void loadProfiles() {
         try {
@@ -51,20 +50,20 @@ public class ProfileManager {
                             profiles.put(profile.getName(), profile);
                         }
                     } catch (Exception e) {
-                        System.err.println("Failed to load profile: " + path + " - " + e.getMessage());
+                        System.err.println("加载配置文件失败: " + path + " - " + e.getMessage());
                     }
                 });
         } catch (IOException e) {
-            System.err.println("Failed to load profile directory: " + e.getMessage());
+            System.err.println("加载配置文件目录失败: " + e.getMessage());
         }
     }
 
     /**
-     * Load single profile from file (public method for backup recovery)
+     * 从文件加载单个配置文件（公共方法，用于恢复备份）
      */
     public Profile loadProfileFromFile(File file) throws IOException {
-        // Simplified implementation: use JSON format
-        // Actual implementation needs to parse custom time filter syntax
+        // 简化实现：使用JSON格式
+        // 实际实现需要解析自定义的时间过滤器语法
         String content = Files.readString(file.toPath());
         ProfileData data = objectMapper.readValue(content, ProfileData.class);
         
@@ -78,7 +77,7 @@ public class ProfileManager {
     }
 
     /**
-     * Parse time filter (simplified implementation)
+     * 解析时间过滤器（简化实现）
      */
     private TimeFilter parseTimeFilter(TimeFilterData data) {
         TimeFilter filter = new TimeFilter();
@@ -113,7 +112,7 @@ public class ProfileManager {
             Set<DayOfWeek> daySet = new HashSet<>();
             String[] dayNames = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
             String[] dayNamesShort = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
-            String[] dayNamesCN = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+            String[] dayNamesCN = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
             
             for (String dayStr : data.daysOfWeek) {
                 for (int i = 0; i < dayNames.length; i++) {
@@ -134,7 +133,7 @@ public class ProfileManager {
         if (data.timeRanges != null) {
             List<TimeFilter.TimeRange> ranges = new ArrayList<>();
             for (String rangeStr : data.timeRanges) {
-                // Parse time range string, e.g., "8:00-12:00"
+                // 解析时间范围字符串，例如 "8:00-12:00"
                 String[] parts = rangeStr.split("-");
                 if (parts.length == 2) {
                     String[] start = parts[0].split(":");
@@ -157,7 +156,7 @@ public class ProfileManager {
     }
 
     /**
-     * Save profile to file
+     * 保存配置文件到文件
      */
     public void saveProfile(Profile profile) throws IOException {
         Path profilesPath = Paths.get(PROFILES_DIR);
@@ -170,7 +169,7 @@ public class ProfileManager {
         data.name = profile.getName();
         data.accessRights = new HashMap<>();
         
-        // Convert TimeFilter to TimeFilterData
+        // 将TimeFilter转换为TimeFilterData
         Map<String, TimeFilter> accessRights = profile.getAccessRights();
         for (Map.Entry<String, TimeFilter> entry : accessRights.entrySet()) {
             TimeFilter filter = entry.getValue();
@@ -222,37 +221,37 @@ public class ProfileManager {
         }
         
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, data);
-        // Update profile in memory (ensure using latest object)
+        // 更新内存中的配置文件（确保使用最新的对象）
         profiles.put(profile.getName(), profile);
         
-        // Reload to ensure latest data from file (handle possible serialization issues)
+        // 重新加载以确保从文件读取的最新数据（处理可能的序列化问题）
         try {
             Profile reloadedProfile = loadProfileFromFile(file);
             if (reloadedProfile != null) {
                 profiles.put(profile.getName(), reloadedProfile);
             }
         } catch (Exception e) {
-            // If reload fails, use in-memory object
-            System.err.println("Failed to reload profile, using in-memory object: " + e.getMessage());
+            // 如果重新加载失败，使用内存中的对象
+            System.err.println("重新加载配置文件失败，使用内存对象: " + e.getMessage());
         }
     }
 
     /**
-     * Get profile
+     * 获取配置文件
      */
     public Profile getProfile(String name) {
         return profiles.get(name);
     }
 
     /**
-     * Get all profiles
+     * 获取所有配置文件
      */
     public Map<String, Profile> getAllProfiles() {
         return new HashMap<>(profiles);
     }
 
     /**
-     * Delete profile
+     * 删除配置文件
      */
     public void deleteProfile(String name) throws IOException {
         profiles.remove(name);
@@ -262,7 +261,7 @@ public class ProfileManager {
         }
     }
 
-    // Internal data classes for JSON serialization
+    // 内部数据类用于JSON序列化
     private static class ProfileData {
         public String name;
         public Map<String, TimeFilterData> accessRights;

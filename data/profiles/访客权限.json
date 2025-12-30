@@ -5,7 +5,7 @@
       "years" : null,
       "months" : null,
       "daysOfMonth" : null,
-      "daysOfWeek" : [ "Tue", "Mon", "Wed", "Thu", "Fri" ],
+      "daysOfWeek" : [ "Wed", "Thu", "Mon", "Tue", "Fri" ],
       "timeRanges" : [ "10:00-16:00" ],
       "excludeYears" : false,
       "excludeMonths" : false,

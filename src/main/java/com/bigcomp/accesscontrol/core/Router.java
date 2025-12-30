@@ -1,4 +1,3 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.core;
 
 import com.bigcomp.accesscontrol.model.AccessRequest;
@@ -12,12 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Router class - Forwards messages between badge readers and access control system
+ * 路由器类 - 负责在读卡器和访问控制系统之间转发消息
  */
 public class Router implements PropertyChangeListener {
-    private AccessRequestProcessor arp; // Access Request Processor
-    private Map<String, BadgeReader> badgeReaders; // Badge reader map
-    private List<AccessEventListener> accessEventListeners; // Access event listener list
+    private AccessRequestProcessor arp; // 访问请求处理器
+    private Map<String, BadgeReader> badgeReaders; // 读卡器映射表
+    private List<AccessEventListener> accessEventListeners; // 访问事件监听器列表
 
     public Router(AccessRequestProcessor arp) {
         this.arp = arp;
@@ -26,21 +25,21 @@ public class Router implements PropertyChangeListener {
     }
     
     /**
-     * Add access event listener
+     * 添加访问事件监听器
      */
     public void addAccessEventListener(AccessEventListener listener) {
         accessEventListeners.add(listener);
     }
     
     /**
-     * Remove access event listener
+     * 移除访问事件监听器
      */
     public void removeAccessEventListener(AccessEventListener listener) {
         accessEventListeners.remove(listener);
     }
     
     /**
-     * Notify all listeners of access event
+     * 通知所有监听器访问事件
      */
     private void notifyAccessEvent(AccessRequest request, AccessResponse response) {
         for (AccessEventListener listener : accessEventListeners) {
@@ -49,7 +48,7 @@ public class Router implements PropertyChangeListener {
     }
 
     /**
-     * Register badge reader
+     * 注册读卡器
      */
     public void registerBadgeReader(BadgeReader reader) {
         badgeReaders.put(reader.getId(), reader);
@@ -57,7 +56,7 @@ public class Router implements PropertyChangeListener {
     }
 
     /**
-     * Unregister badge reader
+     * 注销读卡器
      */
     public void unregisterBadgeReader(String readerId) {
         BadgeReader reader = badgeReaders.remove(readerId);
@@ -67,7 +66,7 @@ public class Router implements PropertyChangeListener {
     }
 
     /**
-     * Handle property change event (from badge reader)
+     * 处理属性变化事件（来自读卡器）
      */
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
@@ -78,16 +77,16 @@ public class Router implements PropertyChangeListener {
     }
 
     /**
-     * Handle access request
+     * 处理访问请求
      */
     private void handleAccessRequest(AccessRequest request) {
-        // Forward to access request processor
+        // 转发到访问请求处理器
         AccessResponse response = arp.processRequest(request);
         
-        // Notify listeners
+        // 通知监听器
         notifyAccessEvent(request, response);
         
-        // Forward response back to corresponding badge reader
+        // 将响应转发回对应的读卡器
         BadgeReader reader = badgeReaders.get(request.getBadgeReaderId());
         if (reader != null) {
             reader.handleAccessResponse(response);
@@ -95,14 +94,14 @@ public class Router implements PropertyChangeListener {
     }
     
     /**
-     * Access event listener interface
+     * 访问事件监听器接口
      */
     public interface AccessEventListener {
         void onAccessEvent(AccessRequest request, AccessResponse response);
     }
 
     /**
-     * Get all registered badge readers
+     * 获取所有注册的读卡器
      */
     public Map<String, BadgeReader> getBadgeReaders() {
         return badgeReaders;
