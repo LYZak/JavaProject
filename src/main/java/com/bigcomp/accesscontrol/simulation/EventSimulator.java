@@ -145,8 +145,24 @@ public class EventSimulator {
                 simUser.setLastAccessTime(SystemClock.now());
             }
             
-            // Simulate badge swipe
-            reader.swipeBadge(simUser.getBadge());
+            Badge badge = simUser.getBadge();
+            
+            // Check if badge needs update
+            if (badge.needsUpdate()) {
+                // Randomly decide to update or swipe (simulating user behavior)
+                // 80% chance to update if they know, 20% chance to forget and swipe
+                if (random.nextDouble() < 0.8) {
+                    boolean success = reader.updateBadge(badge);
+                    if (success) {
+                        System.out.println("Simulation: Badge " + badge.getCode() + " updated at reader " + reader.getId());
+                    }
+                } else {
+                    reader.swipeBadge(badge);
+                }
+            } else {
+                // Normal swipe
+                reader.swipeBadge(badge);
+            }
         }
     }
     

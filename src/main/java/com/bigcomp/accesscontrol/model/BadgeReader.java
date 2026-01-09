@@ -63,6 +63,8 @@ public class BadgeReader {
 
         if (badge.needsUpdate()) {
             badge.updateCode();
+            // Notify system about badge update
+            pcs.firePropertyChange("badgeUpdated", null, badge);
             return true;
         }
         return false;

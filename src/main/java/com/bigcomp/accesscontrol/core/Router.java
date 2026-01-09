@@ -3,6 +3,7 @@ package com.bigcomp.accesscontrol.core;
 
 import com.bigcomp.accesscontrol.model.AccessRequest;
 import com.bigcomp.accesscontrol.model.AccessResponse;
+import com.bigcomp.accesscontrol.model.Badge;
 import com.bigcomp.accesscontrol.model.BadgeReader;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -74,6 +75,9 @@ public class Router implements PropertyChangeListener {
         if ("accessRequest".equals(evt.getPropertyName())) {
             AccessRequest request = (AccessRequest) evt.getNewValue();
             handleAccessRequest(request);
+        } else if ("badgeUpdated".equals(evt.getPropertyName())) {
+            Badge badge = (Badge) evt.getNewValue();
+            arp.updateBadge(badge);
         }
     }
 

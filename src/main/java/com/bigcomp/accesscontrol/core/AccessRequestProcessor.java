@@ -3,6 +3,7 @@ package com.bigcomp.accesscontrol.core;
 
 import com.bigcomp.accesscontrol.model.AccessRequest;
 import com.bigcomp.accesscontrol.model.AccessResponse;
+import com.bigcomp.accesscontrol.model.Badge;
 import com.bigcomp.accesscontrol.model.Resource;
 import com.bigcomp.accesscontrol.model.User;
 import com.bigcomp.accesscontrol.profile.Profile;
@@ -11,6 +12,7 @@ import com.bigcomp.accesscontrol.profile.TimeFilter;
 import com.bigcomp.accesscontrol.database.DatabaseManager;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,27 +24,71 @@ public class AccessRequestProcessor {
     private DatabaseManager dbManager;
     private ProfileManager profileManager;
     
-    // In-memory fast lookup structures
-    private Map<String, User> usersByBadgeCode; // Find user by badge code
-    private Map<String, Set<String>> userProfiles; // User ID -> Profile name set
-    private Map<String, Resource> resources; // Resource ID -> Resource object
-    private Map<String, String> resourceGroups; // Resource ID -> Group name
+    // Thread-safe context container using Snapshot Pattern
+    private volatile AccessControlContext context;
+    
+    // Immutable context to hold all data maps
+    private static class AccessControlContext {
+        final Map<String, User> usersByBadgeCode;
+        final Map<String, User> usersById; // Added for fast user lookup
+        final Map<String, Badge> badgesByCode;
+        final Map<String, Set<String>> userProfiles;
+        final Map<String, Resource> resources;
+        final Map<String, String> resourceGroups;
+
+        AccessControlContext(Map<String, User> usersByBadgeCode,
+                           Map<String, User> usersById,
+                           Map<String, Badge> badgesByCode,
+                           Map<String, Set<String>> userProfiles,
+                           Map<String, Resource> resources,
+                           Map<String, String> resourceGroups) {
+            this.usersByBadgeCode = usersByBadgeCode;
+            this.usersById = usersById;
+            this.badgesByCode = badgesByCode;
+            this.userProfiles = userProfiles;
+            this.resources = resources;
+            this.resourceGroups = resourceGroups;
+        }
+    }
 
     public AccessRequestProcessor(DatabaseManager dbManager, ProfileManager profileManager) {
         this.dbManager = dbManager;
         this.profileManager = profileManager;
-        loadDataIntoMemory();
+        this.context = loadDataIntoMemory();
     }
 
     /**
      * Load data into memory for fast access
+     * Creates a new immutable context
      */
-    private void loadDataIntoMemory() {
+    private AccessControlContext loadDataIntoMemory() {
         // Load all data from database into memory
-        usersByBadgeCode = dbManager.loadUsersByBadgeCode();
-        userProfiles = dbManager.loadUserProfiles();
-        resources = dbManager.loadAllResources();
-        resourceGroups = dbManager.loadResourceGroups();
+        Map<String, User> usersByBadgeCode = dbManager.loadUsersByBadgeCode();
+        Map<String, Set<String>> userProfiles = dbManager.loadUserProfiles();
+        Map<String, Resource> resources = dbManager.loadAllResources();
+        Map<String, String> resourceGroups = dbManager.loadResourceGroups();
+        
+        // Load badges for validation
+        Map<String, Badge> badgesByCode = new HashMap<>();
+        Map<String, Badge> allBadges = dbManager.loadAllBadges();
+        for (Badge badge : allBadges.values()) {
+            badgesByCode.put(badge.getCode(), badge);
+        }
+        
+        // Build usersById for fast lookup during updates
+        Map<String, User> usersById = new HashMap<>();
+        for (User user : usersByBadgeCode.values()) {
+            usersById.put(user.getId(), user);
+        }
+        
+        return new AccessControlContext(
+            usersByBadgeCode,
+            usersById,
+            badgesByCode,
+            userProfiles,
+            resources,
+            resourceGroups
+        );
     }
 
     /**
@@ -51,18 +97,31 @@ public class AccessRequestProcessor {
      * @return Access response
      */
     public AccessResponse processRequest(AccessRequest request) {
+        // Get local reference to current context (thread-safe)
+        AccessControlContext currentContext = this.context;
+        
         String badgeCode = request.getBadgeCode();
         String resourceId = request.getResourceId();
         LocalDateTime requestTime = request.getTimestamp();
 
+        // 0. Check badge validity
+        Badge badge = currentContext.badgesByCode.get(badgeCode);
+        if (badge == null) {
+            return new AccessResponse(request.getBadgeReaderId(), false, "Badge not found");
+        }
+        
+        if (!badge.isValid()) {
+             return new AccessResponse(request.getBadgeReaderId(), false, "Badge is invalid or expired");
+        }
+
         // 1. Find user
-        User user = usersByBadgeCode.get(badgeCode);
+        User user = currentContext.usersByBadgeCode.get(badgeCode);
         if (user == null) {
             return new AccessResponse(request.getBadgeReaderId(), false, "User not found");
         }
 
         // 2. Check resource status
-        Resource resource = resources.get(resourceId);
+        Resource resource = currentContext.resources.get(resourceId);
         if (resource == null) {
             return new AccessResponse(request.getBadgeReaderId(), false, "Resource does not exist");
         }
@@ -72,13 +131,13 @@ public class AccessRequestProcessor {
         }
 
         // 3. Get user profiles
-        Set<String> profileNames = userProfiles.get(user.getId());
+        Set<String> profileNames = currentContext.userProfiles.get(user.getId());
         if (profileNames == null || profileNames.isEmpty()) {
             return new AccessResponse(request.getBadgeReaderId(), false, "User has no access permissions configured");
         }
 
         // 4. Get resource group
-        String groupName = resourceGroups.get(resourceId);
+        String groupName = currentContext.resourceGroups.get(resourceId);
         if (groupName == null) {
             return new AccessResponse(request.getBadgeReaderId(), false, "Resource does not belong to any group");
         }
@@ -119,9 +178,56 @@ public class AccessRequestProcessor {
 
     /**
      * Reload data in memory (called when data is updated)
+     * Replaces the entire context atomically
      */
     public void reloadData() {
-        loadDataIntoMemory();
+        this.context = loadDataIntoMemory();
+    }
+    
+    /**
+     * Update badge (DB persistence + Cache update)
+     */
+    public void updateBadge(Badge badge) {
+        try {
+            // 1. Update Database
+            dbManager.updateBadge(badge);
+            
+            // 2. Update Cache
+            updateBadgeCache(badge);
+        } catch (Exception e) {
+            System.err.println("Failed to update badge: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Update cache for a single badge without full reload
+     * Used when a badge is updated (e.g. rotated code)
+     */
+    public void updateBadgeCache(Badge badge) {
+        AccessControlContext current = this.context;
+        
+        // 1. Create copies of maps that need update
+        Map<String, Badge> newBadges = new HashMap<>(current.badgesByCode);
+        Map<String, User> newUsersByCode = new HashMap<>(current.usersByBadgeCode);
+        
+        // 2. Update badge map
+        newBadges.put(badge.getCode(), badge);
+        
+        // 3. Update user map (need to find user first)
+        User user = current.usersById.get(badge.getUserId());
+        if (user != null) {
+            newUsersByCode.put(badge.getCode(), user);
+        }
+        
+        // 4. Create new context (sharing other maps)
+        this.context = new AccessControlContext(
+            newUsersByCode,
+            current.usersById, // User list didn't change
+            newBadges,
+            current.userProfiles,
+            current.resources,
+            current.resourceGroups
+        );
     }
     
     /**
@@ -188,13 +294,12 @@ public class AccessRequestProcessor {
         return "Time filter does not allow access";
     }
     
-    // Getters for accessing memory data
+    // Getters for accessing memory data (delegating to context)
     public Map<String, User> getUsersByBadgeCode() {
-        return usersByBadgeCode;
+        return context.usersByBadgeCode;
     }
     
     public Map<String, Resource> getResources() {
-        return resources;
+        return context.resources;
     }
 }
-

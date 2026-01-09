@@ -31,6 +31,8 @@ CREATE TABLE `badges` (
   `code` VARCHAR(50) UNIQUE NOT NULL,
   `user_id` VARCHAR(50) NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `expiration_date` DATETIME,
+  `last_update_date` DATETIME,
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

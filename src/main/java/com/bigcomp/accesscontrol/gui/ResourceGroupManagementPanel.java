@@ -130,6 +130,15 @@ public class ResourceGroupManagementPanel extends JPanel {
         buttonPanel.add(new JButton("Save Resource Group") {{
             addActionListener(e -> saveGroup());
         }});
+        buttonPanel.add(new JButton("Set UNCONTROLLED") {{
+            setForeground(Color.RED);
+            setToolTipText("Set all resources in this group to UNCONTROLLED state (Emergency Open)");
+            addActionListener(e -> setGroupResourcesState(Resource.ResourceState.UNCONTROLLED));
+        }});
+        buttonPanel.add(new JButton("Set CONTROLLED") {{
+            setToolTipText("Set all resources in this group to CONTROLLED state (Normal)");
+            addActionListener(e -> setGroupResourcesState(Resource.ResourceState.CONTROLLED));
+        }});
         infoPanel.add(buttonPanel, gbc);
         
         centerPanel.add(infoPanel, BorderLayout.NORTH);
@@ -676,6 +685,56 @@ public class ResourceGroupManagementPanel extends JPanel {
                 JOptionPane.showMessageDialog(this, "Failed to save resource group: " + e.getMessage(), 
                     "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+
+    /**
+     * Batch set state for all resources in the selected group
+     */
+    private void setGroupResourcesState(Resource.ResourceState state) {
+        String selected = groupList.getSelectedValue();
+        if (selected == null) {
+            JOptionPane.showMessageDialog(this, "Please select a resource group", "Warning", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        GroupManager groupManager = new GroupManager();
+        ResourceGroup group = groupManager.getGroup(selected);
+        if (group == null) return;
+        
+        int confirm = JOptionPane.showConfirmDialog(this, 
+            "Set all resources in group \"" + selected + "\" to " + state + "?", 
+            "Confirm State Change", 
+            JOptionPane.YES_NO_OPTION);
+            
+        if (confirm != JOptionPane.YES_OPTION) return;
+        
+        try {
+            DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
+            Map<String, Resource> allResources = dbManager.loadAllResources();
+            
+            int count = 0;
+            for (String resourceId : group.getResourceIds()) {
+                Resource resource = allResources.get(resourceId);
+                if (resource != null) {
+                    resource.setState(state);
+                    dbManager.addResource(resource); // Save to DB
+                    count++;
+                }
+            }
+            
+            // Reload in-memory data
+            accessControlSystem.getAccessRequestProcessor().reloadData();
+            loadSelectedGroup(); // Refresh table display
+            
+            JOptionPane.showMessageDialog(this, 
+                "Updated " + count + " resources to " + state, 
+                "Success", JOptionPane.INFORMATION_MESSAGE);
+                
+        } catch (Exception e) {
+             JOptionPane.showMessageDialog(this, "Failed to update resources: " + e.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     

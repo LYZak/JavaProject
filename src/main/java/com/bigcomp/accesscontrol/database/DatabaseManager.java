@@ -176,6 +176,26 @@ public class DatabaseManager {
     }
 
     /**
+     * Update badge (updates existing badge by user_id)
+     */
+    public void updateBadge(Badge badge) throws SQLException {
+        String sql = "UPDATE badges SET code = ?, last_update_date = ?, expiration_date = ?, valid = ? WHERE user_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, badge.getCode());
+            pstmt.setString(2, badge.getLastUpdateDate().toString());
+            pstmt.setString(3, badge.getExpirationDate().toString());
+            pstmt.setInt(4, badge.isValid() ? 1 : 0);
+            pstmt.setString(5, badge.getUserId());
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                // If update failed (maybe badge doesn't exist?), try insert or handle error
+                // For now, assume badge exists if we are updating it
+                System.err.println("Warning: detailed update failed for user " + badge.getUserId() + ", badge not found in DB");
+            }
+        }
+    }
+
+    /**
      * Add badge
      */
     public void addBadge(Badge badge, String badgeId) throws SQLException {
