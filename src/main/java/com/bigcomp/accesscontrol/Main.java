@@ -2,6 +2,7 @@
 package com.bigcomp.accesscontrol;
 
 import com.bigcomp.accesscontrol.gui.MainWindow;
+import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
@@ -27,19 +28,36 @@ public class Main {
     }
 
     private static void applyGlobalUiStyle() {
+        System.setProperty("awt.useSystemAAFontSettings", "on");
+        System.setProperty("swing.aatext", "true");
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            FlatLightLaf.setup();
         } catch (Exception ignored) {
             try {
-                for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                    if ("Nimbus".equals(info.getName())) {
-                        UIManager.setLookAndFeel(info.getClassName());
-                        break;
-                    }
-                }
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             } catch (Exception ignored2) {
+                try {
+                    for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                        if ("Nimbus".equals(info.getName())) {
+                            UIManager.setLookAndFeel(info.getClassName());
+                            break;
+                        }
+                    }
+                } catch (Exception ignored3) {
+                }
             }
         }
+
+        UIManager.put("Component.arc", 10);
+        UIManager.put("Button.arc", 10);
+        UIManager.put("TextComponent.arc", 10);
+        UIManager.put("ProgressBar.arc", 10);
+        UIManager.put("ScrollBar.width", 12);
+        UIManager.put("ScrollBar.thumbArc", 999);
+        UIManager.put("ScrollBar.trackArc", 999);
+        UIManager.put("TabbedPane.tabInsets", new javax.swing.plaf.InsetsUIResource(10, 12, 10, 12));
+        UIManager.put("TabbedPane.contentBorderInsets", new javax.swing.plaf.InsetsUIResource(8, 8, 8, 8));
+        UIManager.put("Table.rowHeight", 28);
 
         Font baseFont = pickBestUiFont();
         FontUIResource base = new FontUIResource(baseFont);
@@ -52,9 +70,6 @@ public class Main {
             }
         }
 
-        UIManager.put("TabbedPane.tabInsets", new javax.swing.plaf.InsetsUIResource(10, 12, 10, 12));
-        UIManager.put("TabbedPane.contentBorderInsets", new javax.swing.plaf.InsetsUIResource(8, 8, 8, 8));
-        UIManager.put("Table.rowHeight", 28);
         UIManager.put("OptionPane.messageFont", base);
         UIManager.put("OptionPane.buttonFont", base);
     }

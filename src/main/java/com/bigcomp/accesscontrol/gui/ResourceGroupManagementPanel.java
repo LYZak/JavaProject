@@ -100,7 +100,9 @@ public class ResourceGroupManagementPanel extends JPanel {
         JPanel leftPanel = new JPanel(new BorderLayout());
         leftBorder = new TitledBorder("");
         leftPanel.setBorder(leftBorder);
-        leftPanel.add(new JScrollPane(groupList), BorderLayout.CENTER);
+        JScrollPane groupListScroll = new JScrollPane(groupList);
+        groupListScroll.setBorder(BorderFactory.createEmptyBorder());
+        leftPanel.add(groupListScroll, BorderLayout.CENTER);
         
         JPanel leftButtonPanel = new JPanel(new GridLayout(2, 2, 8, 8));
         leftButtonPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
@@ -177,10 +179,10 @@ public class ResourceGroupManagementPanel extends JPanel {
         
         centerPanel.add(infoPanel, BorderLayout.NORTH);
         JScrollPane groupResourcesScroll = new JScrollPane(resourceTable);
-        groupResourcesScroll.setBorder(new EmptyBorder(8, 0, 8, 0));
+        groupResourcesScroll.setBorder(BorderFactory.createEmptyBorder());
         centerPanel.add(groupResourcesScroll, BorderLayout.CENTER);
         JScrollPane groupInfoScroll = new JScrollPane(groupInfoArea);
-        groupInfoScroll.setBorder(new EmptyBorder(0, 0, 0, 0));
+        groupInfoScroll.setBorder(BorderFactory.createEmptyBorder());
         centerPanel.add(groupInfoScroll, BorderLayout.SOUTH);
         
         // Right: Available resource list
@@ -211,7 +213,9 @@ public class ResourceGroupManagementPanel extends JPanel {
             }
         });
         
-        rightPanel.add(new JScrollPane(availableResourceTable), BorderLayout.CENTER);
+        JScrollPane availableResourceScroll = new JScrollPane(availableResourceTable);
+        availableResourceScroll.setBorder(BorderFactory.createEmptyBorder());
+        rightPanel.add(availableResourceScroll, BorderLayout.CENTER);
         
         // Add button panel
         JPanel rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
@@ -226,12 +230,16 @@ public class ResourceGroupManagementPanel extends JPanel {
         
         // Main layout
         JSplitPane leftSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, centerPanel);
-        leftSplit.setDividerLocation(200);
-        leftSplit.setResizeWeight(0.2);
+        leftSplit.setResizeWeight(0.5);
+        leftSplit.setDividerSize(8);
+        leftSplit.setContinuousLayout(true);
+        leftSplit.setBorder(null);
         
         JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftSplit, rightPanel);
-        mainSplit.setDividerLocation(700);
-        mainSplit.setResizeWeight(0.7);
+        mainSplit.setResizeWeight(0.66);
+        mainSplit.setDividerSize(8);
+        mainSplit.setContinuousLayout(true);
+        mainSplit.setBorder(null);
         
         add(mainSplit, BorderLayout.CENTER);
     }
@@ -314,7 +322,7 @@ public class ResourceGroupManagementPanel extends JPanel {
         table.setRowHeight(Math.max(table.getRowHeight(), 28));
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
-        table.getTableHeader().setReorderingAllowed(false);
+        table.getTableHeader().setReorderingAllowed(true);
         table.setDefaultRenderer(Object.class, new StripedTableCellRenderer());
     }
 

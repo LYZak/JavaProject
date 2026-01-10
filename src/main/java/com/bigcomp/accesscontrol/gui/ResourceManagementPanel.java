@@ -167,7 +167,7 @@ public class ResourceManagementPanel extends JPanel {
         table.setRowHeight(Math.max(table.getRowHeight(), 28));
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
-        table.getTableHeader().setReorderingAllowed(false);
+        table.getTableHeader().setReorderingAllowed(true);
         table.setDefaultRenderer(Object.class, new StripedTableCellRenderer());
     }
 

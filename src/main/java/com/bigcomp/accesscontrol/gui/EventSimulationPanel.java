@@ -217,7 +217,9 @@ public class EventSimulationPanel extends JPanel {
         JPanel leftPanel = new JPanel(new BorderLayout());
         usersBorder = new TitledBorder("");
         leftPanel.setBorder(usersBorder);
-        leftPanel.add(new JScrollPane(userTable), BorderLayout.CENTER);
+        JScrollPane userScroll = new JScrollPane(userTable);
+        userScroll.setBorder(BorderFactory.createEmptyBorder());
+        leftPanel.add(userScroll, BorderLayout.CENTER);
         
         JPanel leftButtonPanel = new JPanel(new GridLayout(2, 1, 0, 4));
         leftButtonPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
@@ -253,7 +255,9 @@ public class EventSimulationPanel extends JPanel {
         JPanel centerPanel = new JPanel(new BorderLayout());
         readersBorder = new TitledBorder("");
         centerPanel.setBorder(readersBorder);
-        centerPanel.add(new JScrollPane(readerTable), BorderLayout.CENTER);
+        JScrollPane readerScroll = new JScrollPane(readerTable);
+        readerScroll.setBorder(BorderFactory.createEmptyBorder());
+        centerPanel.add(readerScroll, BorderLayout.CENTER);
         
         // Add control buttons and info below badge reader list
         JPanel readerControlPanel = new JPanel(new BorderLayout());
@@ -386,11 +390,15 @@ public class EventSimulationPanel extends JPanel {
         
         // Main layout
         JSplitPane leftSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, centerPanel);
-        leftSplit.setResizeWeight(0.35);
+        leftSplit.setResizeWeight(0.5);
+        leftSplit.setDividerSize(8);
+        leftSplit.setContinuousLayout(true);
         leftSplit.setBorder(null);
         
         JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftSplit, rightPanel);
-        mainSplit.setResizeWeight(0.65);
+        mainSplit.setResizeWeight(0.66);
+        mainSplit.setDividerSize(8);
+        mainSplit.setContinuousLayout(true);
         mainSplit.setBorder(null);
         
         add(mainSplit, BorderLayout.CENTER);
@@ -460,7 +468,7 @@ public class EventSimulationPanel extends JPanel {
         table.setRowHeight(Math.max(table.getRowHeight(), 28));
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
-        table.getTableHeader().setReorderingAllowed(false);
+        table.getTableHeader().setReorderingAllowed(true);
         table.setDefaultRenderer(Object.class, new StripedTableCellRenderer());
     }
 

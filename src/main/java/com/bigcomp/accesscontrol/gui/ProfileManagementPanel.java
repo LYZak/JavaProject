@@ -190,12 +190,16 @@ public class ProfileManagementPanel extends JPanel {
         
         // Main layout
         JSplitPane leftSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, centerPanel);
-        leftSplit.setDividerLocation(200);
-        leftSplit.setResizeWeight(0.2);
+        leftSplit.setResizeWeight(0.3);
+        leftSplit.setDividerSize(8);
+        leftSplit.setContinuousLayout(true);
+        leftSplit.setBorder(null);
         
         JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftSplit, rightPanel);
-        mainSplit.setDividerLocation(800);
-        mainSplit.setResizeWeight(0.7);
+        mainSplit.setResizeWeight(0.5);
+        mainSplit.setDividerSize(8);
+        mainSplit.setContinuousLayout(true);
+        mainSplit.setBorder(null);
         
         add(mainSplit, BorderLayout.CENTER);
     }
@@ -204,7 +208,7 @@ public class ProfileManagementPanel extends JPanel {
         table.setRowHeight(Math.max(table.getRowHeight(), 28));
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
-        table.getTableHeader().setReorderingAllowed(false);
+        table.getTableHeader().setReorderingAllowed(true);
         table.setDefaultRenderer(Object.class, new StripedTableCellRenderer());
     }
 
