@@ -31,11 +31,12 @@ public class MainWindow extends JFrame {
     private ProfileManagementPanel profilePanel;
     private RealTimeMonitorPanel monitorPanel;
     private LogViewerPanel logPanel;
-    private EventSimulationPanel simulationPanel;
+    private SimulationWorkbenchPanel simulationPanel;
 
     public MainWindow() {
         // Create shared access control system instance
         this.accessControlSystem = new AccessControlSystem();
+        registerShutdownHook();
         
         initializeComponents();
         setupLayout();
@@ -45,6 +46,16 @@ public class MainWindow extends JFrame {
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setMinimumSize(new Dimension(1080, 720));
         setLocationRelativeTo(null);
+    }
+
+    private void registerShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                accessControlSystem.shutdown();
+            } catch (Exception e) {
+                System.err.println("Shutdown failed: " + e.getMessage());
+            }
+        }));
     }
 
     private void initializeComponents() {
@@ -58,7 +69,7 @@ public class MainWindow extends JFrame {
         profilePanel = new ProfileManagementPanel(accessControlSystem);
         monitorPanel = new RealTimeMonitorPanel(accessControlSystem);
         logPanel = new LogViewerPanel(accessControlSystem);
-        simulationPanel = new EventSimulationPanel(accessControlSystem);
+        simulationPanel = new SimulationWorkbenchPanel(accessControlSystem);
 
         tabbedPane.addTab(I18n.t("tab.users"), userPanel);
         tabbedPane.addTab(I18n.t("tab.resources"), resourcePanel);
@@ -90,7 +101,10 @@ public class MainWindow extends JFrame {
         refreshItem.addActionListener(e -> updateStatus());
         fileMenu.add(refreshItem);
         exitItem = new JMenuItem();
-        exitItem.addActionListener(e -> System.exit(0));
+        exitItem.addActionListener(e -> {
+            accessControlSystem.shutdown();
+            System.exit(0);
+        });
         fileMenu.add(exitItem);
         
         languageMenu = new JMenu();
@@ -246,6 +260,217 @@ final class I18n {
         en.put("tab.logs", "Logs");
         zh.put("tab.simulation", "事件模拟");
         en.put("tab.simulation", "Simulation");
+
+        zh.put("simw.tab.users", "用户列表");
+        en.put("simw.tab.users", "Users");
+        zh.put("simw.tab.readers", "读卡器列表");
+        en.put("simw.tab.readers", "Readers");
+
+        zh.put("simw.col.userId", "用户ID");
+        en.put("simw.col.userId", "User ID");
+        zh.put("simw.col.userName", "姓名");
+        en.put("simw.col.userName", "Name");
+        zh.put("simw.col.badgeCode", "徽章码");
+        en.put("simw.col.badgeCode", "Badge Code");
+        zh.put("simw.col.readerId", "读卡器ID");
+        en.put("simw.col.readerId", "Reader ID");
+        zh.put("simw.col.resourceId", "资源ID");
+        en.put("simw.col.resourceId", "Resource ID");
+
+        zh.put("simw.mode.realtime", "实时模拟");
+        en.put("simw.mode.realtime", "Realtime");
+        zh.put("simw.mode.stress", "压力模拟");
+        en.put("simw.mode.stress", "Stress");
+        zh.put("simw.mode.manual", "手动模拟");
+        en.put("simw.mode.manual", "Manual");
+
+        zh.put("simw.action.start", "开始");
+        en.put("simw.action.start", "Start");
+        zh.put("simw.action.stop", "停止");
+        en.put("simw.action.stop", "Stop");
+        zh.put("simw.action.setTime", "设置时间");
+        en.put("simw.action.setTime", "Set Time");
+        zh.put("simw.action.resetTime", "重置时间");
+        en.put("simw.action.resetTime", "Reset Time");
+        zh.put("simw.action.stepHour", "+1小时");
+        en.put("simw.action.stepHour", "+1h");
+        zh.put("simw.action.stepDay", "+1天");
+        en.put("simw.action.stepDay", "+1d");
+
+        zh.put("simw.field.scale", "倍率");
+        en.put("simw.field.scale", "Scale");
+        zh.put("simw.field.consistentPath", "一致路径");
+        en.put("simw.field.consistentPath", "Consistent Path");
+        zh.put("simw.field.intervalSeconds", "间隔(秒)");
+        en.put("simw.field.intervalSeconds", "Interval(s)");
+        zh.put("simw.field.threads", "线程数");
+        en.put("simw.field.threads", "Threads");
+        zh.put("simw.field.rps", "每秒请求数");
+        en.put("simw.field.rps", "RPS");
+        zh.put("simw.field.durationSeconds", "持续(秒)");
+        en.put("simw.field.durationSeconds", "Duration(s)");
+        zh.put("simw.field.rateModel", "速率模型");
+        en.put("simw.field.rateModel", "Model");
+        zh.put("simw.field.stepStart", "起始RPS");
+        en.put("simw.field.stepStart", "StepStart");
+        zh.put("simw.field.stepEnd", "结束RPS");
+        en.put("simw.field.stepEnd", "StepEnd");
+        zh.put("simw.field.stepSeconds", "步长(秒)");
+        en.put("simw.field.stepSeconds", "StepSec");
+
+        zh.put("simw.field.user", "用户");
+        en.put("simw.field.user", "User");
+        zh.put("simw.field.reader", "读卡器");
+        en.put("simw.field.reader", "Reader");
+        zh.put("simw.field.resource", "资源");
+        en.put("simw.field.resource", "Resource");
+        zh.put("simw.field.count", "次数");
+        en.put("simw.field.count", "Count");
+
+        zh.put("simw.action.queue", "加入队列");
+        en.put("simw.action.queue", "Queue");
+        zh.put("simw.action.runQueue", "执行队列");
+        en.put("simw.action.runQueue", "Run Queue");
+        zh.put("simw.action.clearQueue", "清空队列");
+        en.put("simw.action.clearQueue", "Clear Queue");
+        zh.put("simw.action.importScript", "导入脚本");
+        en.put("simw.action.importScript", "Import Script");
+
+        zh.put("simw.queue.title", "队列列表");
+        en.put("simw.queue.title", "Queue");
+
+        zh.put("simw.event.swipe", "刷卡");
+        en.put("simw.event.swipe", "Swipe");
+        zh.put("simw.event.updateBadge", "更新徽章");
+        en.put("simw.event.updateBadge", "UpdateBadge");
+        zh.put("simw.event.submitRequest", "提交请求");
+        en.put("simw.event.submitRequest", "SubmitRequest");
+        zh.put("simw.event.stepHour", "时间步进(+1小时)");
+        en.put("simw.event.stepHour", "StepTime(+1h)");
+        zh.put("simw.event.stepDay", "时间步进(+1天)");
+        en.put("simw.event.stepDay", "StepTime(+1d)");
+        zh.put("simw.event.setResourceUncontrolled", "资源设为(不受控)");
+        en.put("simw.event.setResourceUncontrolled", "SetResource(UNCONTROLLED)");
+        zh.put("simw.event.setResourceControlled", "资源设为(受控)");
+        en.put("simw.event.setResourceControlled", "SetResource(CONTROLLED)");
+
+        zh.put("simw.field.users", "用户数");
+        en.put("simw.field.users", "Users");
+        zh.put("simw.field.resourcesReaders", "资源/读卡器数");
+        en.put("simw.field.resourcesReaders", "Resources/Readers");
+        zh.put("simw.action.generateDemoData", "生成演示数据");
+        en.put("simw.action.generateDemoData", "Generate Demo Data");
+
+        zh.put("simw.progress.running", "执行中...");
+        en.put("simw.progress.running", "Running...");
+        zh.put("simw.progress.generating", "生成中...");
+        en.put("simw.progress.generating", "Generating...");
+        zh.put("simw.progress.done", "完成");
+        en.put("simw.progress.done", "Done");
+
+        zh.put("simw.msg.engineStarted", "已启动：{0}");
+        en.put("simw.msg.engineStarted", "Started: {0}");
+        zh.put("simw.msg.engineStopped", "已停止");
+        en.put("simw.msg.engineStopped", "Stopped");
+        zh.put("simw.msg.manualNoEngine", "手动模式无需启动引擎");
+        en.put("simw.msg.manualNoEngine", "Manual mode does not start an engine");
+        zh.put("simw.msg.queueExecuted", "队列已执行");
+        en.put("simw.msg.queueExecuted", "Queue executed");
+        zh.put("simw.msg.importedLines", "已导入 {0} 行");
+        en.put("simw.msg.importedLines", "Imported {0} lines");
+        zh.put("simw.msg.generatingDemoData", "正在生成演示数据...");
+        en.put("simw.msg.generatingDemoData", "Generating demo data...");
+        zh.put("simw.msg.generatedSummary", "生成完成：用户={0}，资源={1}，读卡器={2}");
+        en.put("simw.msg.generatedSummary", "Generated: users={0}, resources={1}, readers={2}");
+        zh.put("simw.msg.generateFailed", "生成失败：{0}");
+        en.put("simw.msg.generateFailed", "Generate failed: {0}");
+        zh.put("simw.msg.updateResourceFailed", "更新资源失败：{0}");
+        en.put("simw.msg.updateResourceFailed", "Failed to update resource: {0}");
+
+        zh.put("simw.feed.access", "访问：读卡器={0} 徽章={1} 资源={2} 授权={3} 提示={4}");
+        en.put("simw.feed.access", "Access: reader={0} badge={1} res={2} granted={3} msg={4}");
+        zh.put("simw.feed.readerEvent", "读卡器事件：{0} {1} {2}");
+        en.put("simw.feed.readerEvent", "ReaderEvent: {0} {1} {2}");
+
+        zh.put("simw.dialog.setTime.title", "设置时间");
+        en.put("simw.dialog.setTime.title", "Set Time");
+        zh.put("simw.field.year", "年");
+        en.put("simw.field.year", "Year");
+        zh.put("simw.field.month", "月");
+        en.put("simw.field.month", "Month");
+        zh.put("simw.field.day", "日");
+        en.put("simw.field.day", "Day");
+        zh.put("simw.field.hour", "时");
+        en.put("simw.field.hour", "Hour");
+        zh.put("simw.field.minute", "分");
+        en.put("simw.field.minute", "Minute");
+
+        zh.put("simw.rate.fixed", "固定");
+        en.put("simw.rate.fixed", "Fixed");
+        zh.put("simw.rate.poisson", "泊松");
+        en.put("simw.rate.poisson", "Poisson");
+        zh.put("simw.rate.step", "阶梯");
+        en.put("simw.rate.step", "Step");
+
+        zh.put("simw.details.title", "详细信息");
+        en.put("simw.details.title", "Details");
+        zh.put("simw.details.noneSelected", "点击左侧“用户列表”或“读卡器列表”的一行以查看详细信息。");
+        en.put("simw.details.noneSelected", "Click a row in Users/Readers to view details.");
+        zh.put("simw.details.userTitle", "用户详情");
+        en.put("simw.details.userTitle", "User Details");
+        zh.put("simw.details.readerTitle", "读卡器详情");
+        en.put("simw.details.readerTitle", "Reader Details");
+
+        zh.put("simw.details.type.user", "类型：用户");
+        en.put("simw.details.type.user", "Type: User");
+        zh.put("simw.details.type.reader", "类型：读卡器");
+        en.put("simw.details.type.reader", "Type: Reader");
+
+        zh.put("simw.details.userId", "用户ID");
+        en.put("simw.details.userId", "User ID");
+        zh.put("simw.details.userName", "姓名");
+        en.put("simw.details.userName", "Name");
+        zh.put("simw.details.userGender", "性别");
+        en.put("simw.details.userGender", "Gender");
+        zh.put("simw.details.userType", "类型");
+        en.put("simw.details.userType", "Type");
+        zh.put("simw.details.badgeId", "徽章ID");
+        en.put("simw.details.badgeId", "Badge ID");
+        zh.put("simw.details.badgeCode", "徽章码");
+        en.put("simw.details.badgeCode", "Badge Code");
+        zh.put("simw.details.badgeValid", "徽章有效");
+        en.put("simw.details.badgeValid", "Badge valid");
+        zh.put("simw.details.badgeCreatedAt", "创建时间");
+        en.put("simw.details.badgeCreatedAt", "Created at");
+        zh.put("simw.details.badgeExpiresAt", "过期时间");
+        en.put("simw.details.badgeExpiresAt", "Expires at");
+        zh.put("simw.details.badgeLastUpdateAt", "最后更新时间");
+        en.put("simw.details.badgeLastUpdateAt", "Last update at");
+        zh.put("simw.details.badgeNeedsUpdate", "需要更新");
+        en.put("simw.details.badgeNeedsUpdate", "Needs update");
+        zh.put("simw.details.profiles", "配置文件");
+        en.put("simw.details.profiles", "Profiles");
+
+        zh.put("simw.details.readerId", "读卡器ID");
+        en.put("simw.details.readerId", "Reader ID");
+        zh.put("simw.details.resourceId", "资源ID");
+        en.put("simw.details.resourceId", "Resource ID");
+        zh.put("simw.details.groupName", "所属组");
+        en.put("simw.details.groupName", "Group");
+        zh.put("simw.details.resourceName", "资源名称");
+        en.put("simw.details.resourceName", "Resource name");
+        zh.put("simw.details.resourceType", "资源类型");
+        en.put("simw.details.resourceType", "Resource type");
+        zh.put("simw.details.resourceLocation", "位置");
+        en.put("simw.details.resourceLocation", "Location");
+        zh.put("simw.details.resourceBuilding", "楼栋");
+        en.put("simw.details.resourceBuilding", "Building");
+        zh.put("simw.details.resourceFloor", "楼层");
+        en.put("simw.details.resourceFloor", "Floor");
+        zh.put("simw.details.resourceState", "状态");
+        en.put("simw.details.resourceState", "State");
+        zh.put("simw.details.badgeReaderId", "绑定读卡器");
+        en.put("simw.details.badgeReaderId", "Badge reader");
 
         zh.put("status.ready", "就绪  |  {0}");
         en.put("status.ready", "Ready  |  {0}");
