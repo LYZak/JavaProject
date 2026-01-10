@@ -67,13 +67,13 @@ public class ProfileManagementPanel extends JPanel {
         });
         
         // Access rights table
-        String[] columnNames = {"Resource Group", "Time Filter"};
-        accessRightsModel = new DefaultTableModel(columnNames, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        accessRightsModel = new DefaultTableModel() {
+             @Override
+             public boolean isCellEditable(int row, int column) {
+                 return false;
+             }
+         };
+         accessRightsModel.setColumnIdentifiers(new String[]{I18n.t("profile.col.group"), I18n.t("profile.col.timeFilter")});
         accessRightsTable = new JTable(accessRightsModel);
         accessRightsTable.setAutoCreateRowSorter(true);
         accessRightsTable.setFillsViewportHeight(true);
@@ -130,7 +130,7 @@ public class ProfileManagementPanel extends JPanel {
         refreshGroupsButton.addActionListener(e -> {
                 loadGroups();
                 JOptionPane.showMessageDialog(ProfileManagementPanel.this, 
-                    "Resource group list refreshed", "Info", JOptionPane.INFORMATION_MESSAGE);
+                    I18n.t("profile.msg.refreshed"), I18n.t("common.info"), JOptionPane.INFORMATION_MESSAGE);
         });
         addRightButton = new JButton();
         addRightButton.addActionListener(e -> addAccessRight());
@@ -275,13 +275,13 @@ public class ProfileManagementPanel extends JPanel {
         List<String> parts = new ArrayList<>();
         
         if (filter.getDaysOfWeek() != null && !filter.getDaysOfWeek().isEmpty()) {
-            parts.add("Days: " + filter.getDaysOfWeek());
+            parts.add(I18n.f("profile.msg.days", filter.getDaysOfWeek()));
         }
         if (filter.getTimeRanges() != null && !filter.getTimeRanges().isEmpty()) {
-            parts.add("Time Ranges: " + filter.getTimeRanges().size() + " range(s)");
+            parts.add(I18n.f("profile.msg.timeRanges", filter.getTimeRanges().size()));
         }
         
-        return parts.isEmpty() ? "No restrictions" : String.join(", ", parts);
+        return parts.isEmpty() ? I18n.t("profile.msg.noRestrictions") : String.join(", ", parts);
     }
     
     private void clearProfileInfo() {
@@ -336,18 +336,16 @@ public class ProfileManagementPanel extends JPanel {
     private void addAccessRight() {
         String selected = profileList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Please select or create a profile first", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.selectProfileFirst"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         String groupName = (String) groupCombo.getSelectedItem();
-        if (groupName == null || groupName.startsWith("(No resource groups")) {
+        if (groupName == null || groupName.startsWith("(") || groupName.contains(I18n.t("profile.msg.noGroups"))) {
             JOptionPane.showMessageDialog(this, 
-                "Please create resource groups first.\n\nResource group files should be placed in data/groups/ directory, in JSON format.\n" +
-                "Example: {\"name\": \"Office Area\", \"securityLevel\": 1, \"resources\": [\"resource-id\"]}\n\n" +
-                "After creating, please click the \"Refresh\" button to reload.", 
-                "Warning", 
+                I18n.t("profile.msg.noGroupsHint"), 
+                I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -358,8 +356,8 @@ public class ProfileManagementPanel extends JPanel {
         if (profile != null) {
             if (profile.getAccessRights().containsKey(groupName)) {
                 int confirm = JOptionPane.showConfirmDialog(this, 
-                    "Access right for this resource group already exists. Overwrite?", 
-                    "Confirm", 
+                    I18n.t("profile.msg.overwriteConfirm"), 
+                    I18n.t("common.confirmDelete.title"), 
                     JOptionPane.YES_NO_OPTION);
                 if (confirm != JOptionPane.YES_OPTION) {
                     return;
@@ -373,11 +371,11 @@ public class ProfileManagementPanel extends JPanel {
             try {
                 profileManager.saveProfile(profile);
                 loadSelectedProfile();
-                JOptionPane.showMessageDialog(this, "Access right added", "Success", 
+                JOptionPane.showMessageDialog(this, I18n.t("profile.msg.rightAdded"), I18n.t("common.success"), 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to save profile: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("profile.msg.saveProfileFailed", e.getMessage()), 
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -385,14 +383,14 @@ public class ProfileManagementPanel extends JPanel {
     private void removeAccessRight() {
         int selectedRow = accessRightsTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Please select an access right to delete", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.selectRightToDelete"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         String selected = profileList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Please select a profile first", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.selectProfileFirst"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -400,8 +398,8 @@ public class ProfileManagementPanel extends JPanel {
         String groupName = (String) accessRightsTable.getValueAt(selectedRow, 0);
         
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "Are you sure you want to delete access right for resource group \"" + groupName + "\"?", 
-            "Confirm Delete", 
+            I18n.f("profile.msg.confirmDeleteRight", groupName), 
+            I18n.t("common.confirmDelete.title"), 
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
         
@@ -413,11 +411,11 @@ public class ProfileManagementPanel extends JPanel {
                 try {
                     profileManager.saveProfile(profile);
                     loadSelectedProfile();
-                    JOptionPane.showMessageDialog(this, "Access right deleted", "Success", 
+                    JOptionPane.showMessageDialog(this, I18n.t("profile.msg.rightDeleted"), I18n.t("common.success"), 
                         JOptionPane.INFORMATION_MESSAGE);
                 } catch (Exception e) {
-                    JOptionPane.showMessageDialog(this, "Failed to save profile: " + e.getMessage(), 
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, I18n.f("profile.msg.saveProfileFailed", e.getMessage()), 
+                        I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
                 }
             }
         }
@@ -426,7 +424,7 @@ public class ProfileManagementPanel extends JPanel {
     private void editTimeFilter() {
         int selectedRow = accessRightsTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Please select an access right to edit", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.selectRightToEdit"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -453,7 +451,7 @@ public class ProfileManagementPanel extends JPanel {
     private void modifyProfile() {
         String selected = profileList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Please select a profile to modify", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.selectProfileToModify"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -461,44 +459,40 @@ public class ProfileManagementPanel extends JPanel {
         ProfileManager profileManager = accessControlSystem.getProfileManager();
         Profile profile = profileManager.getProfile(selected);
         if (profile == null) {
-            JOptionPane.showMessageDialog(this, "Profile does not exist", "Error", 
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.notExist"), I18n.t("common.error"), 
                 JOptionPane.ERROR_MESSAGE);
             return;
         }
         
-        // Create backup
+        // Create backup first
         try {
             backupProfile(selected);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Failed to create backup: " + e.getMessage(), 
-                "Warning", JOptionPane.WARNING_MESSAGE);
+        } catch (java.io.IOException e) {
+            JOptionPane.showMessageDialog(this, I18n.f("profile.msg.backupFailed", e.getMessage()), 
+                I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
         }
         
-        // Allow user to modify name and access rights
-        String newName = JOptionPane.showInputDialog(this, 
-            "Please enter new profile name (leave empty to keep original name):", 
-            "Modify Profile", 
-            JOptionPane.QUESTION_MESSAGE);
-        
-        if (newName != null) {
-            if (!newName.trim().isEmpty() && !newName.trim().equals(selected)) {
-                profile.setName(newName.trim());
-                try {
-                    profileManager.deleteProfile(selected);
-                } catch (Exception e) {
-                    // Ignore delete error
-                }
-            }
+        String newName = (String) JOptionPane.showInputDialog(this, 
+            I18n.t("profile.msg.enterNewName"), 
+            I18n.t("profile.action.modify"), 
+            JOptionPane.QUESTION_MESSAGE, 
+            null, null, selected);
             
+        if (newName != null && !newName.trim().isEmpty() && !newName.equals(selected)) {
+            newName = newName.trim();
             try {
+                // Rename means delete old and save new
+                profileManager.deleteProfile(selected);
+                profile.setName(newName);
                 profileManager.saveProfile(profile);
+                
                 loadProfiles();
-                profileList.setSelectedValue(profile.getName(), true);
-                JOptionPane.showMessageDialog(this, "Profile modified successfully", "Success", 
+                profileList.setSelectedValue(newName, true);
+                JOptionPane.showMessageDialog(this, I18n.t("profile.msg.modifySuccess"), I18n.t("common.success"), 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to modify profile: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("profile.msg.modifyFailed", e.getMessage()), 
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -506,7 +500,7 @@ public class ProfileManagementPanel extends JPanel {
     private void restoreProfile() {
         String selected = profileList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Please select a profile to restore", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.selectProfileToRestore"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -514,7 +508,7 @@ public class ProfileManagementPanel extends JPanel {
         // Find backup files
         java.io.File backupDir = new java.io.File("data/profiles/backup");
         if (!backupDir.exists() || !backupDir.isDirectory()) {
-            JOptionPane.showMessageDialog(this, "Backup directory not found", "Info", 
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.backupDirNotFound"), I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
@@ -524,7 +518,7 @@ public class ProfileManagementPanel extends JPanel {
             name.startsWith(selected + "_") && name.endsWith(".json"));
         
         if (backupFiles == null || backupFiles.length == 0) {
-            JOptionPane.showMessageDialog(this, "No backups found for this profile", "Info", 
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.noBackupsFound"), I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
@@ -535,12 +529,12 @@ public class ProfileManagementPanel extends JPanel {
             String name = backupFiles[i].getName();
             // Extract timestamp
             String timestamp = name.substring(selected.length() + 1, name.length() - 5);
-            backupNames[i] = "Backup time: " + timestamp;
+            backupNames[i] = I18n.f("profile.msg.backupTime", timestamp);
         }
         
         String selectedBackup = (String) JOptionPane.showInputDialog(this,
-            "Select backup to restore:",
-            "Restore Profile",
+            I18n.t("profile.msg.selectBackup"),
+            I18n.t("profile.title.restore"),
             JOptionPane.QUESTION_MESSAGE,
             null,
             backupNames,
@@ -551,8 +545,8 @@ public class ProfileManagementPanel extends JPanel {
             java.io.File backupFile = backupFiles[index];
             
             int confirm = JOptionPane.showConfirmDialog(this, 
-                "Are you sure you want to restore this backup? Current configuration will be overwritten.", 
-                "Confirm Restore", 
+                I18n.t("profile.msg.confirmRestore"), 
+                I18n.t("profile.msg.confirmRestoreTitle"), 
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
             
@@ -567,15 +561,15 @@ public class ProfileManagementPanel extends JPanel {
                         profileManager.saveProfile(backupProfile);
                         loadProfiles();
                         profileList.setSelectedValue(backupProfile.getName(), true);
-                        JOptionPane.showMessageDialog(this, "Profile restored successfully", "Success", 
+                        JOptionPane.showMessageDialog(this, I18n.t("profile.msg.restoreSuccess"), I18n.t("common.success"), 
                             JOptionPane.INFORMATION_MESSAGE);
                     } else {
-                        JOptionPane.showMessageDialog(this, "Restore failed: Unable to read backup file", "Error", 
+                        JOptionPane.showMessageDialog(this, I18n.t("profile.msg.restoreFailedRead"), I18n.t("common.error"), 
                             JOptionPane.ERROR_MESSAGE);
                     }
                 } catch (Exception e) {
-                    JOptionPane.showMessageDialog(this, "Failed to restore profile: " + e.getMessage(), 
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, I18n.f("profile.msg.restoreFailed", e.getMessage()), 
+                        I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
                 }
             }
         }
@@ -600,14 +594,14 @@ public class ProfileManagementPanel extends JPanel {
     private void saveProfile() {
         String selected = profileList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Please select a profile to save", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.selectProfileToSave"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         String newName = profileNameField.getText().trim();
         if (newName.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Profile name cannot be empty", "Error", 
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.nameEmpty"), I18n.t("common.error"), 
                 JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -636,11 +630,11 @@ public class ProfileManagementPanel extends JPanel {
                 profileManager.saveProfile(profile);
                 loadProfiles();
                 profileList.setSelectedValue(newName, true);
-                JOptionPane.showMessageDialog(this, "Profile saved successfully", "Success", 
+                JOptionPane.showMessageDialog(this, I18n.t("profile.msg.saveSuccess"), I18n.t("common.success"), 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to save profile: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("profile.msg.saveFailed", e.getMessage()), 
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -663,16 +657,15 @@ public class ProfileManagementPanel extends JPanel {
         private JCheckBox excludeTimeRangeCheckbox;
         
         public TimeFilterDialog(JFrame parent, TimeFilter filter) {
-            super(parent, "Edit Time Filter", true);
+            super(parent, I18n.t("profile.title.editTime"), true);
             this.originalFilter = filter;
-            // Create a copy to avoid directly modifying the original object
             this.timeFilter = new TimeFilter();
             if (filter != null) {
                 copyFilter(filter, this.timeFilter);
             }
-            initializeDialog();
+            initializeComponents();
         }
-        
+
         private void copyFilter(TimeFilter source, TimeFilter target) {
             if (source.getDaysOfWeek() != null) {
                 target.setDaysOfWeek(new java.util.HashSet<>(source.getDaysOfWeek()));
@@ -683,73 +676,80 @@ public class ProfileManagementPanel extends JPanel {
             target.setExcludeDaysOfWeek(source.isExcludeDaysOfWeek());
             target.setExcludeTimeRanges(source.isExcludeTimeRanges());
         }
-        
-        private void initializeDialog() {
-        setLayout(new BorderLayout());
+
+        private void initializeComponents() {
+            setSize(600, 500);
+            setLayout(new BorderLayout());
             
             JPanel mainPanel = new JPanel(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.insets = new Insets(5, 5, 5, 5);
             gbc.anchor = GridBagConstraints.WEST;
             
-            // Day of week selection
+            // Days of week
             gbc.gridx = 0; gbc.gridy = 0;
-            gbc.gridwidth = 7;
-            mainPanel.add(new JLabel("Allowed Days of Week:"), gbc);
-            
-            dayOfWeekCheckboxes = new JCheckBox[7];
-            String[] dayNames = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
-            java.time.DayOfWeek[] days = {
-                java.time.DayOfWeek.MONDAY, java.time.DayOfWeek.TUESDAY, 
-                java.time.DayOfWeek.WEDNESDAY, java.time.DayOfWeek.THURSDAY,
-                java.time.DayOfWeek.FRIDAY, java.time.DayOfWeek.SATURDAY, 
-                java.time.DayOfWeek.SUNDAY
-            };
+            gbc.gridwidth = 8;
+            mainPanel.add(new JLabel(I18n.t("profile.field.days")), gbc);
             
             gbc.gridy = 1;
             gbc.gridwidth = 1;
+            String[] dayNames = {
+                I18n.t("profile.day.mon"), I18n.t("profile.day.tue"), 
+                I18n.t("profile.day.wed"), I18n.t("profile.day.thu"), 
+                I18n.t("profile.day.fri"), I18n.t("profile.day.sat"), 
+                I18n.t("profile.day.sun")
+            };
+            dayOfWeekCheckboxes = new JCheckBox[7];
             for (int i = 0; i < 7; i++) {
                 gbc.gridx = i;
                 dayOfWeekCheckboxes[i] = new JCheckBox(dayNames[i]);
-                if (timeFilter.getDaysOfWeek() != null && 
-                    timeFilter.getDaysOfWeek().contains(days[i])) {
-                    dayOfWeekCheckboxes[i].setSelected(true);
-                }
                 mainPanel.add(dayOfWeekCheckboxes[i], gbc);
             }
             
-            // Exclude days of week option
+            // Load existing days
+            if (timeFilter.getDaysOfWeek() != null) {
+                java.util.Set<java.time.DayOfWeek> days = timeFilter.getDaysOfWeek();
+                dayOfWeekCheckboxes[0].setSelected(days.contains(java.time.DayOfWeek.MONDAY));
+                dayOfWeekCheckboxes[1].setSelected(days.contains(java.time.DayOfWeek.TUESDAY));
+                dayOfWeekCheckboxes[2].setSelected(days.contains(java.time.DayOfWeek.WEDNESDAY));
+                dayOfWeekCheckboxes[3].setSelected(days.contains(java.time.DayOfWeek.THURSDAY));
+                dayOfWeekCheckboxes[4].setSelected(days.contains(java.time.DayOfWeek.FRIDAY));
+                dayOfWeekCheckboxes[5].setSelected(days.contains(java.time.DayOfWeek.SATURDAY));
+                dayOfWeekCheckboxes[6].setSelected(days.contains(java.time.DayOfWeek.SUNDAY));
+            }
+            
+            // Exclude days option
             gbc.gridx = 0; gbc.gridy = 2;
-            gbc.gridwidth = 7;
-            excludeDaysCheckbox = new JCheckBox("Exclude selected days (instead of allowing)");
+            gbc.gridwidth = 8;
+            excludeDaysCheckbox = new JCheckBox(I18n.t("profile.field.excludeDays"));
             excludeDaysCheckbox.setSelected(timeFilter.isExcludeDaysOfWeek());
             mainPanel.add(excludeDaysCheckbox, gbc);
             
             // Time range
             gbc.gridx = 0; gbc.gridy = 3;
             gbc.gridwidth = 1;
-            mainPanel.add(new JLabel("Time Range:"), gbc);
+            mainPanel.add(new JLabel(I18n.t("profile.field.timeRange")), gbc);
             
             gbc.gridx = 1;
-            startHourSpinner = new JSpinner(new SpinnerNumberModel(8, 0, 23, 1));
+            startHourSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 23, 1));
             mainPanel.add(startHourSpinner, gbc);
             
             gbc.gridx = 2;
-            mainPanel.add(new JLabel(":"), gbc);
+            mainPanel.add(new JLabel(I18n.t("common.colon")), gbc);
             
             gbc.gridx = 3;
             startMinuteSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
             mainPanel.add(startMinuteSpinner, gbc);
             
             gbc.gridx = 4;
-            mainPanel.add(new JLabel(" to "), gbc);
+            mainPanel.add(new JLabel(I18n.t("profile.text.to")), gbc);
             
             gbc.gridx = 5;
-            endHourSpinner = new JSpinner(new SpinnerNumberModel(18, 0, 23, 1));
+            endHourSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 23, 1));
             mainPanel.add(endHourSpinner, gbc);
             
             gbc.gridx = 6;
-            mainPanel.add(new JLabel(":"), gbc);
+            mainPanel.add(new JLabel(I18n.t("common.colon")), gbc);
             
             gbc.gridx = 7;
             endMinuteSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
@@ -769,7 +769,7 @@ public class ProfileManagementPanel extends JPanel {
             // Exclude time range option
             gbc.gridx = 0; gbc.gridy = 4;
             gbc.gridwidth = 8;
-            excludeTimeRangeCheckbox = new JCheckBox("Exclude time range (instead of allowing)");
+            excludeTimeRangeCheckbox = new JCheckBox(I18n.t("profile.field.excludeTime"));
             excludeTimeRangeCheckbox.setSelected(timeFilter.isExcludeTimeRanges());
             mainPanel.add(excludeTimeRangeCheckbox, gbc);
             
@@ -779,22 +779,23 @@ public class ProfileManagementPanel extends JPanel {
             gbc.fill = GridBagConstraints.BOTH;
             JTextArea infoArea = new JTextArea(3, 40);
             infoArea.setEditable(false);
-            infoArea.setText("Note: If no days are selected, all days are allowed. If no time range is set, all times are allowed.");
+            infoArea.setText(I18n.t("profile.text.timeHelp"));
             infoArea.setBackground(getBackground());
             mainPanel.add(infoArea, gbc);
             
             // Buttons
             JPanel buttonPanel = new JPanel(new FlowLayout());
-            buttonPanel.add(new JButton("OK") {{
-                addActionListener(e -> {
-                    applyChanges();
-                    confirmed = true;
-                    dispose();
-                });
-            }});
-            buttonPanel.add(new JButton("Cancel") {{
-                addActionListener(e -> dispose());
-            }});
+            JButton okButton = new JButton(I18n.t("common.ok"));
+            okButton.addActionListener(e -> {
+                applyChanges();
+                confirmed = true;
+                dispose();
+            });
+            buttonPanel.add(okButton);
+            
+            JButton cancelButton = new JButton(I18n.t("common.cancel"));
+            cancelButton.addActionListener(e -> dispose());
+            buttonPanel.add(cancelButton);
             
             add(new JScrollPane(mainPanel), BorderLayout.CENTER);
             add(buttonPanel, BorderLayout.SOUTH);

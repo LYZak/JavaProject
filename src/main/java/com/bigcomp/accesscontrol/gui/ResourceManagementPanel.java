@@ -66,6 +66,16 @@ public class ResourceManagementPanel extends JPanel {
         // Input fields
         nameField = new JTextField(15);
         typeCombo = new JComboBox<>(Resource.ResourceType.values());
+        typeCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Resource.ResourceType) {
+                    setText(I18n.t("resource.type." + ((Resource.ResourceType) value).name()));
+                }
+                return this;
+            }
+        });
         locationField = new JTextField(15);
         buildingField = new JTextField(15);
         floorField = new JTextField(15);
@@ -403,8 +413,8 @@ public class ResourceManagementPanel extends JPanel {
         loadResources();
         
         // Display results
-        String message = String.format(
-            I18n.t("resource.msg.createReadersDone"),
+        String message = I18n.f(
+            "resource.msg.createReadersDone",
             createdCount, skippedCount, errorCount, details.toString()
         );
         
@@ -481,11 +491,11 @@ public class ResourceManagementPanel extends JPanel {
                 tableModel.addRow(new Object[]{
                     resource.getId(),
                     resource.getName(),
-                    resource.getType().toString(),
+                    I18n.t("resource.type." + resource.getType().name()),
                     resource.getLocation(),
                     resource.getBuilding(),
                     resource.getFloor(),
-                    resource.getState().toString()
+                    I18n.t("resource.state." + resource.getState().name())
                 });
             }
             

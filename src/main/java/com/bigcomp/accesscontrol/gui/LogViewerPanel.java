@@ -249,9 +249,9 @@ public class LogViewerPanel extends JPanel {
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (!isSelected && value instanceof String) {
                 String v = (String) value;
-                if ("Granted".equalsIgnoreCase(v)) {
+                if (I18n.t("log.status.granted").equalsIgnoreCase(v)) {
                     c.setForeground(granted);
-                } else if ("Denied".equalsIgnoreCase(v)) {
+                } else if (I18n.t("log.status.denied").equalsIgnoreCase(v)) {
                     c.setForeground(denied);
                 } else {
                     c.setForeground(table.getForeground());
@@ -321,7 +321,7 @@ public class LogViewerPanel extends JPanel {
                     entry.getResourceId(),
                     entry.getUserId(),
                     entry.getUserName(),
-                    entry.isGranted() ? "Granted" : "Denied"
+                    entry.isGranted() ? I18n.t("log.status.granted") : I18n.t("log.status.denied")
                 });
             }
             
@@ -329,13 +329,13 @@ public class LogViewerPanel extends JPanel {
             if (showMessage) {
                 if (results.isEmpty()) {
                     JOptionPane.showMessageDialog(this, 
-                        "No matching log records found", 
-                        "Search Results", 
+                        I18n.t("log.msg.noMatches"), 
+                        I18n.t("log.msg.searchResultTitle"), 
                         JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     JOptionPane.showMessageDialog(this, 
-                        "Found " + results.size() + " log records", 
-                        "Search Complete", 
+                        I18n.f("log.msg.searchComplete", results.size()), 
+                        I18n.t("log.msg.searchCompleteTitle"), 
                         JOptionPane.INFORMATION_MESSAGE);
                 }
             }
@@ -343,15 +343,15 @@ public class LogViewerPanel extends JPanel {
         } catch (DateTimeParseException e) {
             if (showMessage) {
                 JOptionPane.showMessageDialog(this, 
-                    "Date format error, please use yyyy-MM-dd format", 
-                    "Error", 
+                    I18n.t("log.msg.dateFormatError"), 
+                    I18n.t("common.error"), 
                     JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception e) {
             if (showMessage) {
                 JOptionPane.showMessageDialog(this, 
-                    "Failed to search logs: " + e.getMessage(), 
-                    "Error", 
+                    I18n.f("log.msg.searchError", e.getMessage()), 
+                    I18n.t("log.msg.searchErrorTitle"), 
                     JOptionPane.ERROR_MESSAGE);
             }
             e.printStackTrace();
@@ -408,22 +408,22 @@ public class LogViewerPanel extends JPanel {
             entries = logManager.searchLogs(criteria);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, 
-                "Failed to get log data: " + e.getMessage(), 
-                "Error", 
+                I18n.f("log.msg.exportDataError", e.getMessage()), 
+                I18n.t("common.error"), 
                 JOptionPane.ERROR_MESSAGE);
             return;
         }
         
         if (entries.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
-                "No log data to export", 
-                "Info", 
+                I18n.t("log.msg.noExportData"), 
+                I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Export Logs");
+        fileChooser.setDialogTitle(I18n.t("log.msg.exportTitle"));
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fileChooser.setSelectedFile(new java.io.File("access_logs_" + 
             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv"));
@@ -445,7 +445,7 @@ public class LogViewerPanel extends JPanel {
                     writer.write('\ufeff');
                     
                     // Write header
-                    writer.write("Time,Badge Code,Badge Reader ID,Resource ID,User ID,User Name,Status\n");
+                    writer.write(I18n.t("log.csv.header") + "\n");
                     
                     // Write data
                     DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -457,19 +457,19 @@ public class LogViewerPanel extends JPanel {
                             entry.getResourceId(),
                             entry.getUserId(),
                             entry.getUserName(),
-                            entry.isGranted() ? "Granted" : "Denied"
+                            entry.isGranted() ? I18n.t("log.csv.granted") : I18n.t("log.csv.denied")
                         ));
                     }
                 }
                 
                 JOptionPane.showMessageDialog(this, 
-                    "Successfully exported " + entries.size() + " log records to:\n" + file.getAbsolutePath(), 
-                    "Export Successful", 
+                    I18n.f("log.msg.exportSuccess", entries.size(), file.getAbsolutePath()), 
+                    I18n.t("log.msg.exportSuccessTitle"), 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, 
-                    "Failed to export logs: " + e.getMessage(), 
-                    "Error", 
+                    I18n.f("log.msg.exportError", e.getMessage()), 
+                    I18n.t("common.error"), 
                     JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
@@ -483,7 +483,7 @@ public class LogViewerPanel extends JPanel {
         int selectedRow = logTable.getSelectedRow();
         if (selectedRow < 0) {
             JOptionPane.showMessageDialog(this, 
-                "Please select a log record first", "Warning", 
+                I18n.t("log.msg.selectRecordFirst"), I18n.t("log.msg.selectRecordFirstTitle"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -500,7 +500,7 @@ public class LogViewerPanel extends JPanel {
         // Display diagnosis results
         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         JDialog dialog = new JDialog(parentFrame, 
-            "Access Control Diagnosis - " + status, true);
+            I18n.f("log.diag.title", status), true);
         dialog.setSize(700, 600);
         dialog.setLocationRelativeTo(this);
         
@@ -516,9 +516,9 @@ public class LogViewerPanel extends JPanel {
         scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("Close") {{
-            addActionListener(e -> dialog.dispose());
-        }});
+        JButton closeButton = new JButton(I18n.t("common.close"));
+        closeButton.addActionListener(e -> dialog.dispose());
+        buttonPanel.add(closeButton);
         
         dialog.add(scrollPane, BorderLayout.CENTER);
         dialog.add(buttonPanel, BorderLayout.SOUTH);
@@ -534,7 +534,7 @@ public class LogViewerPanel extends JPanel {
         
         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         JDialog dialog = new JDialog(parentFrame, 
-            "System Status Report", true);
+            I18n.t("log.diag.reportTitle"), true);
         dialog.setSize(600, 500);
         dialog.setLocationRelativeTo(this);
         
@@ -550,9 +550,9 @@ public class LogViewerPanel extends JPanel {
         scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("Close") {{
-            addActionListener(e -> dialog.dispose());
-        }});
+        JButton closeButton = new JButton(I18n.t("common.close"));
+        closeButton.addActionListener(e -> dialog.dispose());
+        buttonPanel.add(closeButton);
         
         dialog.add(scrollPane, BorderLayout.CENTER);
         dialog.add(buttonPanel, BorderLayout.SOUTH);
@@ -564,12 +564,8 @@ public class LogViewerPanel extends JPanel {
      */
     private void clearLogs() {
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Are you sure you want to clear all log files?\n\n" +
-            "This operation will:\n" +
-            "• Delete all log files in data/logs/ directory\n" +
-            "• This operation cannot be undone!\n\n" +
-            "Continue?",
-            "Confirm Clear Logs",
+            I18n.t("log.msg.clearLogs.confirmInitial"),
+            I18n.t("log.msg.clearLogs.confirmInitialTitle"),
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
         
@@ -581,7 +577,7 @@ public class LogViewerPanel extends JPanel {
             java.nio.file.Path logsDir = java.nio.file.Paths.get("data/logs");
             if (!java.nio.file.Files.exists(logsDir)) {
                 JOptionPane.showMessageDialog(this, 
-                    "Log directory does not exist, no need to clear", "Info", 
+                    I18n.t("log.msg.noLogsDir"), I18n.t("common.info"), 
                     JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
@@ -607,7 +603,7 @@ public class LogViewerPanel extends JPanel {
             
             if (fileCount == 0) {
                 JOptionPane.showMessageDialog(this, 
-                    "No log files found", "Info", 
+                    I18n.t("log.msg.noLogs"), I18n.t("common.info"), 
                     JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
@@ -615,13 +611,12 @@ public class LogViewerPanel extends JPanel {
             // Confirm again
             long totalSizeValue = totalSize[0];
             String sizeStr = totalSizeValue > 1024 * 1024 ? 
-                String.format("%.2f MB", totalSizeValue / (1024.0 * 1024.0)) :
-                String.format("%.2f KB", totalSizeValue / 1024.0);
+                String.format("%.2f %s", totalSizeValue / (1024.0 * 1024.0), I18n.t("common.unit.mb")) :
+                String.format("%.2f %s", totalSizeValue / 1024.0, I18n.t("common.unit.kb"));
             
             int finalConfirm = JOptionPane.showConfirmDialog(this,
-                "About to delete " + fileCount + " log files (Total size: " + sizeStr + ")\n\n" +
-                "Are you sure you want to continue?",
-                "Final Confirmation",
+                I18n.f("log.msg.clearLogs.confirm", fileCount, sizeStr),
+                I18n.t("log.msg.clearLogs.confirmTitle"),
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
             
@@ -647,22 +642,16 @@ public class LogViewerPanel extends JPanel {
             tableModel.setRowCount(0);
             
             // Display results
-            String message = String.format(
-                "Log clearing completed!\n\n" +
-                "Statistics:\n" +
-                "• Successfully deleted: %d files\n" +
-                "• Failed: %d files",
-                deletedCount, errorCount
-            );
+            String message = I18n.f("log.msg.clearLogs.done", deletedCount, errorCount);
             
             JOptionPane.showMessageDialog(this, message, 
-                "Clear Complete", 
+                I18n.t("log.msg.clearLogs.doneTitle"), 
                 deletedCount > 0 ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE);
             
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, 
-                "Failed to clear logs: " + e.getMessage(), 
-                "Error", 
+                I18n.f("log.msg.clearLogs.error", e.getMessage()), 
+                I18n.t("common.error"), 
                 JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }

@@ -1,0 +1,41 @@
+{
+  "name" : "profile.default.employee",
+  "accessRights" : {
+    "access.right.office_area" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : [ "Thu", "Mon", "Wed", "Fri", "Tue" ],
+      "timeRanges" : [ "8:00-18:00" ],
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : false,
+      "excludeTimeRanges" : false
+    },
+    "access.right.public_area" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : [ "Thu", "Mon", "Wed", "Fri", "Tue" ],
+      "timeRanges" : [ "8:00-18:00" ],
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : false,
+      "excludeTimeRanges" : false
+    },
+    "access.right.equipment_resources" : {
+      "years" : null,
+      "months" : null,
+      "daysOfMonth" : null,
+      "daysOfWeek" : [ "Thu", "Mon", "Wed", "Fri", "Tue" ],
+      "timeRanges" : [ "8:00-18:00" ],
+      "excludeYears" : false,
+      "excludeMonths" : false,
+      "excludeDaysOfMonth" : false,
+      "excludeDaysOfWeek" : false,
+      "excludeTimeRanges" : false
+    }
+  }
+}

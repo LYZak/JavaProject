@@ -120,35 +120,6 @@ public class EventSimulationPanel extends JPanel {
         readerTable.getColumnModel().getColumn(3).setPreferredWidth(200);
         readerTable.getColumnModel().getColumn(4).setPreferredWidth(80);
         
-        // Add checkbox renderer and editor for status column
-        readerTable.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                JCheckBox checkBox = new JCheckBox();
-                if (value instanceof String) {
-                    checkBox.setSelected("Active".equals(value));
-                } else if (value instanceof Boolean) {
-                    checkBox.setSelected((Boolean) value);
-                }
-                checkBox.setHorizontalAlignment(JCheckBox.CENTER);
-                if (isSelected) {
-                    checkBox.setBackground(table.getSelectionBackground());
-                } else {
-                    checkBox.setBackground(table.getBackground());
-                }
-                return checkBox;
-            }
-        });
-        
-        readerTable.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(new JCheckBox()) {
-            @Override
-            public Object getCellEditorValue() {
-                JCheckBox checkBox = (JCheckBox) getComponent();
-                return checkBox.isSelected() ? "Active" : "Inactive";
-            }
-        });
-        
         // Add checkbox renderer and editor for "Participate" column
         readerTable.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
@@ -179,7 +150,7 @@ public class EventSimulationPanel extends JPanel {
                 if (value instanceof Boolean) {
                     checkBox.setSelected((Boolean) value);
                 } else if (value instanceof String) {
-                    checkBox.setSelected("Active".equals(value));
+                    checkBox.setSelected(I18n.t("common.active").equals(value));
                 }
                 checkBox.setHorizontalAlignment(JCheckBox.CENTER);
                 if (isSelected) {
@@ -208,23 +179,23 @@ public class EventSimulationPanel extends JPanel {
                 // Participate column changed
                 String readerId = (String) readerTableModel.getValueAt(row, 1);
                 Boolean selected = (Boolean) readerTableModel.getValueAt(row, 0);
-                statusArea.append("Badge reader " + readerId + " " + (selected ? "added to" : "removed from") + " simulation\n");
+                statusArea.append(selected ? I18n.f("sim.msg.readerAddedToSim", readerId) : I18n.f("sim.msg.readerRemovedFromSim", readerId));
             } else if (column == 4) {
                 // Status column changed
                 String readerId = (String) readerTableModel.getValueAt(row, 1);
                 Object statusValue = readerTableModel.getValueAt(row, 4);
                 boolean active = statusValue instanceof Boolean ? (Boolean) statusValue : 
-                                "Active".equals(statusValue);
+                                I18n.t("common.active").equals(statusValue);
                 
                 updateReaderStatus(readerId, active);
             }
         });
         
         // Control buttons
-        startButton = new JButton("Start Simulation");
+        startButton = new JButton();
         startButton.addActionListener(e -> startSimulation());
         
-        stopButton = new JButton("Stop Simulation");
+        stopButton = new JButton();
         stopButton.addActionListener(e -> stopSimulation());
         stopButton.setEnabled(false);
         
@@ -247,8 +218,11 @@ public class EventSimulationPanel extends JPanel {
         usersBorder = new TitledBorder("");
         leftPanel.setBorder(usersBorder);
         leftPanel.add(new JScrollPane(userTable), BorderLayout.CENTER);
-        JPanel leftButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        
+        JPanel leftButtonPanel = new JPanel(new GridLayout(2, 1, 0, 4));
         leftButtonPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
+        
+        JPanel userRow1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         selectAllUsersButton = new JButton();
         selectAllUsersButton.addActionListener(e -> selectAllUsers());
         deselectAllUsersButton = new JButton();
@@ -257,17 +231,22 @@ public class EventSimulationPanel extends JPanel {
         addUserButton.addActionListener(e -> addSimulatedUser());
         addAllUsersButton = new JButton();
         addAllUsersButton.addActionListener(e -> addAllUsers());
+        userRow1.add(selectAllUsersButton);
+        userRow1.add(deselectAllUsersButton);
+        userRow1.add(addUserButton);
+        userRow1.add(addAllUsersButton);
+        
+        JPanel userRow2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         removeUserButton = new JButton();
         removeUserButton.addActionListener(e -> removeSimulatedUser());
         clearUsersButton = new JButton();
         clearUsersButton.setForeground(Color.RED);
         clearUsersButton.addActionListener(e -> clearAllSimulatedUsers());
-        leftButtonPanel.add(selectAllUsersButton);
-        leftButtonPanel.add(deselectAllUsersButton);
-        leftButtonPanel.add(addUserButton);
-        leftButtonPanel.add(addAllUsersButton);
-        leftButtonPanel.add(removeUserButton);
-        leftButtonPanel.add(clearUsersButton);
+        userRow2.add(removeUserButton);
+        userRow2.add(clearUsersButton);
+        
+        leftButtonPanel.add(userRow1);
+        leftButtonPanel.add(userRow2);
         leftPanel.add(leftButtonPanel, BorderLayout.SOUTH);
         
         // Center: Badge reader list
@@ -279,8 +258,10 @@ public class EventSimulationPanel extends JPanel {
         // Add control buttons and info below badge reader list
         JPanel readerControlPanel = new JPanel(new BorderLayout());
         
-        JPanel readerButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel readerButtonPanel = new JPanel(new GridLayout(2, 1, 0, 4));
         readerButtonPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
+        
+        JPanel readerRow1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         selectAllReadersButton = new JButton();
         selectAllReadersButton.addActionListener(e -> selectAllReaders());
         deselectAllReadersButton = new JButton();
@@ -289,19 +270,24 @@ public class EventSimulationPanel extends JPanel {
         participateAllButton.addActionListener(e -> setAllReadersSelected(true));
         participateNoneButton = new JButton();
         participateNoneButton.addActionListener(e -> setAllReadersSelected(false));
+        readerRow1.add(selectAllReadersButton);
+        readerRow1.add(deselectAllReadersButton);
+        readerRow1.add(participateAllButton);
+        readerRow1.add(participateNoneButton);
+        
+        JPanel readerRow2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         enableAllButton = new JButton();
         enableAllButton.addActionListener(e -> setAllReadersStatus(true));
         disableAllButton = new JButton();
         disableAllButton.addActionListener(e -> setAllReadersStatus(false));
         refreshReadersButton = new JButton();
         refreshReadersButton.addActionListener(e -> loadReaders());
-        readerButtonPanel.add(selectAllReadersButton);
-        readerButtonPanel.add(deselectAllReadersButton);
-        readerButtonPanel.add(participateAllButton);
-        readerButtonPanel.add(participateNoneButton);
-        readerButtonPanel.add(enableAllButton);
-        readerButtonPanel.add(disableAllButton);
-        readerButtonPanel.add(refreshReadersButton);
+        readerRow2.add(enableAllButton);
+        readerRow2.add(disableAllButton);
+        readerRow2.add(refreshReadersButton);
+        
+        readerButtonPanel.add(readerRow1);
+        readerButtonPanel.add(readerRow2);
         readerControlPanel.add(readerButtonPanel, BorderLayout.NORTH);
         
         JPanel readerInfoPanel = new JPanel(new BorderLayout());
@@ -343,9 +329,11 @@ public class EventSimulationPanel extends JPanel {
         
         gbc.gridx = 0; gbc.gridy = 3;
         gbc.gridwidth = 2;
-        statsLabel = new JLabel("Statistics: Total Events: 0 | Granted: 0 | Denied: 0");
+        statsLabel = new JLabel();
         statsLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         controlPanel.add(statsLabel, gbc);
+        
+        updateStatistics();
         
         // System time control
         gbc.gridy = 4;
@@ -362,12 +350,12 @@ public class EventSimulationPanel extends JPanel {
         
         gbc.gridx = 0; gbc.gridy = 5;
         gbc.gridwidth = 1;
-        setTimeButton = new JButton("Set Time");
+        setTimeButton = new JButton();
         setTimeButton.addActionListener(e -> setSystemTime());
         controlPanel.add(setTimeButton, gbc);
         
         gbc.gridx = 1;
-        resetTimeButton = new JButton("Reset Time");
+        resetTimeButton = new JButton();
         resetTimeButton.addActionListener(e -> resetSystemTime());
         resetTimeButton.setEnabled(SystemClock.isUsingCustomTime());
         controlPanel.add(resetTimeButton, gbc);
@@ -387,7 +375,7 @@ public class EventSimulationPanel extends JPanel {
         refreshDataButton.addActionListener(e -> {
                 loadData();
                 JOptionPane.showMessageDialog(EventSimulationPanel.this, 
-                    "Data refreshed", "Info", JOptionPane.INFORMATION_MESSAGE);
+                    I18n.t("sim.dialog.dataRefreshed"), I18n.t("common.info"), JOptionPane.INFORMATION_MESSAGE);
         });
         controlPanel.add(refreshDataButton, gbc);
         
@@ -398,12 +386,12 @@ public class EventSimulationPanel extends JPanel {
         
         // Main layout
         JSplitPane leftSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, centerPanel);
-        leftSplit.setDividerLocation(300);
-        leftSplit.setResizeWeight(0.3);
+        leftSplit.setResizeWeight(0.35);
+        leftSplit.setBorder(null);
         
         JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftSplit, rightPanel);
-        mainSplit.setDividerLocation(700);
-        mainSplit.setResizeWeight(0.7);
+        mainSplit.setResizeWeight(0.65);
+        mainSplit.setBorder(null);
         
         add(mainSplit, BorderLayout.CENTER);
     }
@@ -438,6 +426,7 @@ public class EventSimulationPanel extends JPanel {
         refreshDataButton.setText(I18n.t("sim.action.refreshData"));
 
         infoText.setText(I18n.t("sim.text.instructions"));
+        updateStatistics();
 
         userTableModel.setColumnIdentifiers(getUserColumnNames());
         readerTableModel.setColumnIdentifiers(getReaderColumnNames());
@@ -515,11 +504,11 @@ public class EventSimulationPanel extends JPanel {
                 userBadges.put(user.getId(), badge);
             }
             
-            String badgeCode = badge != null ? badge.getCode() : "None";
+            String badgeCode = badge != null ? badge.getCode() : I18n.t("common.none");
             userTableModel.addRow(new Object[]{
                 user.getId(),
                 user.getFullName(),
-                user.getUserType().toString(),
+                I18n.t("user.type." + user.getUserType().name()),
                 badgeCode
             });
         }
@@ -533,9 +522,9 @@ public class EventSimulationPanel extends JPanel {
         if (readers.isEmpty()) {
             // If no badge readers, show prompt
             readerTableModel.addRow(new Object[]{
-                false, "None", "None", "No available badge readers", false
+                false, I18n.t("common.none"), I18n.t("common.none"), I18n.t("sim.msg.noReadersPrompt"), false
             });
-            statusArea.append("Note: No available badge readers, please create resources and badge readers in Resource Management first\n");
+            statusArea.append(I18n.t("sim.msg.noReadersPrompt"));
             return;
         }
         
@@ -545,8 +534,8 @@ public class EventSimulationPanel extends JPanel {
         for (BadgeReader reader : readers.values()) {
             String resourceId = reader.getResourceId();
             Resource resource = resources.get(resourceId);
-            String resourceName = resource != null ? resource.getName() : "Unknown";
-            String resourceType = resource != null ? resource.getType().toString() : "Unknown";
+            String resourceName = resource != null ? resource.getName() : I18n.t("common.unknown");
+            String resourceType = resource != null ? I18n.t("resource.type." + resource.getType().name()) : I18n.t("common.unknown");
             Boolean status = reader.isActive(); // Use Boolean type for checkbox display
             Boolean selected = true; // Default selected to participate in simulation
             
@@ -560,13 +549,13 @@ public class EventSimulationPanel extends JPanel {
         }
         
         // Display badge reader count in status area
-        statusArea.append("Loaded " + readers.size() + " badge readers (all participate in simulation by default)\n");
+        statusArea.append(I18n.f("sim.msg.loadedReaders", readers.size()));
     }
     
     private void addSimulatedUser() {
         int[] selectedRows = userTable.getSelectedRows();
         if (selectedRows.length == 0) {
-            JOptionPane.showMessageDialog(this, "Please select users to add", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("sim.dialog.selectUsersToAdd"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -592,8 +581,8 @@ public class EventSimulationPanel extends JPanel {
                     // If still not found, create a new badge (but won't save to database)
                     if (badge == null) {
                         JOptionPane.showMessageDialog(this, 
-                            "User \"" + user.getFullName() + "\" has no badge, cannot add to simulation. Please create a badge for the user first.", 
-                            "Warning", 
+                            I18n.f("sim.dialog.userNoBadge", user.getFullName()), 
+                            I18n.t("common.warning"), 
                             JOptionPane.WARNING_MESSAGE);
                         continue;
                     }
@@ -602,16 +591,16 @@ public class EventSimulationPanel extends JPanel {
                 }
                 
                 simulatedUsers.put(userId, user);
-                statusArea.append("Added simulated user: " + user.getFullName() + " (Badge: " + badge.getCode() + ")\n");
+                statusArea.append(I18n.f("sim.msg.addedUser", user.getFullName(), badge.getCode()));
             } else if (simulatedUsers.containsKey(userId)) {
-                statusArea.append("User \"" + (user != null ? user.getFullName() : userId) + "\" is already in simulation list\n");
+                statusArea.append(I18n.f("sim.msg.userAlreadyInSim", (user != null ? user.getFullName() : userId)));
             }
         }
     }
     
     private void removeSimulatedUser() {
         if (simulatedUsers.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No simulated users to remove", "Info", 
+            JOptionPane.showMessageDialog(this, I18n.t("sim.dialog.noUsersToRemove"), I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
@@ -622,8 +611,8 @@ public class EventSimulationPanel extends JPanel {
             .toArray(String[]::new);
         
         String selected = (String) JOptionPane.showInputDialog(this,
-            "Select simulated user to remove:",
-            "Remove Simulated User",
+            I18n.t("sim.dialog.selectUserToRemove"),
+            I18n.t("sim.title.removeUser"),
             JOptionPane.QUESTION_MESSAGE,
             null,
             userNames,
@@ -642,7 +631,7 @@ public class EventSimulationPanel extends JPanel {
             if (userIdToRemove != null) {
                 simulatedUsers.remove(userIdToRemove);
                 userBadges.remove(userIdToRemove);
-                statusArea.append("Removed simulated user: " + selected + "\n");
+                statusArea.append(I18n.f("sim.msg.removedUser", selected));
                 
                 // If simulator is running, need to update simulator
                 if (simulator != null && simulator.isRunning()) {
@@ -662,7 +651,7 @@ public class EventSimulationPanel extends JPanel {
                     }
                     
                     simulator.start();
-                    statusArea.append("Simulator updated\n");
+                    statusArea.append(I18n.t("sim.msg.simulatorUpdated"));
                 }
             }
         }
@@ -670,14 +659,14 @@ public class EventSimulationPanel extends JPanel {
     
     private void startSimulation() {
         if (simulator != null && simulator.isRunning()) {
-            JOptionPane.showMessageDialog(this, "Simulation is already running", "Info", 
+            JOptionPane.showMessageDialog(this, I18n.t("sim.dialog.alreadyRunning"), I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
         if (simulatedUsers.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
-                "Please add simulated users first", "Warning", 
+                I18n.t("sim.dialog.addUsersFirst"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -705,16 +694,13 @@ public class EventSimulationPanel extends JPanel {
         }
         
         if (readerList.isEmpty()) {
-            String message = "No available badge readers to participate in simulation.\n\n";
+            String message = I18n.t("sim.dialog.noReaders");
             if (disabledCount > 0) {
-                message += "Note: " + disabledCount + " badge readers are checked but not enabled.\n";
-                message += "Please enable these badge readers first, or check other enabled badge readers.";
+                message += I18n.f("sim.dialog.readersCheckedButDisabled", disabledCount);
             } else {
-                message += "Please:\n";
-                message += "1. Check badge readers in the 'Participate' column\n";
-                message += "2. Ensure these badge readers' 'Status' is enabled";
+                message += I18n.t("sim.dialog.noReadersInstruction");
             }
-            JOptionPane.showMessageDialog(this, message, "Warning", 
+            JOptionPane.showMessageDialog(this, message, I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -739,7 +725,7 @@ public class EventSimulationPanel extends JPanel {
         startButton.setEnabled(false);
         stopButton.setEnabled(true);
         intervalSpinner.setEnabled(false);
-        statusArea.append("Simulation started (interval: " + interval + " seconds, using " + readerList.size() + " badge readers)\n");
+        statusArea.append(I18n.f("sim.msg.started", interval, readerList.size()));
         
         // Start statistics update thread
         startStatisticsUpdate();
@@ -752,7 +738,7 @@ public class EventSimulationPanel extends JPanel {
             startButton.setEnabled(true);
             stopButton.setEnabled(true);
             intervalSpinner.setEnabled(true);
-            statusArea.append("Simulation stopped\n");
+            statusArea.append(I18n.t("sim.msg.stopped"));
         }
     }
     
@@ -761,11 +747,11 @@ public class EventSimulationPanel extends JPanel {
         grantedEvents = 0;
         deniedEvents = 0;
         updateStatistics();
-        statusArea.append("Statistics reset\n");
+        statusArea.append(I18n.t("sim.msg.statsReset"));
     }
     
     private void updateStatistics() {
-        statsLabel.setText(String.format("Statistics: Total Events: %d | Granted: %d | Denied: %d", 
+        statsLabel.setText(I18n.f("sim.text.stats",
             totalEvents, grantedEvents, deniedEvents));
     }
     
@@ -792,7 +778,7 @@ public class EventSimulationPanel extends JPanel {
      */
     private void setSystemTime() {
         JDialog dialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), 
-            "Set System Time", true);
+            I18n.t("sim.title.setTime"), true);
         dialog.setSize(400, 300);
         dialog.setLocationRelativeTo(this);
         
@@ -805,35 +791,35 @@ public class EventSimulationPanel extends JPanel {
         
         // Year
         gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("Year:"), gbc);
+        panel.add(new JLabel(I18n.t("sim.field.year")), gbc);
         gbc.gridx = 1;
         JSpinner yearSpinner = new JSpinner(new SpinnerNumberModel(currentTime.getYear(), 2020, 2030, 1));
         panel.add(yearSpinner, gbc);
         
         // Month
         gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Month:"), gbc);
+        panel.add(new JLabel(I18n.t("sim.field.month")), gbc);
         gbc.gridx = 1;
         JSpinner monthSpinner = new JSpinner(new SpinnerNumberModel(currentTime.getMonthValue(), 1, 12, 1));
         panel.add(monthSpinner, gbc);
         
         // Day
         gbc.gridx = 0; gbc.gridy = 2;
-        panel.add(new JLabel("Day:"), gbc);
+        panel.add(new JLabel(I18n.t("sim.field.day")), gbc);
         gbc.gridx = 1;
         JSpinner daySpinner = new JSpinner(new SpinnerNumberModel(currentTime.getDayOfMonth(), 1, 31, 1));
         panel.add(daySpinner, gbc);
         
         // Hour
         gbc.gridx = 0; gbc.gridy = 3;
-        panel.add(new JLabel("Hour:"), gbc);
+        panel.add(new JLabel(I18n.t("sim.field.hour")), gbc);
         gbc.gridx = 1;
         JSpinner hourSpinner = new JSpinner(new SpinnerNumberModel(currentTime.getHour(), 0, 23, 1));
         panel.add(hourSpinner, gbc);
         
         // Minute
         gbc.gridx = 0; gbc.gridy = 4;
-        panel.add(new JLabel("Minute:"), gbc);
+        panel.add(new JLabel(I18n.t("sim.field.minute")), gbc);
         gbc.gridx = 1;
         JSpinner minuteSpinner = new JSpinner(new SpinnerNumberModel(currentTime.getMinute(), 0, 59, 1));
         panel.add(minuteSpinner, gbc);
@@ -842,62 +828,64 @@ public class EventSimulationPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = 5;
         gbc.gridwidth = 2;
         JPanel presetPanel = new JPanel(new FlowLayout());
-        presetPanel.add(new JButton("Weekday 8:00") {{
-            addActionListener(e -> {
-                LocalDateTime preset = LocalDateTime.now()
-                    .withHour(8).withMinute(0).withSecond(0);
-                yearSpinner.setValue(preset.getYear());
-                monthSpinner.setValue(preset.getMonthValue());
-                daySpinner.setValue(preset.getDayOfMonth());
-                hourSpinner.setValue(8);
-                minuteSpinner.setValue(0);
-            });
-        }});
-        presetPanel.add(new JButton("Weekend 10:00") {{
-            addActionListener(e -> {
-                LocalDateTime preset = LocalDateTime.now()
-                    .withHour(10).withMinute(0).withSecond(0);
-                // Set to nearest Saturday
-                int daysUntilSaturday = (java.time.DayOfWeek.SATURDAY.getValue() - 
-                    preset.getDayOfWeek().getValue() + 7) % 7;
-                if (daysUntilSaturday == 0) daysUntilSaturday = 7;
-                preset = preset.plusDays(daysUntilSaturday);
-                yearSpinner.setValue(preset.getYear());
-                monthSpinner.setValue(preset.getMonthValue());
-                daySpinner.setValue(preset.getDayOfMonth());
-                hourSpinner.setValue(10);
-                minuteSpinner.setValue(0);
-            });
-        }});
+        JButton weekdayButton = new JButton(I18n.t("sim.action.weekdayMorning"));
+        weekdayButton.addActionListener(e -> {
+            LocalDateTime preset = LocalDateTime.now()
+                .withHour(8).withMinute(0).withSecond(0);
+            yearSpinner.setValue(preset.getYear());
+            monthSpinner.setValue(preset.getMonthValue());
+            daySpinner.setValue(preset.getDayOfMonth());
+            hourSpinner.setValue(8);
+            minuteSpinner.setValue(0);
+        });
+        presetPanel.add(weekdayButton);
+        
+        JButton weekendButton = new JButton(I18n.t("sim.action.weekendMorning"));
+        weekendButton.addActionListener(e -> {
+            LocalDateTime preset = LocalDateTime.now()
+                .withHour(10).withMinute(0).withSecond(0);
+            // Set to nearest Saturday
+            int daysUntilSaturday = (java.time.DayOfWeek.SATURDAY.getValue() - 
+                preset.getDayOfWeek().getValue() + 7) % 7;
+            if (daysUntilSaturday == 0) daysUntilSaturday = 7;
+            preset = preset.plusDays(daysUntilSaturday);
+            yearSpinner.setValue(preset.getYear());
+            monthSpinner.setValue(preset.getMonthValue());
+            daySpinner.setValue(preset.getDayOfMonth());
+            hourSpinner.setValue(10);
+            minuteSpinner.setValue(0);
+        });
+        presetPanel.add(weekendButton);
         panel.add(presetPanel, gbc);
         
         // Buttons
         gbc.gridy = 6;
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("OK") {{
-            addActionListener(e -> {
-                try {
-                    int year = (Integer) yearSpinner.getValue();
-                    int month = (Integer) monthSpinner.getValue();
-                    int day = (Integer) daySpinner.getValue();
-                    int hour = (Integer) hourSpinner.getValue();
-                    int minute = (Integer) minuteSpinner.getValue();
-                    
-                    LocalDateTime customTime = LocalDateTime.of(year, month, day, hour, minute, 0);
-                    SystemClock.setCustomTime(customTime);
-                    updateTimeDisplay();
-                    resetTimeButton.setEnabled(true);
-                    statusArea.append("System time set to: " + customTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) + "\n");
-                    dialog.dispose();
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(dialog, "Failed to set time: " + ex.getMessage(), 
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            });
-        }});
-        buttonPanel.add(new JButton("Cancel") {{
-            addActionListener(e -> dialog.dispose());
-        }});
+        JButton okButton = new JButton(I18n.t("common.ok"));
+        okButton.addActionListener(e -> {
+            try {
+                int year = (Integer) yearSpinner.getValue();
+                int month = (Integer) monthSpinner.getValue();
+                int day = (Integer) daySpinner.getValue();
+                int hour = (Integer) hourSpinner.getValue();
+                int minute = (Integer) minuteSpinner.getValue();
+                
+                LocalDateTime customTime = LocalDateTime.of(year, month, day, hour, minute, 0);
+                SystemClock.setCustomTime(customTime);
+                updateTimeDisplay();
+                resetTimeButton.setEnabled(true);
+                statusArea.append(I18n.f("sim.msg.timeSet", customTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))));
+                dialog.dispose();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, I18n.t("sim.error.invalidTime") + ex.getMessage(), 
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        buttonPanel.add(okButton);
+        
+        JButton cancelButton = new JButton(I18n.t("common.cancel"));
+        cancelButton.addActionListener(e -> dialog.dispose());
+        buttonPanel.add(cancelButton);
         panel.add(buttonPanel, gbc);
         
         dialog.add(panel);
@@ -911,7 +899,7 @@ public class EventSimulationPanel extends JPanel {
         SystemClock.clearCustomTime();
         updateTimeDisplay();
         resetTimeButton.setEnabled(false);
-        statusArea.append("System time reset to current time\n");
+        statusArea.append(I18n.t("sim.msg.systemTimeReset"));
     }
     
     /**
@@ -922,7 +910,7 @@ public class EventSimulationPanel extends JPanel {
             LocalDateTime now = SystemClock.now();
             String timeStr = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             if (SystemClock.isUsingCustomTime()) {
-                timeStr += " (Custom)";
+                timeStr += I18n.t("sim.text.custom");
                 timeLabel.setForeground(Color.RED);
             } else {
                 timeLabel.setForeground(Color.BLACK);
@@ -938,7 +926,7 @@ public class EventSimulationPanel extends JPanel {
         LocalDateTime now = SystemClock.now();
         String timeStr = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         if (SystemClock.isUsingCustomTime()) {
-            timeStr += " (Custom)";
+            timeStr += I18n.t("sim.text.custom");
         }
         return timeStr;
     }
@@ -951,7 +939,7 @@ public class EventSimulationPanel extends JPanel {
         BadgeReader reader = router.getBadgeReaders().get(readerId);
         if (reader != null) {
             reader.setActive(active);
-            statusArea.append("Badge reader " + readerId + " " + (active ? "enabled" : "disabled") + "\n");
+            statusArea.append(I18n.f("sim.msg.readerStatusChanged", readerId, (active ? I18n.t("common.active") : I18n.t("common.inactive"))));
             
             // Refresh table display
             for (int i = 0; i < readerTableModel.getRowCount(); i++) {
@@ -984,7 +972,8 @@ public class EventSimulationPanel extends JPanel {
             }
         }
         
-        statusArea.append((active ? "Enabled" : "Disabled") + " " + count + " badge readers\n");
+        statusArea.append(I18n.f("sim.msg.setReadersStatus", 
+            (active ? I18n.t("common.enabled") : I18n.t("common.disabled")), count));
         readerTable.repaint();
     }
     
@@ -994,7 +983,7 @@ public class EventSimulationPanel extends JPanel {
     private void selectAllReaders() {
         readerTable.selectAll();
         int selectedCount = readerTable.getSelectedRowCount();
-        statusArea.append("Selected " + selectedCount + " badge readers in the table\n");
+        statusArea.append(I18n.f("sim.msg.selectedReadersTable", selectedCount));
     }
     
     /**
@@ -1002,7 +991,7 @@ public class EventSimulationPanel extends JPanel {
      */
     private void deselectAllReaders() {
         readerTable.clearSelection();
-        statusArea.append("Deselected all badge readers in the table\n");
+        statusArea.append(I18n.t("sim.msg.deselectedReadersTable"));
     }
     
     /**
@@ -1020,7 +1009,7 @@ public class EventSimulationPanel extends JPanel {
         try {
             for (int i = 0; i < readerTableModel.getRowCount(); i++) {
                 String readerId = (String) readerTableModel.getValueAt(i, 1);
-                if (readerId != null && !"None".equals(readerId)) {
+                if (readerId != null && !I18n.t("common.none").equals(readerId)) {
                     // Set the value directly
                     readerTableModel.setValueAt(Boolean.valueOf(selected), i, 0);
                     count++;
@@ -1037,7 +1026,8 @@ public class EventSimulationPanel extends JPanel {
         readerTable.repaint();
         readerTable.revalidate();
         
-        statusArea.append((selected ? "Selected" : "Deselected") + " " + count + " badge readers for simulation\n");
+        statusArea.append(I18n.f("sim.msg.setReadersParticipation", 
+            (selected ? I18n.t("common.selected") : I18n.t("common.deselected")), count));
     }
     
     /**
@@ -1046,7 +1036,7 @@ public class EventSimulationPanel extends JPanel {
     private void selectAllUsers() {
         userTable.selectAll();
         int selectedCount = userTable.getSelectedRowCount();
-        statusArea.append("Selected " + selectedCount + " users in the table\n");
+        statusArea.append(I18n.f("sim.msg.selectedUsersTable", selectedCount));
     }
     
     /**
@@ -1054,7 +1044,7 @@ public class EventSimulationPanel extends JPanel {
      */
     private void deselectAllUsers() {
         userTable.clearSelection();
-        statusArea.append("Deselected all users in the table\n");
+        statusArea.append(I18n.t("sim.msg.deselectedUsersTable"));
     }
     
     /**
@@ -1065,7 +1055,7 @@ public class EventSimulationPanel extends JPanel {
         Map<String, User> allUsers = dbManager.loadAllUsers();
         
         if (allUsers.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No available users", "Info", 
+            JOptionPane.showMessageDialog(this, I18n.t("sim.dialog.noUsersAvailable"), I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
@@ -1100,7 +1090,7 @@ public class EventSimulationPanel extends JPanel {
             simulatedUsers.put(user.getId(), user);
             userBadges.put(user.getId(), badge);
             addedCount++;
-            statusArea.append("Added simulated user: " + user.getFullName() + " (Badge: " + badge.getCode() + ")\n");
+            statusArea.append(I18n.f("sim.msg.addedUser", user.getFullName(), badge.getCode()));
         }
         
         // If simulator is running, need to update simulator
@@ -1120,20 +1110,14 @@ public class EventSimulationPanel extends JPanel {
             }
             
             simulator.start();
-            statusArea.append("Simulator updated\n");
+            statusArea.append(I18n.t("sim.msg.simulatorUpdated"));
         }
         
-        String message = String.format(
-            "Batch add users completed!\n\n" +
-            "Statistics:\n" +
-            "• Successfully added: %d users\n" +
-            "• Skipped (already in list): %d users\n" +
-            "• Skipped (no badge): %d users\n\n" +
-            "Current total simulated users: %d",
+        String message = I18n.f("sim.msg.batchAddUsers.done", 
             addedCount, skippedCount, noBadgeCount, simulatedUsers.size()
         );
         
-        JOptionPane.showMessageDialog(this, message, "Batch Add Complete", 
+        JOptionPane.showMessageDialog(this, message, I18n.t("sim.msg.batchAddUsers.title"), 
             JOptionPane.INFORMATION_MESSAGE);
     }
     
@@ -1142,17 +1126,15 @@ public class EventSimulationPanel extends JPanel {
      */
     private void clearAllSimulatedUsers() {
         if (simulatedUsers.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Simulated user list is already empty", "Info", 
+            JOptionPane.showMessageDialog(this, I18n.t("sim.dialog.userListEmpty"), I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
         int count = simulatedUsers.size();
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Are you sure you want to clear all simulated users?\n\n" +
-            "Currently " + count + " users in simulation list\n" +
-            "If simulation is running, it will be stopped.",
-            "Confirm Clear",
+            I18n.f("sim.dialog.confirmClearUsers", count),
+            I18n.t("sim.title.confirmClear"),
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
         
@@ -1163,15 +1145,15 @@ public class EventSimulationPanel extends JPanel {
                 startButton.setEnabled(true);
                 stopButton.setEnabled(false);
                 intervalSpinner.setEnabled(true);
-                statusArea.append("Simulation stopped\n");
+                statusArea.append(I18n.t("sim.msg.stopped"));
             }
             
             simulatedUsers.clear();
             userBadges.clear();
-            statusArea.append("Cleared all simulated users (total: " + count + ")\n");
+            statusArea.append(I18n.f("sim.msg.clearedUsers", count));
             
             JOptionPane.showMessageDialog(this, 
-                "All simulated users cleared", "Success", 
+                I18n.t("sim.dialog.usersCleared"), I18n.t("common.success"), 
                 JOptionPane.INFORMATION_MESSAGE);
         }
     }

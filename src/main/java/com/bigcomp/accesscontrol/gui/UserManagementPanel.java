@@ -69,7 +69,28 @@ public class UserManagementPanel extends JPanel {
         firstNameField = new JTextField(15);
         lastNameField = new JTextField(15);
         genderCombo = new JComboBox<>(User.Gender.values());
+        genderCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof User.Gender) {
+                    setText(I18n.t("user.gender." + ((User.Gender) value).name()));
+                }
+                return this;
+            }
+        });
+        
         userTypeCombo = new JComboBox<>(User.UserType.values());
+        userTypeCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof User.UserType) {
+                    setText(I18n.t("user.type." + ((User.UserType) value).name()));
+                }
+                return this;
+            }
+        });
     }
     
     private void setupLayout() {
@@ -308,15 +329,15 @@ public class UserManagementPanel extends JPanel {
     private String getDefaultProfileName(User.UserType userType) {
         switch (userType) {
             case EMPLOYEE:
-                return "Employee Permission";
+                return "profile.default.employee";
             case CONTRACTOR:
-                return "Contractor Permission";
+                return "profile.default.contractor";
             case INTERN:
-                return "Intern Permission";
+                return "profile.default.intern";
             case VISITOR:
-                return "Visitor Permission";
+                return "profile.default.visitor";
             case PROJECT_MANAGER:
-                return "Project Manager Permission";
+                return "profile.default.project_manager";
             default:
                 return null;
         }
@@ -345,9 +366,9 @@ public class UserManagementPanel extends JPanel {
                     filter.setTimeRanges(List.of(
                         new TimeFilter.TimeRange(8, 0, 18, 0)
                     ));
-                    profile.addAccessRight("Public Area", filter);
-                    profile.addAccessRight("Office Area", filter);
-                    profile.addAccessRight("Equipment Resources", filter);
+                    profile.addAccessRight("access.right.public_area", filter);
+                    profile.addAccessRight("access.right.office_area", filter);
+                    profile.addAccessRight("access.right.equipment_resources", filter);
                     break;
                     
                 case CONTRACTOR:
@@ -362,8 +383,8 @@ public class UserManagementPanel extends JPanel {
                     filter.setTimeRanges(List.of(
                         new TimeFilter.TimeRange(9, 0, 17, 0)
                     ));
-                    profile.addAccessRight("Public Area", filter);
-                    profile.addAccessRight("Office Area", filter);
+                    profile.addAccessRight("access.right.public_area", filter);
+                    profile.addAccessRight("access.right.office_area", filter);
                     break;
                     
                 case INTERN:
@@ -378,8 +399,8 @@ public class UserManagementPanel extends JPanel {
                     filter.setTimeRanges(List.of(
                         new TimeFilter.TimeRange(9, 0, 17, 0)
                     ));
-                    profile.addAccessRight("Public Area", filter);
-                    profile.addAccessRight("Office Area", filter);
+                    profile.addAccessRight("access.right.public_area", filter);
+                    profile.addAccessRight("access.right.office_area", filter);
                     break;
                     
                 case VISITOR:
@@ -394,7 +415,7 @@ public class UserManagementPanel extends JPanel {
                     filter.setTimeRanges(List.of(
                         new TimeFilter.TimeRange(10, 0, 16, 0)
                     ));
-                    profile.addAccessRight("Public Area", filter);
+                    profile.addAccessRight("access.right.public_area", filter);
                     break;
                     
                 case PROJECT_MANAGER:
@@ -409,15 +430,15 @@ public class UserManagementPanel extends JPanel {
                     filter.setTimeRanges(List.of(
                         new TimeFilter.TimeRange(7, 0, 20, 0)
                     ));
-                    profile.addAccessRight("Public Area", filter);
-                    profile.addAccessRight("Office Area", filter);
-                    profile.addAccessRight("Equipment Resources", filter);
-                    profile.addAccessRight("High Security Area", filter);
+                    profile.addAccessRight("access.right.public_area", filter);
+                    profile.addAccessRight("access.right.office_area", filter);
+                    profile.addAccessRight("access.right.equipment_resources", filter);
+                    profile.addAccessRight("access.right.high_security_area", filter);
                     break;
                     
                 default:
                     // Default: Full-time access to public area
-                    profile.addAccessRight("Public Area", filter);
+                    profile.addAccessRight("access.right.public_area", filter);
                     break;
             }
             
@@ -497,12 +518,12 @@ public class UserManagementPanel extends JPanel {
                         if (profileList.length() > 0) {
                             profileList.append(", ");
                         }
-                        profileList.append(profile);
+                        profileList.append(I18n.t(profile));
                     }
                 }
                 
                 JOptionPane.showMessageDialog(this, 
-                    I18n.f("user.msg.profileAssigned", selectedProfile, profileList.toString()),
+                    I18n.f("user.msg.profileAssigned", I18n.t(selectedProfile), profileList.toString()),
                     I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, I18n.f("user.msg.assignProfileFailed", e.getMessage()),
@@ -521,8 +542,8 @@ public class UserManagementPanel extends JPanel {
                 tableModel.addRow(new Object[]{
                     user.getId(),
                     user.getFullName(),
-                    user.getGender().toString(),
-                    user.getUserType().toString(),
+                    I18n.t("user.gender." + user.getGender().name()),
+                    I18n.t("user.type." + user.getUserType().name()),
                     user.getBadgeId() != null ? user.getBadgeId() : I18n.t("common.none")
                 });
             }
@@ -578,14 +599,16 @@ public class UserManagementPanel extends JPanel {
                         // Assign profile
                         dbManager.linkBadgeToProfile(user.getBadgeId(), profileName);
                         assignedCount++;
-                        details.append("  ✓ ").append(user.getFullName())
-                               .append(" (").append(user.getUserType())
-                               .append(") -> ").append(profileName).append("\n");
+                        details.append(I18n.f("user.msg.autoAssignDetailSuccess", 
+                            user.getFullName(), 
+                            I18n.t("user.type." + user.getUserType().name()), 
+                            I18n.t(profileName))).append("\n");
                     }
                 } catch (Exception e) {
                     errorCount++;
-                    details.append("  ✗ ").append(user.getFullName())
-                           .append(" -> Failed: ").append(e.getMessage()).append("\n");
+                    details.append(I18n.f("user.msg.autoAssignDetailFail", 
+                        user.getFullName(), 
+                        e.getMessage())).append("\n");
                 }
             }
             

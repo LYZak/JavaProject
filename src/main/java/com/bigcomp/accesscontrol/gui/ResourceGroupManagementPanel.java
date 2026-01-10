@@ -203,7 +203,7 @@ public class ResourceGroupManagementPanel extends JPanel {
                             addResourceToGroupById(resourceId);
                         } else {
                             JOptionPane.showMessageDialog(ResourceGroupManagementPanel.this,
-                                "This resource has already been added to the current resource group", "Info",
+                                I18n.t("group.msg.resourceAlreadyIn"), I18n.t("common.info"),
                                 JOptionPane.INFORMATION_MESSAGE);
                         }
                     }
@@ -360,7 +360,7 @@ public class ResourceGroupManagementPanel extends JPanel {
             availableResourceTableModel.addRow(new Object[]{
                 resource.getId(),
                 resource.getName(),
-                resource.getType().toString(),
+                I18n.t("resource.type." + resource.getType().name()),
                 resource.getLocation(),
                 inGroup ? I18n.t("group.status.added") : I18n.t("group.status.notAdded")
             });
@@ -400,19 +400,18 @@ public class ResourceGroupManagementPanel extends JPanel {
                     resourceTableModel.addRow(new Object[]{
                         resource.getId(),
                         resource.getName(),
-                        resource.getType().toString(),
+                        I18n.t("resource.type." + resource.getType().name()),
                         resource.getLocation()
                     });
                 }
             }
             
             // Display resource group information
-            groupInfoArea.setText(String.format(
-                "Resource Group: %s\nSecurity Level: %d\nResource Count: %d\nFile Path: %s",
+            groupInfoArea.setText(I18n.f("group.info.details",
                 group.getName(),
                 group.getSecurityLevel(),
                 group.getResourceIds().size(),
-                group.getFilePath() != null ? group.getFilePath() : "Not saved"
+                group.getFilePath() != null ? group.getFilePath() : I18n.t("group.info.notSaved")
             ));
         }
     }
@@ -425,7 +424,7 @@ public class ResourceGroupManagementPanel extends JPanel {
     }
     
     private void createNewGroup() {
-        String name = JOptionPane.showInputDialog(this, "Please enter resource group name:", "New Resource Group", 
+        String name = JOptionPane.showInputDialog(this, I18n.t("group.msg.enterName"), I18n.t("group.msg.newTitle"), 
             JOptionPane.QUESTION_MESSAGE);
         if (name != null && !name.trim().isEmpty()) {
             int securityLevel = (Integer) securityLevelSpinner.getValue();
@@ -435,11 +434,11 @@ public class ResourceGroupManagementPanel extends JPanel {
                 groupManager.saveGroup(group);
                 loadGroups();
                 groupList.setSelectedValue(name.trim(), true);
-                JOptionPane.showMessageDialog(this, "Resource group created successfully", "Success", 
+                JOptionPane.showMessageDialog(this, I18n.t("group.msg.created"), I18n.t("common.success"), 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to create resource group: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("group.msg.createFailed", e.getMessage()), 
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -448,7 +447,7 @@ public class ResourceGroupManagementPanel extends JPanel {
         String selected = groupList.getSelectedValue();
         if (selected == null) {
             JOptionPane.showMessageDialog(this, 
-                "Please select a resource group from the left list to delete", "Warning", 
+                I18n.t("group.msg.selectDelete"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -458,16 +457,7 @@ public class ResourceGroupManagementPanel extends JPanel {
         ResourceGroup group = groupManager.getGroup(selected);
         int resourceCount = group != null ? group.getResourceIds().size() : 0;
         
-        String message = String.format(
-            "Are you sure you want to delete resource group \"%s\"?\n\n" +
-            "Resource Group Information:\n" +
-            "• Name: %s\n" +
-            "• Security Level: %d\n" +
-            "• Resource Count: %d\n\n" +
-            "Warning: This operation will:\n" +
-            "• Delete resource group JSON file\n" +
-            "• Delete associated records in database\n" +
-            "• This operation cannot be undone!",
+        String message = I18n.f("group.msg.confirmDelete",
             selected, 
             selected,
             group != null ? group.getSecurityLevel() : 0,
@@ -476,7 +466,7 @@ public class ResourceGroupManagementPanel extends JPanel {
         
         int confirm = JOptionPane.showConfirmDialog(this, 
             message, 
-            "Confirm Delete Resource Group", 
+            I18n.t("group.msg.confirmDeleteTitle"), 
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
             
@@ -520,18 +510,15 @@ public class ResourceGroupManagementPanel extends JPanel {
                 clearGroupInfo();
                 refreshAvailableResourceTable();
                 
-                String successMessage = "Resource group \"" + selected + "\" has been successfully deleted";
-                if (updatedProfileCount > 0) {
-                    successMessage += "\n\nRemoved references to this resource group from " + updatedProfileCount + " profiles";
-                }
+                String successMessage = I18n.t("group.msg.deleted");
                 
                 JOptionPane.showMessageDialog(this, 
-                    successMessage, "Delete Successful", 
+                    successMessage, I18n.t("common.success"), 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, 
-                    "Failed to delete resource group: " + e.getMessage() + "\n\nPlease check file permissions and database connection.", 
-                    "Delete Failed", 
+                    I18n.f("group.msg.deleteFailed", e.getMessage()), 
+                    I18n.t("common.error"), 
                     JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
@@ -541,7 +528,7 @@ public class ResourceGroupManagementPanel extends JPanel {
     private void addResourceToGroup() {
         String selected = groupList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Please select or create a resource group first", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("group.msg.noGroupSelected"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -568,14 +555,14 @@ public class ResourceGroupManagementPanel extends JPanel {
         }
         
         if (availableResourceIds.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No resources available to add", "Info", 
+            JOptionPane.showMessageDialog(this, I18n.t("group.msg.noResources"), I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
         String selectedResourceName = (String) JOptionPane.showInputDialog(this,
-            "Select resource to add to resource group:",
-            "Add Resource",
+            I18n.t("group.msg.selectToAdd"),
+            I18n.t("group.action.add"),
             JOptionPane.QUESTION_MESSAGE,
             null,
             availableResourceNames.toArray(),
@@ -592,11 +579,11 @@ public class ResourceGroupManagementPanel extends JPanel {
                 accessControlSystem.getAccessRequestProcessor().reloadData();
                 loadSelectedGroup();
                 refreshAvailableResourceTable(); // Refresh available resource list
-                JOptionPane.showMessageDialog(this, "Resource added to resource group", "Success", 
+                JOptionPane.showMessageDialog(this, I18n.t("group.msg.resourceAdded"), I18n.t("common.success"), 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to add resource: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("group.msg.addResourceFailed", e.getMessage()), 
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -607,7 +594,7 @@ public class ResourceGroupManagementPanel extends JPanel {
     private void addResourceToGroupById(String resourceId) {
         String selected = groupList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Please select or create a resource group first", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("group.msg.noGroupSelected"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -621,7 +608,7 @@ public class ResourceGroupManagementPanel extends JPanel {
         
         // Check if resource is already in group
         if (group.getResourceIds().contains(resourceId)) {
-            JOptionPane.showMessageDialog(this, "This resource is already in this resource group", "Info", 
+            JOptionPane.showMessageDialog(this, I18n.t("group.msg.resourceAlreadyIn"), I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
@@ -633,11 +620,11 @@ public class ResourceGroupManagementPanel extends JPanel {
             accessControlSystem.getAccessRequestProcessor().reloadData();
             loadSelectedGroup();
             refreshAvailableResourceTable();
-            JOptionPane.showMessageDialog(this, "Resource added to resource group", "Success", 
+            JOptionPane.showMessageDialog(this, I18n.t("group.msg.resourceAdded"), I18n.t("common.success"), 
                 JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Failed to add resource: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.f("group.msg.addResourceFailed", e.getMessage()), 
+                I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
         }
     }
     
@@ -647,14 +634,14 @@ public class ResourceGroupManagementPanel extends JPanel {
     private void addSelectedResourcesFromTable() {
         String selected = groupList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Please select or create a resource group first", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("group.msg.noGroupSelected"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         int[] selectedRows = availableResourceTable.getSelectedRows();
         if (selectedRows.length == 0) {
-            JOptionPane.showMessageDialog(this, "Please select resources to add first", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("group.msg.selectToAdd"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -696,17 +683,16 @@ public class ResourceGroupManagementPanel extends JPanel {
                 loadSelectedGroup();
                 refreshAvailableResourceTable();
                 JOptionPane.showMessageDialog(this, 
-                    String.format("Successfully added %d resources to resource group\nSkipped %d existing resources", 
-                        addedCount, skippedCount), 
-                    "Success", 
+                    I18n.f("group.msg.addResources.done", addedCount, skippedCount), 
+                    I18n.t("common.success"), 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to save resource group: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("group.msg.saveFailed", e.getMessage()), 
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             }
         } else if (skippedCount > 0) {
             JOptionPane.showMessageDialog(this, 
-                "All selected resources have already been added to the resource group", "Info", 
+                I18n.t("group.msg.resourceAlreadyIn"), I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
         }
     }
@@ -714,7 +700,7 @@ public class ResourceGroupManagementPanel extends JPanel {
     private void removeResourceFromGroup() {
         int selectedRow = resourceTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a resource to remove", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("group.msg.selectToAdd"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -728,8 +714,8 @@ public class ResourceGroupManagementPanel extends JPanel {
         String resourceName = (String) resourceTableModel.getValueAt(selectedRow, 1);
         
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "Are you sure you want to remove resource \"" + resourceName + "\" from the resource group?", 
-            "Confirm Remove", 
+            I18n.f("group.msg.confirmRemove", resourceName), 
+            I18n.t("group.msg.confirmRemoveTitle"), 
             JOptionPane.YES_NO_OPTION);
         
         if (confirm == JOptionPane.YES_OPTION) {
@@ -749,11 +735,11 @@ public class ResourceGroupManagementPanel extends JPanel {
                     accessControlSystem.getAccessRequestProcessor().reloadData();
                     loadSelectedGroup();
                     refreshAvailableResourceTable(); // Refresh available resource list
-                    JOptionPane.showMessageDialog(this, "Resource removed from resource group", "Success", 
+                    JOptionPane.showMessageDialog(this, I18n.t("group.msg.resourceRemoved"), I18n.t("common.success"), 
                         JOptionPane.INFORMATION_MESSAGE);
                 } catch (Exception e) {
-                    JOptionPane.showMessageDialog(this, "Failed to remove resource: " + e.getMessage(), 
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, I18n.f("group.msg.addResourceFailed", e.getMessage()), 
+                        I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
                 }
             }
         }
@@ -762,14 +748,14 @@ public class ResourceGroupManagementPanel extends JPanel {
     private void saveGroup() {
         String selected = groupList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Please select a resource group to save", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("group.msg.noGroupSelected"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         String newName = groupNameField.getText().trim();
         if (newName.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Resource group name cannot be empty", "Error", 
+            JOptionPane.showMessageDialog(this, I18n.t("user.msg.enterName"), I18n.t("common.error"), 
                 JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -795,11 +781,11 @@ public class ResourceGroupManagementPanel extends JPanel {
                 groupManager.saveGroup(group);
                 loadGroups();
                 groupList.setSelectedValue(newName, true);
-                JOptionPane.showMessageDialog(this, "Resource group saved successfully", "Success", 
+                JOptionPane.showMessageDialog(this, I18n.t("group.msg.saveSuccess"), I18n.t("common.success"), 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to save resource group: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("group.msg.saveFailed", e.getMessage()), 
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -810,7 +796,7 @@ public class ResourceGroupManagementPanel extends JPanel {
     private void setGroupResourcesState(Resource.ResourceState state) {
         String selected = groupList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Please select a resource group", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("group.msg.noGroupSelected"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -820,8 +806,8 @@ public class ResourceGroupManagementPanel extends JPanel {
         if (group == null) return;
         
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "Set all resources in group \"" + selected + "\" to " + state + "?", 
-            "Confirm State Change", 
+            I18n.f("group.msg.confirmStateChange", selected, state), 
+            I18n.t("group.msg.confirmStateChangeTitle"), 
             JOptionPane.YES_NO_OPTION);
             
         if (confirm != JOptionPane.YES_OPTION) return;
@@ -845,12 +831,12 @@ public class ResourceGroupManagementPanel extends JPanel {
             loadSelectedGroup(); // Refresh table display
             
             JOptionPane.showMessageDialog(this, 
-                "Updated " + count + " resources to " + state, 
-                "Success", JOptionPane.INFORMATION_MESSAGE);
+                I18n.f("group.msg.updateStateSuccess", count, state), 
+                I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
                 
         } catch (Exception e) {
-             JOptionPane.showMessageDialog(this, "Failed to update resources: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
+             JOptionPane.showMessageDialog(this, I18n.f("group.msg.updateResourcesFailed", e.getMessage()), 
+                I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
         }
     }
     
@@ -864,65 +850,80 @@ public class ResourceGroupManagementPanel extends JPanel {
         
         if (allResources.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
-                "No available resources, please create resources in Resource Management first", 
-                "Warning", 
+                I18n.t("group.msg.noResources"), 
+                I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         // Show grouping strategy selection dialog
-        String[] strategies = {
-            "Group by Building",
-            "Group by Floor", 
-            "Group by Resource Type",
-            "Group by Building + Floor",
-            "Group by Building + Type",
-            "Group by Floor + Type",
-            "Create All Possible Combinations"
+        String[] strategyKeys = {
+            "group.strategy.building",
+            "group.strategy.floor", 
+            "group.strategy.type",
+            "group.strategy.buildingFloor",
+            "group.strategy.buildingType",
+            "group.strategy.floorType",
+            "group.strategy.all"
         };
         
-        String selectedStrategy = (String) JOptionPane.showInputDialog(this,
-            "Select resource group creation strategy:",
-            "Auto-create Resource Groups",
+        String[] strategyLabels = new String[strategyKeys.length];
+        for (int i = 0; i < strategyKeys.length; i++) {
+            strategyLabels[i] = I18n.t(strategyKeys[i]);
+        }
+        
+        String selectedStrategyLabel = (String) JOptionPane.showInputDialog(this,
+            I18n.t("group.msg.selectStrategy"),
+            I18n.t("group.msg.autoCreateTitle"),
             JOptionPane.QUESTION_MESSAGE,
             null,
-            strategies,
-            strategies[6]); // Default to "Create All Possible Combinations"
+            strategyLabels,
+            strategyLabels[strategyLabels.length - 1]); // Default to "Create All Possible Combinations"
         
-        if (selectedStrategy == null) {
+        if (selectedStrategyLabel == null) {
             return;
         }
         
+        // Find back the key from label
+        String selectedStrategyKey = null;
+        for (int i = 0; i < strategyLabels.length; i++) {
+            if (strategyLabels[i].equals(selectedStrategyLabel)) {
+                selectedStrategyKey = strategyKeys[i];
+                break;
+            }
+        }
+        
         GroupManager groupManager = new GroupManager();
-        int createdCount = 0;
-        int skippedCount = 0;
         
         try {
-            if ("Create All Possible Combinations".equals(selectedStrategy)) {
+            int[] results;
+            if ("group.strategy.all".equals(selectedStrategyKey)) {
                 // Create all possible combinations
-                createdCount = createAllPossibleGroups(allResources, groupManager);
+                results = createAllPossibleGroups(allResources, groupManager);
             } else {
                 // Create based on selected strategy
-                createdCount = createGroupsByStrategy(allResources, groupManager, selectedStrategy);
+                results = createGroupsByStrategy(allResources, groupManager, selectedStrategyKey);
             }
+            
+            int createdCount = results[0];
+            int skippedCount = results[1];
             
             // Refresh list
             loadGroups();
             
             JOptionPane.showMessageDialog(this, 
-                String.format("Successfully created %d resource groups\nSkipped %d existing resource groups", 
-                    createdCount, skippedCount), 
-                "Complete", 
+                I18n.f("group.msg.autoCreate.done", createdCount, skippedCount), 
+                I18n.t("common.success"), 
                 JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, 
-                "Error creating resource groups: " + e.getMessage(), 
-                "Error", 
+                I18n.f("group.msg.autoCreateError", e.getMessage()), 
+                I18n.t("common.error"), 
                 JOptionPane.ERROR_MESSAGE);
         }
     }
     
-    private int createGroupsByStrategy(Map<String, Resource> resources, 
+    private int[] createGroupsByStrategy(Map<String, Resource> resources, 
                                       GroupManager groupManager, 
                                       String strategy) throws Exception {
         Map<String, List<String>> groupMap = new HashMap<>();
@@ -936,6 +937,7 @@ public class ResourceGroupManagementPanel extends JPanel {
         }
         
         int created = 0;
+        int skipped = 0;
         for (Map.Entry<String, List<String>> entry : groupMap.entrySet()) {
             String groupName = entry.getKey();
             List<String> resourceIds = entry.getValue();
@@ -958,6 +960,9 @@ public class ResourceGroupManagementPanel extends JPanel {
                 }
                 if (hasNewResources) {
                     groupManager.saveGroup(existingGroup);
+                    created++; // Technically updated, but we count it as "processed/created" in this context
+                } else {
+                    skipped++;
                 }
                 continue;
             }
@@ -982,55 +987,47 @@ public class ResourceGroupManagementPanel extends JPanel {
             created++;
         }
         
-        return created;
+        return new int[]{created, skipped};
     }
     
-    private int createAllPossibleGroups(Map<String, Resource> resources, 
+    private int[] createAllPossibleGroups(Map<String, Resource> resources, 
                                        GroupManager groupManager) throws Exception {
         int created = 0;
+        int skipped = 0;
         
-        // 1. Group by building
-        created += createGroupsByStrategy(resources, groupManager, "Group by Building");
+        String[] strategies = {
+            "group.strategy.building",
+            "group.strategy.floor",
+            "group.strategy.type",
+            "group.strategy.buildingFloor",
+            "group.strategy.buildingType",
+            "group.strategy.floorType"
+        };
         
-        // 2. Group by floor
-        created += createGroupsByStrategy(resources, groupManager, "Group by Floor");
+        for (String strategy : strategies) {
+            int[] results = createGroupsByStrategy(resources, groupManager, strategy);
+            created += results[0];
+            skipped += results[1];
+        }
         
-        // 3. Group by type
-        created += createGroupsByStrategy(resources, groupManager, "Group by Resource Type");
-        
-        // 4. Group by building + floor
-        created += createGroupsByStrategy(resources, groupManager, "Group by Building + Floor");
-        
-        // 5. Group by building + type
-        created += createGroupsByStrategy(resources, groupManager, "Group by Building + Type");
-        
-        // 6. Group by floor + type
-        created += createGroupsByStrategy(resources, groupManager, "Group by Floor + Type");
-        
-        return created;
+        return new int[]{created, skipped};
     }
     
-    private String getGroupKey(Resource resource, String strategy) {
-        String building = resource.getBuilding() != null ? resource.getBuilding() : "Unspecified Building";
-        String floor = resource.getFloor() != null ? resource.getFloor() : "Unspecified Floor";
-        String type = resource.getType() != null ? resource.getType().toString() : "Unspecified Type";
-        
-        switch (strategy) {
-            case "Group by Building":
-                return building + " Area";
-            case "Group by Floor":
-                return floor + " Floor";
-            case "Group by Resource Type":
-                return type + " Resource Group";
-            case "Group by Building + Floor":
-                return building + "-" + floor;
-            case "Group by Building + Type":
-                return building + "-" + type;
-            case "Group by Floor + Type":
-                return floor + "-" + type;
-            default:
-                return null;
+    private String getGroupKey(Resource resource, String strategyKey) {
+        if ("group.strategy.building".equals(strategyKey)) {
+            return resource.getBuilding();
+        } else if ("group.strategy.floor".equals(strategyKey)) {
+            return I18n.f("group.strategy.floor.pattern", resource.getFloor());
+        } else if ("group.strategy.type".equals(strategyKey)) {
+            return resource.getType().toString();
+        } else if ("group.strategy.buildingFloor".equals(strategyKey)) {
+            return I18n.f("group.strategy.buildingFloor.pattern", resource.getBuilding(), resource.getFloor());
+        } else if ("group.strategy.buildingType".equals(strategyKey)) {
+            return I18n.f("group.strategy.buildingType.pattern", resource.getBuilding(), resource.getType());
+        } else if ("group.strategy.floorType".equals(strategyKey)) {
+            return I18n.f("group.strategy.floorType.pattern", resource.getFloor(), resource.getType());
         }
+        return null;
     }
     
     /**

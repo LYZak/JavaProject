@@ -64,6 +64,7 @@ public class RealTimeMonitorPanel extends JPanel {
     private JButton zoomInBtn;
     private JButton resetZoomBtn;
     private JButton clearLogButton;
+    private JLabel scaleLabel;
     private Map<String, Point> badgeReaderPositions; // Badge reader ID -> Position
     private Map<String, FlashIndicator> flashIndicators; // Badge reader ID -> Flash indicator
     private Map<String, BadgeReader> badgeReaderMap; // Badge reader ID -> Badge reader object
@@ -154,15 +155,15 @@ public class RealTimeMonitorPanel extends JPanel {
         topPanel.add(Box.createHorizontalStrut(10));
         zoomLabel = new JLabel();
         topPanel.add(zoomLabel);
-        zoomOutBtn = new JButton("-");
+        zoomOutBtn = new JButton();
         zoomOutBtn.addActionListener(e -> mapViewPanel.zoomOut());
         topPanel.add(zoomOutBtn);
         
-        JLabel scaleLabel = new JLabel("100%");
+        scaleLabel = new JLabel("", SwingConstants.CENTER);
         scaleLabel.setPreferredSize(new Dimension(60, 20));
         topPanel.add(scaleLabel);
         
-        zoomInBtn = new JButton("+");
+        zoomInBtn = new JButton();
         zoomInBtn.addActionListener(e -> mapViewPanel.zoomIn());
         topPanel.add(zoomInBtn);
         
@@ -240,7 +241,9 @@ public class RealTimeMonitorPanel extends JPanel {
         savePositionsButton.setText(I18n.t("monitor.action.savePositions"));
 
         zoomLabel.setText(I18n.t("monitor.label.zoom"));
+        zoomOutBtn.setText(I18n.t("monitor.action.zoomOut"));
         zoomOutBtn.setToolTipText(I18n.t("monitor.tip.zoomOut"));
+        zoomInBtn.setText(I18n.t("monitor.action.zoomIn"));
         zoomInBtn.setToolTipText(I18n.t("monitor.tip.zoomIn"));
         resetZoomBtn.setText(I18n.t("monitor.action.resetZoom"));
         resetZoomBtn.setToolTipText(I18n.t("monitor.tip.resetZoom"));
@@ -250,6 +253,8 @@ public class RealTimeMonitorPanel extends JPanel {
 
         logBorder.setTitle(I18n.t("monitor.title.log"));
         clearLogButton.setText(I18n.t("monitor.action.clearLog"));
+
+        mapViewPanel.updateScaleLabel();
 
         revalidate();
         repaint();
@@ -347,14 +352,14 @@ public class RealTimeMonitorPanel extends JPanel {
             
             // Save to file
             try (java.io.FileOutputStream fos = new java.io.FileOutputStream(posFile)) {
-                props.store(fos, "Badge Reader Position Configuration");
+                props.store(fos, I18n.t("monitor.save.comment"));
             }
             
-            JOptionPane.showMessageDialog(this, "Position configuration saved", "Success", 
+            JOptionPane.showMessageDialog(this, I18n.t("monitor.msg.posSaved"), I18n.t("common.success"), 
                 JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Failed to save position configuration: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.f("monitor.msg.saveFailed", e.getMessage()), 
+                I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
         }
     }
     
@@ -366,16 +371,14 @@ public class RealTimeMonitorPanel extends JPanel {
         Map<String, BadgeReader> readers = router.getBadgeReaders();
         
         if (readers.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No available badge readers", "Info", 
+            JOptionPane.showMessageDialog(this, I18n.t("monitor.msg.noReaders"), I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Automatically assign positions for all badge readers?\n" +
-            "System will automatically assign coordinates based on resource type and location.\n" +
-            "You can manually adjust positions later.",
-            "Auto-configure Positions",
+            I18n.t("monitor.msg.confirmAutoConfig"),
+            I18n.t("monitor.title.autoConfig"),
             JOptionPane.YES_NO_OPTION);
         
         if (confirm != JOptionPane.YES_OPTION) {
@@ -457,9 +460,8 @@ public class RealTimeMonitorPanel extends JPanel {
         
         mapViewPanel.repaint();
         JOptionPane.showMessageDialog(this, 
-            "Automatically assigned positions for " + totalReaders + " badge readers\n" +
-            "You can drag to adjust positions on the map, then click 'Save Position Configuration' to save.",
-            "Configuration Complete",
+            I18n.f("monitor.msg.autoConfigComplete", totalReaders),
+            I18n.t("monitor.title.configComplete"),
             JOptionPane.INFORMATION_MESSAGE);
     }
     
@@ -468,33 +470,17 @@ public class RealTimeMonitorPanel extends JPanel {
      */
     private void showPositionConfigDialog() {
         JDialog dialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), 
-            "Configure Badge Reader Positions", true);
+            I18n.t("monitor.title.configDialog"), true);
         dialog.setSize(400, 300);
         dialog.setLocationRelativeTo(this);
         
         JPanel panel = new JPanel(new BorderLayout());
-        JTextArea infoArea = new JTextArea(
-            "Badge Reader Position Configuration Instructions:\n\n" +
-            "Purpose:\n" +
-            "• Set badge reader display positions on the map\n" +
-            "• Used for visual display of badge reader positions in real-time monitor panel\n" +
-            "• When access events occur, flash indicators will be shown at corresponding badge reader positions\n\n" +
-            "Usage:\n" +
-            "1. Click 'Auto-configure All Positions' button to assign positions for all badge readers at once\n" +
-            "2. Click and drag badge reader icons on the map to manually adjust positions\n" +
-            "3. Click badge reader icons to view detailed information\n" +
-            "4. After adjustment, click 'Save Position Configuration' button to save\n" +
-            "5. Position configurations are saved separately by view type (Site Layout/Office Layout)\n\n" +
-            "Tips:\n" +
-            "• It's recommended to use 'Auto-configure All Positions' for quick configuration first\n" +
-            "• Then manually fine-tune positions according to actual layout\n" +
-            "• Position configurations for different view types are independent"
-        );
+        JTextArea infoArea = new JTextArea(I18n.t("monitor.text.configInstructions"));
         infoArea.setEditable(false);
         infoArea.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
         panel.add(new JScrollPane(infoArea), BorderLayout.CENTER);
         
-        JButton closeBtn = new JButton("Close");
+        JButton closeBtn = new JButton(I18n.t("common.close"));
         closeBtn.addActionListener(e -> dialog.dispose());
         panel.add(closeBtn, BorderLayout.SOUTH);
         
@@ -609,9 +595,9 @@ public class RealTimeMonitorPanel extends JPanel {
             repaint();
         }
         
-        private void updateScaleLabel() {
+        public void updateScaleLabel() {
             if (scaleLabel != null) {
-                scaleLabel.setText(String.format("%.0f%%", scaleFactor * 100));
+                scaleLabel.setText(I18n.f("monitor.text.scale", (int)(scaleFactor * 100)));
             }
         }
         
@@ -742,7 +728,7 @@ public class RealTimeMonitorPanel extends JPanel {
                 int fontSize = Math.max(10, (int) (11 * scaleFactor));
                 g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, fontSize));
                 BadgeReader reader = badgeReaderMap.get(readerId);
-                String label = reader != null ? getReaderLabel(reader) : "R" + readerId.substring(0, Math.min(4, readerId.length()));
+                String label = reader != null ? getReaderLabel(reader) : I18n.f("monitor.reader.prefix", readerId.substring(0, Math.min(4, readerId.length())));
                 g.drawString(label, scaledX + (int)(10 * scaleFactor), scaledY - (int)(10 * scaleFactor));
             }
         }
@@ -761,7 +747,7 @@ public class RealTimeMonitorPanel extends JPanel {
             } catch (Exception e) {
                 // Ignore error
             }
-            return "R" + reader.getId().substring(0, Math.min(4, reader.getId().length()));
+            return I18n.f("monitor.reader.prefix", reader.getId().substring(0, Math.min(4, reader.getId().length())));
         }
         
         /**
@@ -865,35 +851,34 @@ public class RealTimeMonitorPanel extends JPanel {
             }
             
             StringBuilder info = new StringBuilder();
-            info.append("Badge Reader ID: ").append(reader.getId()).append("\n");
-            
-            try {
-                DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
-                Map<String, Resource> resources = dbManager.loadAllResources();
-                Resource resource = resources.get(reader.getResourceId());
-                if (resource != null) {
-                    info.append("Resource Name: ").append(resource.getName()).append("\n");
-                    info.append("Resource Type: ").append(resource.getType()).append("\n");
-                    info.append("Location: ").append(resource.getLocation()).append("\n");
-                    info.append("Building: ").append(resource.getBuilding()).append("\n");
-                    info.append("Floor: ").append(resource.getFloor()).append("\n");
-                }
-            } catch (Exception e) {
-                info.append("Resource ID: ").append(reader.getResourceId()).append("\n");
+        info.append(I18n.t("monitor.info.readerId")).append(reader.getId()).append("\n");
+        
+        try {
+            DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
+            Map<String, Resource> resources = dbManager.loadAllResources();
+            Resource resource = resources.get(reader.getResourceId());
+            if (resource != null) {
+                info.append(I18n.t("monitor.info.resourceName")).append(resource.getName()).append("\n");
+                info.append(I18n.t("monitor.info.resourceType")).append(I18n.t("resource.type." + resource.getType().name())).append("\n");
+                info.append(I18n.t("monitor.info.location")).append(resource.getLocation()).append("\n");
+                info.append(I18n.t("monitor.info.building")).append(resource.getBuilding()).append("\n");
+                info.append(I18n.t("monitor.info.floor")).append(resource.getFloor()).append("\n");
             }
-            
-            Point pos = badgeReaderPositions.get(readerId);
-            if (pos != null) {
-                info.append("Position (Original): (").append(pos.x).append(", ").append(pos.y).append(")\n");
-                double currentScale = mapViewPanel.getScaleFactor();
-                info.append("Position (Current Scale): (").append((int)(pos.x * currentScale))
-                    .append(", ").append((int)(pos.y * currentScale)).append(")");
-            }
-            
-            JOptionPane.showMessageDialog(RealTimeMonitorPanel.this, 
-                info.toString(), 
-                "Badge Reader Information", 
-                JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            info.append(I18n.t("monitor.info.resourceId")).append(reader.getResourceId()).append("\n");
+        }
+        
+        Point pos = badgeReaderPositions.get(readerId);
+        if (pos != null) {
+            info.append(I18n.f("monitor.info.posOriginal", pos.x, pos.y)).append("\n");
+            double currentScale = mapViewPanel.getScaleFactor();
+            info.append(I18n.f("monitor.info.posCurrent", (int)(pos.x * currentScale), (int)(pos.y * currentScale)));
+        }
+        
+        JOptionPane.showMessageDialog(RealTimeMonitorPanel.this, 
+            info.toString(), 
+            I18n.t("monitor.title.readerInfo"), 
+            JOptionPane.INFORMATION_MESSAGE);
         }
         
         @Override
