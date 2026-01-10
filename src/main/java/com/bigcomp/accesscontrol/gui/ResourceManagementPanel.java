@@ -8,6 +8,9 @@ import com.bigcomp.accesscontrol.profile.GroupManager;
 import com.bigcomp.accesscontrol.database.DatabaseManager;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.UUID;
@@ -45,6 +48,9 @@ public class ResourceManagementPanel extends JPanel {
         };
         resourceTable = new JTable(tableModel);
         resourceTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        resourceTable.setAutoCreateRowSorter(true);
+        resourceTable.setFillsViewportHeight(true);
+        styleTable(resourceTable);
         
         // Input fields
         nameField = new JTextField(15);
@@ -56,63 +62,99 @@ public class ResourceManagementPanel extends JPanel {
 
     private void setupLayout() {
         setLayout(new BorderLayout());
+        setBorder(new EmptyBorder(12, 12, 12, 12));
         
         // Top: Input form
         JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBorder(new TitledBorder("Resource"));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(6, 6, 6, 6);
         gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
         
         gbc.gridx = 0; gbc.gridy = 0;
+        gbc.weightx = 0;
         formPanel.add(new JLabel("Name:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         formPanel.add(nameField, gbc);
         
         gbc.gridx = 0; gbc.gridy = 1;
+        gbc.weightx = 0;
         formPanel.add(new JLabel("Type:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         formPanel.add(typeCombo, gbc);
         
         gbc.gridx = 0; gbc.gridy = 2;
+        gbc.weightx = 0;
         formPanel.add(new JLabel("Location:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         formPanel.add(locationField, gbc);
         
         gbc.gridx = 0; gbc.gridy = 3;
+        gbc.weightx = 0;
         formPanel.add(new JLabel("Building:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         formPanel.add(buildingField, gbc);
         
         gbc.gridx = 0; gbc.gridy = 4;
+        gbc.weightx = 0;
         formPanel.add(new JLabel("Floor:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         formPanel.add(floorField, gbc);
         
         gbc.gridx = 0; gbc.gridy = 5;
         gbc.gridwidth = 2;
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("Add Resource") {{
-            addActionListener(e -> addResource());
-        }});
-        buttonPanel.add(new JButton("Delete Resource") {{
-            addActionListener(e -> deleteResource());
-        }});
-        buttonPanel.add(new JButton("Create Badge Reader") {{
-            addActionListener(e -> createBadgeReader());
-        }});
-        buttonPanel.add(new JButton("Create Badge Readers for All Resources") {{
-            addActionListener(e -> createBadgeReadersForAll());
-        }});
-        buttonPanel.add(new JButton("Link to Resource Group") {{
-            addActionListener(e -> linkToResourceGroup());
-        }});
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JButton addButton = new JButton("Add Resource");
+        addButton.addActionListener(e -> addResource());
+        JButton deleteButton = new JButton("Delete Resource");
+        deleteButton.addActionListener(e -> deleteResource());
+        JButton createReaderButton = new JButton("Create Badge Reader");
+        createReaderButton.addActionListener(e -> createBadgeReader());
+        JButton createAllReadersButton = new JButton("Create Readers (All)");
+        createAllReadersButton.addActionListener(e -> createBadgeReadersForAll());
+        JButton linkGroupButton = new JButton("Link to Group");
+        linkGroupButton.addActionListener(e -> linkToResourceGroup());
+        buttonPanel.add(addButton);
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(createReaderButton);
+        buttonPanel.add(createAllReadersButton);
+        buttonPanel.add(linkGroupButton);
         formPanel.add(buttonPanel, gbc);
         
         // Center: Table
         JScrollPane scrollPane = new JScrollPane(resourceTable);
+        scrollPane.setBorder(new EmptyBorder(8, 0, 0, 0));
         
         add(formPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
+    }
+
+    private void styleTable(JTable table) {
+        table.setRowHeight(Math.max(table.getRowHeight(), 28));
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.getTableHeader().setReorderingAllowed(false);
+        table.setDefaultRenderer(Object.class, new StripedTableCellRenderer());
+    }
+
+    private static class StripedTableCellRenderer extends DefaultTableCellRenderer {
+        private final Color stripe = new Color(247, 248, 250);
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (!isSelected) {
+                c.setBackground((row % 2 == 0) ? table.getBackground() : stripe);
+            }
+            return c;
+        }
     }
     
     private void addResource() {

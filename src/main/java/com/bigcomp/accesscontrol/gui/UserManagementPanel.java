@@ -9,6 +9,9 @@ import com.bigcomp.accesscontrol.profile.TimeFilter;
 import com.bigcomp.accesscontrol.database.DatabaseManager;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.UUID;
@@ -48,78 +51,105 @@ public class UserManagementPanel extends JPanel {
         };
         userTable = new JTable(tableModel);
         userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        userTable.setAutoCreateRowSorter(true);
+        userTable.setFillsViewportHeight(true);
+        styleTable(userTable);
 
         // Input fields
         firstNameField = new JTextField(15);
         lastNameField = new JTextField(15);
         genderCombo = new JComboBox<>(User.Gender.values());
         userTypeCombo = new JComboBox<>(User.UserType.values());
-
-        // Buttons
-        JButton addButton = new JButton("Add User");
-        addButton.addActionListener(e -> addUser());
-
-        JButton deleteButton = new JButton("Delete User");
-        deleteButton.addActionListener(e -> deleteUser());
-
-        JButton createBadgeButton = new JButton("Create Badge");
-        createBadgeButton.addActionListener(e -> createBadge());
     }
     
     private void setupLayout() {
         setLayout(new BorderLayout());
+        setBorder(new EmptyBorder(12, 12, 12, 12));
 
         // Top: Input form
         JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBorder(new TitledBorder("User"));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(6, 6, 6, 6);
         gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
 
         gbc.gridx = 0; gbc.gridy = 0;
+        gbc.weightx = 0;
         formPanel.add(new JLabel("First Name:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         formPanel.add(firstNameField, gbc);
 
         gbc.gridx = 0; gbc.gridy = 1;
+        gbc.weightx = 0;
         formPanel.add(new JLabel("Last Name:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         formPanel.add(lastNameField, gbc);
 
         gbc.gridx = 0; gbc.gridy = 2;
+        gbc.weightx = 0;
         formPanel.add(new JLabel("Gender:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         formPanel.add(genderCombo, gbc);
 
         gbc.gridx = 0; gbc.gridy = 3;
+        gbc.weightx = 0;
         formPanel.add(new JLabel("Type:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         formPanel.add(userTypeCombo, gbc);
 
         gbc.gridx = 0; gbc.gridy = 4;
         gbc.gridwidth = 2;
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("Add User") {{
-            addActionListener(e -> addUser());
-        }});
-        buttonPanel.add(new JButton("Delete User") {{
-            addActionListener(e -> deleteUser());
-        }});
-        buttonPanel.add(new JButton("Create Badge") {{
-            addActionListener(e -> createBadge());
-        }});
-        buttonPanel.add(new JButton("Assign Profile") {{
-            addActionListener(e -> assignProfile());
-        }});
-        buttonPanel.add(new JButton("Auto-assign Profiles") {{
-            addActionListener(e -> autoAssignProfilesForAll());
-        }});
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JButton addButton = new JButton("Add User");
+        addButton.addActionListener(e -> addUser());
+        JButton deleteButton = new JButton("Delete User");
+        deleteButton.addActionListener(e -> deleteUser());
+        JButton createBadgeButton = new JButton("Create Badge");
+        createBadgeButton.addActionListener(e -> createBadge());
+        JButton assignProfileButton = new JButton("Assign Profile");
+        assignProfileButton.addActionListener(e -> assignProfile());
+        JButton autoAssignButton = new JButton("Auto-assign");
+        autoAssignButton.addActionListener(e -> autoAssignProfilesForAll());
+        buttonPanel.add(addButton);
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(createBadgeButton);
+        buttonPanel.add(assignProfileButton);
+        buttonPanel.add(autoAssignButton);
         formPanel.add(buttonPanel, gbc);
 
         // Center: Table
         JScrollPane scrollPane = new JScrollPane(userTable);
+        scrollPane.setBorder(new EmptyBorder(8, 0, 0, 0));
 
         add(formPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
+    }
+
+    private void styleTable(JTable table) {
+        table.setRowHeight(Math.max(table.getRowHeight(), 28));
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.getTableHeader().setReorderingAllowed(false);
+        table.setDefaultRenderer(Object.class, new StripedTableCellRenderer());
+    }
+
+    private static class StripedTableCellRenderer extends DefaultTableCellRenderer {
+        private final Color stripe = new Color(247, 248, 250);
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (!isSelected) {
+                c.setBackground((row % 2 == 0) ? table.getBackground() : stripe);
+            }
+            return c;
+        }
     }
 
     private void addUser() {

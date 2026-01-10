@@ -11,10 +11,16 @@ import java.util.*;
  * Database Manager - Handles all database operations
  */
 public class DatabaseManager {
-    private static final String DB_URL = "jdbc:sqlite:data/access_control.db";
+    private static final String DEFAULT_DB_URL = "jdbc:sqlite:data/access_control.db";
+    private final String dbUrl;
     private Connection connection;
 
     public DatabaseManager() {
+        this(DEFAULT_DB_URL);
+    }
+
+    public DatabaseManager(String dbUrl) {
+        this.dbUrl = dbUrl;
         initializeDatabase();
         updateResourceGroupNames();
     }
@@ -64,7 +70,7 @@ public class DatabaseManager {
      */
     private void initializeDatabase() {
         try {
-            connection = DriverManager.getConnection(DB_URL);
+            connection = DriverManager.getConnection(dbUrl);
             createTables();
         } catch (SQLException e) {
             System.err.println("Database initialization failed: " + e.getMessage());

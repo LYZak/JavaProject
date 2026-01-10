@@ -9,6 +9,9 @@ import com.bigcomp.accesscontrol.profile.GroupManager;
 import com.bigcomp.accesscontrol.profile.ResourceGroup;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
@@ -56,91 +59,112 @@ public class ProfileManagementPanel extends JPanel {
             }
         };
         accessRightsTable = new JTable(accessRightsModel);
+        accessRightsTable.setAutoCreateRowSorter(true);
+        accessRightsTable.setFillsViewportHeight(true);
+        styleTable(accessRightsTable);
         
         // Input fields
         profileNameField = new JTextField(20);
         groupCombo = new JComboBox<>();
         profileInfoArea = new JTextArea(5, 30);
         profileInfoArea.setEditable(false);
+        profileInfoArea.setLineWrap(true);
+        profileInfoArea.setWrapStyleWord(true);
     }
     
     private void setupLayout() {
         setLayout(new BorderLayout());
+        setBorder(new EmptyBorder(12, 12, 12, 12));
         
         // Left: Profile list and operations
         JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setBorder(BorderFactory.createTitledBorder("Profile List"));
+        leftPanel.setBorder(new TitledBorder("Profiles"));
         leftPanel.add(new JScrollPane(profileList), BorderLayout.CENTER);
         
-        JPanel leftButtonPanel = new JPanel(new FlowLayout());
-        leftButtonPanel.add(new JButton("New Profile") {{
-            addActionListener(e -> createNewProfile());
-        }});
-        leftButtonPanel.add(new JButton("Modify Profile") {{
-            addActionListener(e -> modifyProfile());
-        }});
-        leftButtonPanel.add(new JButton("Delete Profile") {{
-            addActionListener(e -> deleteProfile());
-        }});
-        leftButtonPanel.add(new JButton("Restore Profile") {{
-            addActionListener(e -> restoreProfile());
-        }});
+        JPanel leftButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        leftButtonPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
+        JButton newButton = new JButton("New");
+        newButton.addActionListener(e -> createNewProfile());
+        JButton modifyButton = new JButton("Modify");
+        modifyButton.addActionListener(e -> modifyProfile());
+        JButton deleteButton = new JButton("Delete");
+        deleteButton.setForeground(Color.RED);
+        deleteButton.addActionListener(e -> deleteProfile());
+        JButton restoreButton = new JButton("Restore");
+        restoreButton.addActionListener(e -> restoreProfile());
+        leftButtonPanel.add(newButton);
+        leftButtonPanel.add(modifyButton);
+        leftButtonPanel.add(deleteButton);
+        leftButtonPanel.add(restoreButton);
         leftPanel.add(leftButtonPanel, BorderLayout.SOUTH);
         
         // Center: Access rights management
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setBorder(BorderFactory.createTitledBorder("Access Rights"));
+        centerPanel.setBorder(new TitledBorder("Access Rights"));
         
         // Top: Add access rights
-        JPanel addPanel = new JPanel(new FlowLayout());
+        JPanel addPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        addPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
         addPanel.add(new JLabel("Resource Group:"));
         addPanel.add(groupCombo);
-        addPanel.add(new JButton("Refresh Groups") {{
-            addActionListener(e -> {
+        JButton refreshGroupsButton = new JButton("Refresh Groups");
+        refreshGroupsButton.addActionListener(e -> {
                 loadGroups();
                 JOptionPane.showMessageDialog(ProfileManagementPanel.this, 
                     "Resource group list refreshed", "Info", JOptionPane.INFORMATION_MESSAGE);
-            });
-        }});
-        addPanel.add(new JButton("Add Access Right") {{
-            addActionListener(e -> addAccessRight());
-        }});
-        addPanel.add(new JButton("Remove Access Right") {{
-            addActionListener(e -> removeAccessRight());
-        }});
+        });
+        JButton addRightButton = new JButton("Add Right");
+        addRightButton.addActionListener(e -> addAccessRight());
+        JButton removeRightButton = new JButton("Remove Right");
+        removeRightButton.addActionListener(e -> removeAccessRight());
+        addPanel.add(refreshGroupsButton);
+        addPanel.add(addRightButton);
+        addPanel.add(removeRightButton);
         centerPanel.add(addPanel, BorderLayout.NORTH);
         
         // Center: Access rights table
-        centerPanel.add(new JScrollPane(accessRightsTable), BorderLayout.CENTER);
+        JScrollPane rightsScroll = new JScrollPane(accessRightsTable);
+        rightsScroll.setBorder(new EmptyBorder(0, 8, 8, 8));
+        centerPanel.add(rightsScroll, BorderLayout.CENTER);
         
         // Bottom: Time filter editing
         JPanel timeFilterPanel = new JPanel(new BorderLayout());
-        timeFilterPanel.setBorder(BorderFactory.createTitledBorder("Time Filter Editor"));
-        timeFilterPanel.add(new JScrollPane(profileInfoArea), BorderLayout.CENTER);
-        JPanel timeFilterButtonPanel = new JPanel(new FlowLayout());
-        timeFilterButtonPanel.add(new JButton("Edit Time Filter") {{
-            addActionListener(e -> editTimeFilter());
-        }});
+        timeFilterPanel.setBorder(new TitledBorder("Time Filter"));
+        JScrollPane timeFilterScroll = new JScrollPane(profileInfoArea);
+        timeFilterScroll.setBorder(new EmptyBorder(8, 8, 8, 8));
+        timeFilterPanel.add(timeFilterScroll, BorderLayout.CENTER);
+        JPanel timeFilterButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        timeFilterButtonPanel.setBorder(new EmptyBorder(0, 8, 8, 8));
+        JButton editTimeFilterButton = new JButton("Edit Time Filter");
+        editTimeFilterButton.addActionListener(e -> editTimeFilter());
+        timeFilterButtonPanel.add(editTimeFilterButton);
         timeFilterPanel.add(timeFilterButtonPanel, BorderLayout.SOUTH);
         centerPanel.add(timeFilterPanel, BorderLayout.SOUTH);
         
         // Right: Profile information
         JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBorder(BorderFactory.createTitledBorder("Profile Information"));
+        rightPanel.setBorder(new TitledBorder("Profile"));
         JPanel infoPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(6, 6, 6, 6);
         gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
         
         gbc.gridx = 0; gbc.gridy = 0;
+        gbc.weightx = 0;
         infoPanel.add(new JLabel("Profile Name:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         infoPanel.add(profileNameField, gbc);
         
         rightPanel.add(infoPanel, BorderLayout.NORTH);
-        rightPanel.add(new JButton("Save Profile") {{
-            addActionListener(e -> saveProfile());
-        }}, BorderLayout.SOUTH);
+        JButton saveButton = new JButton("Save Profile");
+        saveButton.addActionListener(e -> saveProfile());
+        JPanel savePanel = new JPanel(new BorderLayout());
+        savePanel.setBorder(new EmptyBorder(8, 8, 8, 8));
+        savePanel.add(saveButton, BorderLayout.NORTH);
+        rightPanel.add(savePanel, BorderLayout.SOUTH);
         
         // Main layout
         JSplitPane leftSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, centerPanel);
@@ -152,6 +176,27 @@ public class ProfileManagementPanel extends JPanel {
         mainSplit.setResizeWeight(0.7);
         
         add(mainSplit, BorderLayout.CENTER);
+    }
+
+    private void styleTable(JTable table) {
+        table.setRowHeight(Math.max(table.getRowHeight(), 28));
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.getTableHeader().setReorderingAllowed(false);
+        table.setDefaultRenderer(Object.class, new StripedTableCellRenderer());
+    }
+
+    private static class StripedTableCellRenderer extends DefaultTableCellRenderer {
+        private final Color stripe = new Color(247, 248, 250);
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (!isSelected) {
+                c.setBackground((row % 2 == 0) ? table.getBackground() : stripe);
+            }
+            return c;
+        }
     }
     
     private void loadProfiles() {

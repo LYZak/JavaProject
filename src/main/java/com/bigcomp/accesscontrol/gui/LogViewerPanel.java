@@ -6,6 +6,9 @@ import com.bigcomp.accesscontrol.logging.LogManager;
 import com.bigcomp.accesscontrol.util.AccessDiagnostic;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDateTime;
@@ -46,6 +49,10 @@ public class LogViewerPanel extends JPanel {
         };
         logTable = new JTable(tableModel);
         logTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        logTable.setAutoCreateRowSorter(true);
+        logTable.setFillsViewportHeight(true);
+        logTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        styleTable(logTable);
         
         // Search fields
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -61,69 +68,85 @@ public class LogViewerPanel extends JPanel {
     
     private void setupLayout() {
         setLayout(new BorderLayout());
+        setBorder(new EmptyBorder(12, 12, 12, 12));
         
         // Search panel
         JPanel searchPanel = new JPanel(new GridBagLayout());
-        searchPanel.setBorder(BorderFactory.createTitledBorder("Search Criteria"));
+        searchPanel.setBorder(new TitledBorder("Search"));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(6, 6, 6, 6);
         gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
         
         // First row: Date range
         gbc.gridx = 0; gbc.gridy = 0;
+        gbc.weightx = 0;
         searchPanel.add(new JLabel("Start Date (yyyy-MM-dd):"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         searchPanel.add(startDateField, gbc);
         
         gbc.gridx = 2;
+        gbc.weightx = 0;
         searchPanel.add(new JLabel("End Date (yyyy-MM-dd):"), gbc);
         gbc.gridx = 3;
+        gbc.weightx = 1;
         searchPanel.add(endDateField, gbc);
         
         // Second row: Badge code and resource ID
         gbc.gridx = 0; gbc.gridy = 1;
+        gbc.weightx = 0;
         searchPanel.add(new JLabel("Badge Code:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         searchPanel.add(badgeCodeField, gbc);
         
         gbc.gridx = 2;
+        gbc.weightx = 0;
         searchPanel.add(new JLabel("Resource ID:"), gbc);
         gbc.gridx = 3;
+        gbc.weightx = 1;
         searchPanel.add(resourceIdField, gbc);
         
         // Third row: User ID and status
         gbc.gridx = 0; gbc.gridy = 2;
+        gbc.weightx = 0;
         searchPanel.add(new JLabel("User ID:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         searchPanel.add(userIdField, gbc);
         
         gbc.gridx = 2;
+        gbc.weightx = 0;
         searchPanel.add(new JLabel("Status:"), gbc);
         gbc.gridx = 3;
+        gbc.weightx = 1;
         searchPanel.add(grantedCombo, gbc);
         
         // Buttons
         gbc.gridx = 0; gbc.gridy = 3;
         gbc.gridwidth = 4;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("Search") {{
-            addActionListener(e -> searchLogs());
-        }});
-        buttonPanel.add(new JButton("Clear Criteria") {{
-            addActionListener(e -> clearSearchFields());
-        }});
-        buttonPanel.add(new JButton("Export Logs") {{
-            addActionListener(e -> exportLogs());
-        }});
-        buttonPanel.add(new JButton("Clear Logs") {{
-            addActionListener(e -> clearLogs());
-        }});
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JButton searchButton = new JButton("Search");
+        searchButton.addActionListener(e -> searchLogs());
+        JButton clearCriteriaButton = new JButton("Clear Criteria");
+        clearCriteriaButton.addActionListener(e -> clearSearchFields());
+        JButton exportButton = new JButton("Export Logs");
+        exportButton.addActionListener(e -> exportLogs());
+        JButton clearLogsButton = new JButton("Clear Logs");
+        clearLogsButton.setForeground(Color.RED);
+        clearLogsButton.addActionListener(e -> clearLogs());
+        buttonPanel.add(searchButton);
+        buttonPanel.add(clearCriteriaButton);
+        buttonPanel.add(exportButton);
+        buttonPanel.add(clearLogsButton);
         searchPanel.add(buttonPanel, gbc);
         
         // Table
         JScrollPane scrollPane = new JScrollPane(logTable);
-        scrollPane.setBorder(BorderFactory.createTitledBorder("Log Records"));
+        scrollPane.setBorder(new TitledBorder("Records"));
         
         add(searchPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
@@ -132,6 +155,52 @@ public class LogViewerPanel extends JPanel {
         SwingUtilities.invokeLater(() -> {
             searchLogsSilent();
         });
+    }
+
+    private void styleTable(JTable table) {
+        table.setRowHeight(Math.max(table.getRowHeight(), 28));
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.getTableHeader().setReorderingAllowed(false);
+        table.setDefaultRenderer(Object.class, new StripedTableCellRenderer());
+        table.getColumnModel().getColumn(6).setCellRenderer(new StatusCellRenderer());
+    }
+
+    private static class StripedTableCellRenderer extends DefaultTableCellRenderer {
+        private final Color stripe = new Color(247, 248, 250);
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (!isSelected) {
+                c.setBackground((row % 2 == 0) ? table.getBackground() : stripe);
+            }
+            return c;
+        }
+    }
+
+    private static class StatusCellRenderer extends DefaultTableCellRenderer {
+        private final Color granted = new Color(25, 135, 84);
+        private final Color denied = new Color(220, 53, 69);
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (!isSelected && value instanceof String) {
+                String v = (String) value;
+                if ("Granted".equalsIgnoreCase(v)) {
+                    c.setForeground(granted);
+                } else if ("Denied".equalsIgnoreCase(v)) {
+                    c.setForeground(denied);
+                } else {
+                    c.setForeground(table.getForeground());
+                }
+            } else if (!isSelected) {
+                c.setForeground(table.getForeground());
+            }
+            setHorizontalAlignment(CENTER);
+            return c;
+        }
     }
     
     private void searchLogs() {

@@ -10,6 +10,8 @@ import com.bigcomp.accesscontrol.model.Resource;
 import com.bigcomp.accesscontrol.database.DatabaseManager;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -66,31 +68,34 @@ public class RealTimeMonitorPanel extends JPanel {
         eventLogArea = new JTextArea(10, 30);
         eventLogArea.setEditable(false);
         eventLogArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        eventLogArea.setMargin(new Insets(8, 8, 8, 8));
     }
     
     private void setupLayout() {
         setLayout(new BorderLayout());
+        setBorder(new EmptyBorder(12, 12, 12, 12));
         
         // Top control panel
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        topPanel.setBorder(new EmptyBorder(0, 0, 8, 0));
         topPanel.add(new JLabel("View:"));
         topPanel.add(viewCombo);
         topPanel.add(Box.createHorizontalStrut(20));
-        topPanel.add(new JButton("Refresh") {{
-            addActionListener(e -> {
-                loadBadgeReaderPositions();
-                mapViewPanel.repaint();
-            });
-        }});
-        topPanel.add(new JButton("Configure Badge Reader Positions") {{
-            addActionListener(e -> showPositionConfigDialog());
-        }});
-        topPanel.add(new JButton("Auto-configure All Positions") {{
-            addActionListener(e -> autoConfigureAllPositions());
-        }});
-        topPanel.add(new JButton("Save Position Configuration") {{
-            addActionListener(e -> savePositions());
-        }});
+        JButton refreshButton = new JButton("Refresh");
+        refreshButton.addActionListener(e -> {
+            loadBadgeReaderPositions();
+            mapViewPanel.repaint();
+        });
+        JButton configureButton = new JButton("Configure Positions");
+        configureButton.addActionListener(e -> showPositionConfigDialog());
+        JButton autoConfigureButton = new JButton("Auto-configure");
+        autoConfigureButton.addActionListener(e -> autoConfigureAllPositions());
+        JButton savePositionsButton = new JButton("Save Positions");
+        savePositionsButton.addActionListener(e -> savePositions());
+        topPanel.add(refreshButton);
+        topPanel.add(configureButton);
+        topPanel.add(autoConfigureButton);
+        topPanel.add(savePositionsButton);
         
         // Zoom controls
         topPanel.add(Box.createHorizontalStrut(10));
@@ -131,11 +136,16 @@ public class RealTimeMonitorPanel extends JPanel {
         
         // Right: Event log
         JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBorder(BorderFactory.createTitledBorder("Real-time Event Log"));
-        rightPanel.add(new JScrollPane(eventLogArea), BorderLayout.CENTER);
-        rightPanel.add(new JButton("Clear Log") {{
-            addActionListener(e -> eventLogArea.setText(""));
-        }}, BorderLayout.SOUTH);
+        rightPanel.setBorder(new TitledBorder("Event Log"));
+        JScrollPane logScroll = new JScrollPane(eventLogArea);
+        logScroll.setBorder(new EmptyBorder(8, 8, 8, 8));
+        rightPanel.add(logScroll, BorderLayout.CENTER);
+        JButton clearLogButton = new JButton("Clear Log");
+        clearLogButton.addActionListener(e -> eventLogArea.setText(""));
+        JPanel logActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        logActions.setBorder(new EmptyBorder(0, 8, 8, 8));
+        logActions.add(clearLogButton);
+        rightPanel.add(logActions, BorderLayout.SOUTH);
         
         // Main layout: Left map, right log
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, 

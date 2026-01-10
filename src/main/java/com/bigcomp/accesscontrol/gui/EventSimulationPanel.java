@@ -11,6 +11,8 @@ import com.bigcomp.accesscontrol.database.DatabaseManager;
 import com.bigcomp.accesscontrol.util.SystemClock;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
@@ -63,6 +65,9 @@ public class EventSimulationPanel extends JPanel {
         };
         userTable = new JTable(userTableModel);
         userTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        userTable.setAutoCreateRowSorter(true);
+        userTable.setFillsViewportHeight(true);
+        styleSimpleTable(userTable);
         
         // Badge reader table (status column editable, add selection column)
         String[] readerColumns = {"Participate", "Badge Reader ID", "Resource ID", "Resource Name", "Status"};
@@ -82,6 +87,9 @@ public class EventSimulationPanel extends JPanel {
         };
         readerTable = new JTable(readerTableModel);
         readerTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        readerTable.setFillsViewportHeight(true);
+        readerTable.setShowGrid(false);
+        readerTable.setIntercellSpacing(new Dimension(0, 0));
         
         // Set column widths
         readerTable.getColumnModel().getColumn(0).setPreferredWidth(80);
@@ -202,66 +210,71 @@ public class EventSimulationPanel extends JPanel {
         statusArea = new JTextArea(5, 40);
         statusArea.setEditable(false);
         statusArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        statusArea.setMargin(new Insets(8, 8, 8, 8));
     }
     
     private void setupLayout() {
         setLayout(new BorderLayout());
+        setBorder(new EmptyBorder(12, 12, 12, 12));
         
         // Left: User list
         JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setBorder(BorderFactory.createTitledBorder("Simulated User List"));
+        leftPanel.setBorder(new TitledBorder("Users"));
         leftPanel.add(new JScrollPane(userTable), BorderLayout.CENTER);
-        JPanel leftButtonPanel = new JPanel(new FlowLayout());
-        leftButtonPanel.add(new JButton("Select All") {{
-            addActionListener(e -> selectAllUsers());
-        }});
-        leftButtonPanel.add(new JButton("Deselect All") {{
-            addActionListener(e -> deselectAllUsers());
-        }});
-        leftButtonPanel.add(new JButton("Add User") {{
-            addActionListener(e -> addSimulatedUser());
-        }});
-        leftButtonPanel.add(new JButton("Add All Users") {{
-            addActionListener(e -> addAllUsers());
-        }});
-        leftButtonPanel.add(new JButton("Remove User") {{
-            addActionListener(e -> removeSimulatedUser());
-        }});
-        leftButtonPanel.add(new JButton("Clear All Users") {{
-            addActionListener(e -> clearAllSimulatedUsers());
-        }});
+        JPanel leftButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        leftButtonPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
+        JButton selectAllUsersButton = new JButton("Select All");
+        selectAllUsersButton.addActionListener(e -> selectAllUsers());
+        JButton deselectAllUsersButton = new JButton("Deselect All");
+        deselectAllUsersButton.addActionListener(e -> deselectAllUsers());
+        JButton addUserButton = new JButton("Add User");
+        addUserButton.addActionListener(e -> addSimulatedUser());
+        JButton addAllUsersButton = new JButton("Add All");
+        addAllUsersButton.addActionListener(e -> addAllUsers());
+        JButton removeUserButton = new JButton("Remove");
+        removeUserButton.addActionListener(e -> removeSimulatedUser());
+        JButton clearUsersButton = new JButton("Clear");
+        clearUsersButton.setForeground(Color.RED);
+        clearUsersButton.addActionListener(e -> clearAllSimulatedUsers());
+        leftButtonPanel.add(selectAllUsersButton);
+        leftButtonPanel.add(deselectAllUsersButton);
+        leftButtonPanel.add(addUserButton);
+        leftButtonPanel.add(addAllUsersButton);
+        leftButtonPanel.add(removeUserButton);
+        leftButtonPanel.add(clearUsersButton);
         leftPanel.add(leftButtonPanel, BorderLayout.SOUTH);
         
         // Center: Badge reader list
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setBorder(BorderFactory.createTitledBorder("Badge Reader List (Available for Simulation)"));
+        centerPanel.setBorder(new TitledBorder("Badge Readers"));
         centerPanel.add(new JScrollPane(readerTable), BorderLayout.CENTER);
         
         // Add control buttons and info below badge reader list
         JPanel readerControlPanel = new JPanel(new BorderLayout());
         
-        JPanel readerButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        readerButtonPanel.add(new JButton("Select All") {{
-            addActionListener(e -> selectAllReaders());
-        }});
-        readerButtonPanel.add(new JButton("Deselect All") {{
-            addActionListener(e -> deselectAllReaders());
-        }});
-        readerButtonPanel.add(new JButton("Select All Readers") {{
-            addActionListener(e -> setAllReadersSelected(true));
-        }});
-        readerButtonPanel.add(new JButton("Deselect All Readers") {{
-            addActionListener(e -> setAllReadersSelected(false));
-        }});
-        readerButtonPanel.add(new JButton("Enable All") {{
-            addActionListener(e -> setAllReadersStatus(true));
-        }});
-        readerButtonPanel.add(new JButton("Disable All") {{
-            addActionListener(e -> setAllReadersStatus(false));
-        }});
-        readerButtonPanel.add(new JButton("Refresh List") {{
-            addActionListener(e -> loadReaders());
-        }});
+        JPanel readerButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        readerButtonPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
+        JButton selectAllReadersButton = new JButton("Select All");
+        selectAllReadersButton.addActionListener(e -> selectAllReaders());
+        JButton deselectAllReadersButton = new JButton("Deselect All");
+        deselectAllReadersButton.addActionListener(e -> deselectAllReaders());
+        JButton participateAllButton = new JButton("Participate All");
+        participateAllButton.addActionListener(e -> setAllReadersSelected(true));
+        JButton participateNoneButton = new JButton("Participate None");
+        participateNoneButton.addActionListener(e -> setAllReadersSelected(false));
+        JButton enableAllButton = new JButton("Enable All");
+        enableAllButton.addActionListener(e -> setAllReadersStatus(true));
+        JButton disableAllButton = new JButton("Disable All");
+        disableAllButton.addActionListener(e -> setAllReadersStatus(false));
+        JButton refreshReadersButton = new JButton("Refresh");
+        refreshReadersButton.addActionListener(e -> loadReaders());
+        readerButtonPanel.add(selectAllReadersButton);
+        readerButtonPanel.add(deselectAllReadersButton);
+        readerButtonPanel.add(participateAllButton);
+        readerButtonPanel.add(participateNoneButton);
+        readerButtonPanel.add(enableAllButton);
+        readerButtonPanel.add(disableAllButton);
+        readerButtonPanel.add(refreshReadersButton);
         readerControlPanel.add(readerButtonPanel, BorderLayout.NORTH);
         
         JPanel readerInfoPanel = new JPanel(new BorderLayout());
@@ -275,6 +288,7 @@ public class EventSimulationPanel extends JPanel {
         infoText.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
         infoText.setBackground(readerControlPanel.getBackground());
         infoText.setForeground(Color.DARK_GRAY);
+        infoText.setBorder(new EmptyBorder(8, 8, 8, 8));
         readerInfoPanel.add(infoText, BorderLayout.CENTER);
         readerControlPanel.add(readerInfoPanel, BorderLayout.SOUTH);
         
@@ -282,11 +296,11 @@ public class EventSimulationPanel extends JPanel {
         
         // Right: Control panel
         JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBorder(BorderFactory.createTitledBorder("Simulation Control"));
+        rightPanel.setBorder(new TitledBorder("Control"));
         
         JPanel controlPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(6, 6, 6, 6);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         
         gbc.gridx = 0; gbc.gridy = 0;
@@ -336,21 +350,23 @@ public class EventSimulationPanel extends JPanel {
         
         gbc.gridx = 0; gbc.gridy = 6;
         gbc.gridwidth = 2;
-        controlPanel.add(new JButton("Reset Statistics") {{
-            addActionListener(e -> resetStatistics());
-        }}, gbc);
+        JButton resetStatsButton = new JButton("Reset Statistics");
+        resetStatsButton.addActionListener(e -> resetStatistics());
+        controlPanel.add(resetStatsButton, gbc);
         
         gbc.gridy = 7;
-        controlPanel.add(new JButton("Refresh Data") {{
-            addActionListener(e -> {
+        JButton refreshDataButton = new JButton("Refresh Data");
+        refreshDataButton.addActionListener(e -> {
                 loadData();
                 JOptionPane.showMessageDialog(EventSimulationPanel.this, 
                     "Data refreshed", "Info", JOptionPane.INFORMATION_MESSAGE);
-            });
-        }}, gbc);
+        });
+        controlPanel.add(refreshDataButton, gbc);
         
         rightPanel.add(controlPanel, BorderLayout.NORTH);
-        rightPanel.add(new JScrollPane(statusArea), BorderLayout.CENTER);
+        JScrollPane statusScroll = new JScrollPane(statusArea);
+        statusScroll.setBorder(new EmptyBorder(8, 8, 8, 8));
+        rightPanel.add(statusScroll, BorderLayout.CENTER);
         
         // Main layout
         JSplitPane leftSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, centerPanel);
@@ -362,6 +378,27 @@ public class EventSimulationPanel extends JPanel {
         mainSplit.setResizeWeight(0.7);
         
         add(mainSplit, BorderLayout.CENTER);
+    }
+
+    private void styleSimpleTable(JTable table) {
+        table.setRowHeight(Math.max(table.getRowHeight(), 28));
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.getTableHeader().setReorderingAllowed(false);
+        table.setDefaultRenderer(Object.class, new StripedTableCellRenderer());
+    }
+
+    private static class StripedTableCellRenderer extends DefaultTableCellRenderer {
+        private final Color stripe = new Color(247, 248, 250);
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (!isSelected) {
+                c.setBackground((row % 2 == 0) ? table.getBackground() : stripe);
+            }
+            return c;
+        }
     }
     
     private void loadData() {

@@ -21,11 +21,17 @@ import java.util.HashSet;
  * Profile Manager - Responsible for loading, saving and managing profiles
  */
 public class ProfileManager {
-    private static final String PROFILES_DIR = "data/profiles";
+    private static final String DEFAULT_PROFILES_DIR = "data/profiles";
+    private final String profilesDir;
     private Map<String, Profile> profiles; // Profile name -> Profile object
     private ObjectMapper objectMapper;
 
     public ProfileManager() {
+        this(DEFAULT_PROFILES_DIR);
+    }
+
+    public ProfileManager(String profilesDir) {
+        this.profilesDir = profilesDir;
         this.profiles = new HashMap<>();
         this.objectMapper = new ObjectMapper();
         loadProfiles();
@@ -36,7 +42,7 @@ public class ProfileManager {
      */
     private void loadProfiles() {
         try {
-            Path profilesPath = Paths.get(PROFILES_DIR);
+            Path profilesPath = Paths.get(profilesDir);
             if (!Files.exists(profilesPath)) {
                 Files.createDirectories(profilesPath);
                 return;
@@ -160,7 +166,7 @@ public class ProfileManager {
      * Save profile to file
      */
     public void saveProfile(Profile profile) throws IOException {
-        Path profilesPath = Paths.get(PROFILES_DIR);
+        Path profilesPath = Paths.get(profilesDir);
         if (!Files.exists(profilesPath)) {
             Files.createDirectories(profilesPath);
         }
@@ -256,7 +262,7 @@ public class ProfileManager {
      */
     public void deleteProfile(String name) throws IOException {
         profiles.remove(name);
-        File file = new File(PROFILES_DIR, name + ".json");
+        File file = new File(new File(profilesDir), name + ".json");
         if (file.exists()) {
             file.delete();
         }

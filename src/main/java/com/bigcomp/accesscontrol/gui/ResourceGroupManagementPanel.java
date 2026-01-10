@@ -10,6 +10,9 @@ import com.bigcomp.accesscontrol.database.DatabaseManager;
 import com.bigcomp.accesscontrol.model.Resource;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.*;
@@ -60,94 +63,111 @@ public class ResourceGroupManagementPanel extends JPanel {
         };
         resourceTable = new JTable(resourceTableModel);
         resourceTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        resourceTable.setAutoCreateRowSorter(true);
+        resourceTable.setFillsViewportHeight(true);
+        styleTable(resourceTable);
         
         // Input fields
         groupNameField = new JTextField(20);
         securityLevelSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 10, 1));
         groupInfoArea = new JTextArea(5, 30);
         groupInfoArea.setEditable(false);
+        groupInfoArea.setLineWrap(true);
+        groupInfoArea.setWrapStyleWord(true);
     }
     
     private void setupLayout() {
         setLayout(new BorderLayout());
+        setBorder(new EmptyBorder(12, 12, 12, 12));
         
         // Left: Resource group list
         JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setBorder(BorderFactory.createTitledBorder("Resource Group List"));
+        leftPanel.setBorder(new TitledBorder("Resource Groups"));
         leftPanel.add(new JScrollPane(groupList), BorderLayout.CENTER);
         
-        JPanel leftButtonPanel = new JPanel(new GridLayout(2, 2, 5, 5));
-        leftButtonPanel.add(new JButton("New Resource Group") {{
-            addActionListener(e -> createNewGroup());
-        }});
-        leftButtonPanel.add(new JButton("Auto-create Resource Groups") {{
-            addActionListener(e -> autoCreateGroups());
-        }});
+        JPanel leftButtonPanel = new JPanel(new GridLayout(2, 2, 8, 8));
+        leftButtonPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
+        JButton newGroupButton = new JButton("New Group");
+        newGroupButton.addActionListener(e -> createNewGroup());
+        JButton autoCreateButton = new JButton("Auto-create");
+        autoCreateButton.addActionListener(e -> autoCreateGroups());
         JButton deleteButton = new JButton("Delete Resource Group");
         deleteButton.setForeground(Color.RED);
         deleteButton.addActionListener(e -> deleteGroup());
-        leftButtonPanel.add(deleteButton);
-        leftButtonPanel.add(new JButton("Refresh List") {{
-            addActionListener(e -> {
+        JButton refreshButton = new JButton("Refresh");
+        refreshButton.addActionListener(e -> {
                 loadGroups();
                 if (groupList.getSelectedValue() != null) {
                     loadSelectedGroup();
                     refreshAvailableResourceTable();
                 }
-            });
-        }});
+        });
+        leftButtonPanel.add(newGroupButton);
+        leftButtonPanel.add(autoCreateButton);
+        leftButtonPanel.add(deleteButton);
+        leftButtonPanel.add(refreshButton);
         leftPanel.add(leftButtonPanel, BorderLayout.SOUTH);
         
         // Center: Resource list
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setBorder(BorderFactory.createTitledBorder("Resource List"));
+        centerPanel.setBorder(new TitledBorder("Group Details"));
         
         // Top: Resource group information
         JPanel infoPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(6, 6, 6, 6);
         gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
         
         gbc.gridx = 0; gbc.gridy = 0;
+        gbc.weightx = 0;
         infoPanel.add(new JLabel("Resource Group Name:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         infoPanel.add(groupNameField, gbc);
         
         gbc.gridx = 0; gbc.gridy = 1;
+        gbc.weightx = 0;
         infoPanel.add(new JLabel("Security Level:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1;
         infoPanel.add(securityLevelSpinner, gbc);
         
         gbc.gridx = 0; gbc.gridy = 2;
         gbc.gridwidth = 2;
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("Add Resource") {{
-            addActionListener(e -> addResourceToGroup());
-        }});
-        buttonPanel.add(new JButton("Remove Resource") {{
-            addActionListener(e -> removeResourceFromGroup());
-        }});
-        buttonPanel.add(new JButton("Save Resource Group") {{
-            addActionListener(e -> saveGroup());
-        }});
-        buttonPanel.add(new JButton("Set UNCONTROLLED") {{
-            setForeground(Color.RED);
-            setToolTipText("Set all resources in this group to UNCONTROLLED state (Emergency Open)");
-            addActionListener(e -> setGroupResourcesState(Resource.ResourceState.UNCONTROLLED));
-        }});
-        buttonPanel.add(new JButton("Set CONTROLLED") {{
-            setToolTipText("Set all resources in this group to CONTROLLED state (Normal)");
-            addActionListener(e -> setGroupResourcesState(Resource.ResourceState.CONTROLLED));
-        }});
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JButton addResourceButton = new JButton("Add");
+        addResourceButton.addActionListener(e -> addResourceToGroup());
+        JButton removeResourceButton = new JButton("Remove");
+        removeResourceButton.addActionListener(e -> removeResourceFromGroup());
+        JButton saveButton = new JButton("Save");
+        saveButton.addActionListener(e -> saveGroup());
+        JButton uncontrolledButton = new JButton("Set UNCONTROLLED");
+        uncontrolledButton.setForeground(Color.RED);
+        uncontrolledButton.setToolTipText("Set all resources in this group to UNCONTROLLED state (Emergency Open)");
+        uncontrolledButton.addActionListener(e -> setGroupResourcesState(Resource.ResourceState.UNCONTROLLED));
+        JButton controlledButton = new JButton("Set CONTROLLED");
+        controlledButton.setToolTipText("Set all resources in this group to CONTROLLED state (Normal)");
+        controlledButton.addActionListener(e -> setGroupResourcesState(Resource.ResourceState.CONTROLLED));
+        buttonPanel.add(addResourceButton);
+        buttonPanel.add(removeResourceButton);
+        buttonPanel.add(saveButton);
+        buttonPanel.add(uncontrolledButton);
+        buttonPanel.add(controlledButton);
         infoPanel.add(buttonPanel, gbc);
         
         centerPanel.add(infoPanel, BorderLayout.NORTH);
-        centerPanel.add(new JScrollPane(resourceTable), BorderLayout.CENTER);
-        centerPanel.add(new JScrollPane(groupInfoArea), BorderLayout.SOUTH);
+        JScrollPane groupResourcesScroll = new JScrollPane(resourceTable);
+        groupResourcesScroll.setBorder(new EmptyBorder(8, 0, 8, 0));
+        centerPanel.add(groupResourcesScroll, BorderLayout.CENTER);
+        JScrollPane groupInfoScroll = new JScrollPane(groupInfoArea);
+        groupInfoScroll.setBorder(new EmptyBorder(0, 0, 0, 0));
+        centerPanel.add(groupInfoScroll, BorderLayout.SOUTH);
         
         // Right: Available resource list
         JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBorder(BorderFactory.createTitledBorder("Available Resources (Double-click or use button to add to resource group)"));
+        rightPanel.setBorder(new TitledBorder("Available Resources"));
         
         JTable availableResourceTable = createAvailableResourceTable();
         
@@ -175,13 +195,14 @@ public class ResourceGroupManagementPanel extends JPanel {
         rightPanel.add(new JScrollPane(availableResourceTable), BorderLayout.CENTER);
         
         // Add button panel
-        JPanel rightButtonPanel = new JPanel(new FlowLayout());
-        rightButtonPanel.add(new JButton("Add to Resource Group") {{
-            addActionListener(e -> addSelectedResourcesFromTable());
-        }});
-        rightButtonPanel.add(new JButton("Refresh List") {{
-            addActionListener(e -> refreshAvailableResourceTable());
-        }});
+        JPanel rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        rightButtonPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
+        JButton addToGroupButton = new JButton("Add Selected");
+        addToGroupButton.addActionListener(e -> addSelectedResourcesFromTable());
+        JButton refreshAvailableButton = new JButton("Refresh");
+        refreshAvailableButton.addActionListener(e -> refreshAvailableResourceTable());
+        rightButtonPanel.add(addToGroupButton);
+        rightButtonPanel.add(refreshAvailableButton);
         rightPanel.add(rightButtonPanel, BorderLayout.SOUTH);
         
         // Main layout
@@ -212,7 +233,31 @@ public class ResourceGroupManagementPanel extends JPanel {
         
         availableResourceTable = new JTable(availableResourceTableModel);
         availableResourceTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        availableResourceTable.setAutoCreateRowSorter(true);
+        availableResourceTable.setFillsViewportHeight(true);
+        styleTable(availableResourceTable);
         return availableResourceTable;
+    }
+
+    private void styleTable(JTable table) {
+        table.setRowHeight(Math.max(table.getRowHeight(), 28));
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.getTableHeader().setReorderingAllowed(false);
+        table.setDefaultRenderer(Object.class, new StripedTableCellRenderer());
+    }
+
+    private static class StripedTableCellRenderer extends DefaultTableCellRenderer {
+        private final Color stripe = new Color(247, 248, 250);
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (!isSelected) {
+                c.setBackground((row % 2 == 0) ? table.getBackground() : stripe);
+            }
+            return c;
+        }
     }
     
     /**
