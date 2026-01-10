@@ -44,6 +44,27 @@ public class EventSimulationPanel extends JPanel {
     private int totalEvents = 0;
     private int grantedEvents = 0;
     private int deniedEvents = 0;
+    private TitledBorder usersBorder;
+    private TitledBorder readersBorder;
+    private TitledBorder controlBorder;
+    private JButton selectAllUsersButton;
+    private JButton deselectAllUsersButton;
+    private JButton addUserButton;
+    private JButton addAllUsersButton;
+    private JButton removeUserButton;
+    private JButton clearUsersButton;
+    private JButton selectAllReadersButton;
+    private JButton deselectAllReadersButton;
+    private JButton participateAllButton;
+    private JButton participateNoneButton;
+    private JButton enableAllButton;
+    private JButton disableAllButton;
+    private JButton refreshReadersButton;
+    private JButton resetStatsButton;
+    private JButton refreshDataButton;
+    private JLabel intervalLabel;
+    private JLabel systemTimeLabel;
+    private JTextArea infoText;
     
     public EventSimulationPanel(AccessControlSystem accessControlSystem) {
         this.accessControlSystem = accessControlSystem;
@@ -51,12 +72,13 @@ public class EventSimulationPanel extends JPanel {
         this.userBadges = new HashMap<>();
         initializeComponents();
         setupLayout();
+        applyLanguage();
         loadData();
     }
     
     private void initializeComponents() {
         // User table
-        String[] userColumns = {"User ID", "Name", "Type", "Badge Code"};
+        String[] userColumns = getUserColumnNames();
         userTableModel = new DefaultTableModel(userColumns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -70,7 +92,7 @@ public class EventSimulationPanel extends JPanel {
         styleSimpleTable(userTable);
         
         // Badge reader table (status column editable, add selection column)
-        String[] readerColumns = {"Participate", "Badge Reader ID", "Resource ID", "Resource Name", "Status"};
+        String[] readerColumns = getReaderColumnNames();
         readerTableModel = new DefaultTableModel(readerColumns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -209,7 +231,10 @@ public class EventSimulationPanel extends JPanel {
         // Status area
         statusArea = new JTextArea(5, 40);
         statusArea.setEditable(false);
-        statusArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        Font textAreaFont = UIManager.getFont("TextArea.font");
+        if (textAreaFont != null) {
+            statusArea.setFont(textAreaFont);
+        }
         statusArea.setMargin(new Insets(8, 8, 8, 8));
     }
     
@@ -219,21 +244,22 @@ public class EventSimulationPanel extends JPanel {
         
         // Left: User list
         JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setBorder(new TitledBorder("Users"));
+        usersBorder = new TitledBorder("");
+        leftPanel.setBorder(usersBorder);
         leftPanel.add(new JScrollPane(userTable), BorderLayout.CENTER);
         JPanel leftButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         leftButtonPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
-        JButton selectAllUsersButton = new JButton("Select All");
+        selectAllUsersButton = new JButton();
         selectAllUsersButton.addActionListener(e -> selectAllUsers());
-        JButton deselectAllUsersButton = new JButton("Deselect All");
+        deselectAllUsersButton = new JButton();
         deselectAllUsersButton.addActionListener(e -> deselectAllUsers());
-        JButton addUserButton = new JButton("Add User");
+        addUserButton = new JButton();
         addUserButton.addActionListener(e -> addSimulatedUser());
-        JButton addAllUsersButton = new JButton("Add All");
+        addAllUsersButton = new JButton();
         addAllUsersButton.addActionListener(e -> addAllUsers());
-        JButton removeUserButton = new JButton("Remove");
+        removeUserButton = new JButton();
         removeUserButton.addActionListener(e -> removeSimulatedUser());
-        JButton clearUsersButton = new JButton("Clear");
+        clearUsersButton = new JButton();
         clearUsersButton.setForeground(Color.RED);
         clearUsersButton.addActionListener(e -> clearAllSimulatedUsers());
         leftButtonPanel.add(selectAllUsersButton);
@@ -246,7 +272,8 @@ public class EventSimulationPanel extends JPanel {
         
         // Center: Badge reader list
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setBorder(new TitledBorder("Badge Readers"));
+        readersBorder = new TitledBorder("");
+        centerPanel.setBorder(readersBorder);
         centerPanel.add(new JScrollPane(readerTable), BorderLayout.CENTER);
         
         // Add control buttons and info below badge reader list
@@ -254,19 +281,19 @@ public class EventSimulationPanel extends JPanel {
         
         JPanel readerButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         readerButtonPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
-        JButton selectAllReadersButton = new JButton("Select All");
+        selectAllReadersButton = new JButton();
         selectAllReadersButton.addActionListener(e -> selectAllReaders());
-        JButton deselectAllReadersButton = new JButton("Deselect All");
+        deselectAllReadersButton = new JButton();
         deselectAllReadersButton.addActionListener(e -> deselectAllReaders());
-        JButton participateAllButton = new JButton("Participate All");
+        participateAllButton = new JButton();
         participateAllButton.addActionListener(e -> setAllReadersSelected(true));
-        JButton participateNoneButton = new JButton("Participate None");
+        participateNoneButton = new JButton();
         participateNoneButton.addActionListener(e -> setAllReadersSelected(false));
-        JButton enableAllButton = new JButton("Enable All");
+        enableAllButton = new JButton();
         enableAllButton.addActionListener(e -> setAllReadersStatus(true));
-        JButton disableAllButton = new JButton("Disable All");
+        disableAllButton = new JButton();
         disableAllButton.addActionListener(e -> setAllReadersStatus(false));
-        JButton refreshReadersButton = new JButton("Refresh");
+        refreshReadersButton = new JButton();
         refreshReadersButton.addActionListener(e -> loadReaders());
         readerButtonPanel.add(selectAllReadersButton);
         readerButtonPanel.add(deselectAllReadersButton);
@@ -278,12 +305,7 @@ public class EventSimulationPanel extends JPanel {
         readerControlPanel.add(readerButtonPanel, BorderLayout.NORTH);
         
         JPanel readerInfoPanel = new JPanel(new BorderLayout());
-        JTextArea infoText = new JTextArea(
-            "Instructions:\n" +
-            "• 'Participate' column: Check to include this badge reader in event simulation\n" +
-            "• 'Status' column: Enable/disable badge reader, disabled readers won't respond to any badge operations\n" +
-            "• Only badge readers with both 'Participate' checked and 'Status' enabled will generate events in simulation"
-        );
+        infoText = new JTextArea();
         infoText.setEditable(false);
         infoText.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
         infoText.setBackground(readerControlPanel.getBackground());
@@ -296,7 +318,8 @@ public class EventSimulationPanel extends JPanel {
         
         // Right: Control panel
         JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBorder(new TitledBorder("Control"));
+        controlBorder = new TitledBorder("");
+        rightPanel.setBorder(controlBorder);
         
         JPanel controlPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -312,7 +335,8 @@ public class EventSimulationPanel extends JPanel {
         
         gbc.gridy = 2;
         gbc.gridwidth = 1;
-        controlPanel.add(new JLabel("Event Interval (seconds):"), gbc);
+        intervalLabel = new JLabel();
+        controlPanel.add(intervalLabel, gbc);
         gbc.gridx = 1;
         intervalSpinner = new JSpinner(new SpinnerNumberModel(2, 1, 60, 1));
         controlPanel.add(intervalSpinner, gbc);
@@ -326,10 +350,14 @@ public class EventSimulationPanel extends JPanel {
         // System time control
         gbc.gridy = 4;
         gbc.gridwidth = 1;
-        controlPanel.add(new JLabel("System Time:"), gbc);
+        systemTimeLabel = new JLabel();
+        controlPanel.add(systemTimeLabel, gbc);
         gbc.gridx = 1;
         timeLabel = new JLabel(getCurrentTimeString());
-        timeLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
+        Font labelFont = UIManager.getFont("Label.font");
+        if (labelFont != null) {
+            timeLabel.setFont(labelFont);
+        }
         controlPanel.add(timeLabel, gbc);
         
         gbc.gridx = 0; gbc.gridy = 5;
@@ -350,12 +378,12 @@ public class EventSimulationPanel extends JPanel {
         
         gbc.gridx = 0; gbc.gridy = 6;
         gbc.gridwidth = 2;
-        JButton resetStatsButton = new JButton("Reset Statistics");
+        resetStatsButton = new JButton();
         resetStatsButton.addActionListener(e -> resetStatistics());
         controlPanel.add(resetStatsButton, gbc);
         
         gbc.gridy = 7;
-        JButton refreshDataButton = new JButton("Refresh Data");
+        refreshDataButton = new JButton();
         refreshDataButton.addActionListener(e -> {
                 loadData();
                 JOptionPane.showMessageDialog(EventSimulationPanel.this, 
@@ -378,6 +406,65 @@ public class EventSimulationPanel extends JPanel {
         mainSplit.setResizeWeight(0.7);
         
         add(mainSplit, BorderLayout.CENTER);
+    }
+
+    public void applyLanguage() {
+        usersBorder.setTitle(I18n.t("sim.title.users"));
+        readersBorder.setTitle(I18n.t("sim.title.readers"));
+        controlBorder.setTitle(I18n.t("sim.title.control"));
+
+        selectAllUsersButton.setText(I18n.t("common.selectAll"));
+        deselectAllUsersButton.setText(I18n.t("common.deselectAll"));
+        addUserButton.setText(I18n.t("sim.action.addUser"));
+        addAllUsersButton.setText(I18n.t("sim.action.addAllUsers"));
+        removeUserButton.setText(I18n.t("common.remove"));
+        clearUsersButton.setText(I18n.t("common.clear"));
+
+        selectAllReadersButton.setText(I18n.t("common.selectAll"));
+        deselectAllReadersButton.setText(I18n.t("common.deselectAll"));
+        participateAllButton.setText(I18n.t("sim.action.participateAll"));
+        participateNoneButton.setText(I18n.t("sim.action.participateNone"));
+        enableAllButton.setText(I18n.t("sim.action.enableAll"));
+        disableAllButton.setText(I18n.t("sim.action.disableAll"));
+        refreshReadersButton.setText(I18n.t("common.refresh"));
+
+        startButton.setText(I18n.t("sim.action.start"));
+        stopButton.setText(I18n.t("sim.action.stop"));
+        intervalLabel.setText(I18n.t("sim.field.interval"));
+        systemTimeLabel.setText(I18n.t("sim.field.systemTime"));
+        setTimeButton.setText(I18n.t("sim.action.setTime"));
+        resetTimeButton.setText(I18n.t("sim.action.resetTime"));
+        resetStatsButton.setText(I18n.t("sim.action.resetStats"));
+        refreshDataButton.setText(I18n.t("sim.action.refreshData"));
+
+        infoText.setText(I18n.t("sim.text.instructions"));
+
+        userTableModel.setColumnIdentifiers(getUserColumnNames());
+        readerTableModel.setColumnIdentifiers(getReaderColumnNames());
+        userTable.getTableHeader().repaint();
+        readerTable.getTableHeader().repaint();
+
+        revalidate();
+        repaint();
+    }
+
+    private String[] getUserColumnNames() {
+        return new String[]{
+            I18n.t("sim.user.col.userId"),
+            I18n.t("sim.user.col.name"),
+            I18n.t("sim.user.col.type"),
+            I18n.t("sim.user.col.badgeCode")
+        };
+    }
+
+    private String[] getReaderColumnNames() {
+        return new String[]{
+            I18n.t("sim.reader.col.participate"),
+            I18n.t("sim.reader.col.readerId"),
+            I18n.t("sim.reader.col.resourceId"),
+            I18n.t("sim.reader.col.resourceName"),
+            I18n.t("sim.reader.col.status")
+        };
     }
 
     private void styleSimpleTable(JTable table) {

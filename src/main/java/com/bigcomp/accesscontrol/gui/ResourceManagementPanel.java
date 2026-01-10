@@ -29,18 +29,29 @@ public class ResourceManagementPanel extends JPanel {
     private JTextField locationField;
     private JTextField buildingField;
     private JTextField floorField;
+    private TitledBorder formBorder;
+    private JLabel nameLabel;
+    private JLabel typeLabel;
+    private JLabel locationLabel;
+    private JLabel buildingLabel;
+    private JLabel floorLabel;
+    private JButton addButton;
+    private JButton deleteButton;
+    private JButton createReaderButton;
+    private JButton createAllReadersButton;
+    private JButton linkGroupButton;
 
     public ResourceManagementPanel(AccessControlSystem accessControlSystem) {
         this.accessControlSystem = accessControlSystem;
         this.dbManager = accessControlSystem.getDatabaseManager();
         initializeComponents();
         setupLayout();
+        applyLanguage();
         loadResources();
     }
 
     private void initializeComponents() {
-        String[] columnNames = {"ID", "Name", "Type", "Location", "Building", "Floor", "State"};
-        tableModel = new DefaultTableModel(columnNames, 0) {
+        tableModel = new DefaultTableModel(getColumnNames(), 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return column == 6; // Only state column is editable
@@ -66,7 +77,8 @@ public class ResourceManagementPanel extends JPanel {
         
         // Top: Input form
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(new TitledBorder("Resource"));
+        formBorder = new TitledBorder("");
+        formPanel.setBorder(formBorder);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(6, 6, 6, 6);
         gbc.anchor = GridBagConstraints.WEST;
@@ -75,35 +87,40 @@ public class ResourceManagementPanel extends JPanel {
         
         gbc.gridx = 0; gbc.gridy = 0;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Name:"), gbc);
+        nameLabel = new JLabel();
+        formPanel.add(nameLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         formPanel.add(nameField, gbc);
         
         gbc.gridx = 0; gbc.gridy = 1;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Type:"), gbc);
+        typeLabel = new JLabel();
+        formPanel.add(typeLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         formPanel.add(typeCombo, gbc);
         
         gbc.gridx = 0; gbc.gridy = 2;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Location:"), gbc);
+        locationLabel = new JLabel();
+        formPanel.add(locationLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         formPanel.add(locationField, gbc);
         
         gbc.gridx = 0; gbc.gridy = 3;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Building:"), gbc);
+        buildingLabel = new JLabel();
+        formPanel.add(buildingLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         formPanel.add(buildingField, gbc);
         
         gbc.gridx = 0; gbc.gridy = 4;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Floor:"), gbc);
+        floorLabel = new JLabel();
+        formPanel.add(floorLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         formPanel.add(floorField, gbc);
@@ -111,15 +128,15 @@ public class ResourceManagementPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = 5;
         gbc.gridwidth = 2;
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        JButton addButton = new JButton("Add Resource");
+        addButton = new JButton();
         addButton.addActionListener(e -> addResource());
-        JButton deleteButton = new JButton("Delete Resource");
+        deleteButton = new JButton();
         deleteButton.addActionListener(e -> deleteResource());
-        JButton createReaderButton = new JButton("Create Badge Reader");
+        createReaderButton = new JButton();
         createReaderButton.addActionListener(e -> createBadgeReader());
-        JButton createAllReadersButton = new JButton("Create Readers (All)");
+        createAllReadersButton = new JButton();
         createAllReadersButton.addActionListener(e -> createBadgeReadersForAll());
-        JButton linkGroupButton = new JButton("Link to Group");
+        linkGroupButton = new JButton();
         linkGroupButton.addActionListener(e -> linkToResourceGroup());
         buttonPanel.add(addButton);
         buttonPanel.add(deleteButton);
@@ -161,7 +178,7 @@ public class ResourceManagementPanel extends JPanel {
         try {
             String name = nameField.getText().trim();
             if (name.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please enter resource name", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.t("resource.msg.enterName"), I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
                 return;
             }
             
@@ -184,17 +201,17 @@ public class ResourceManagementPanel extends JPanel {
             buildingField.setText("");
             floorField.setText("");
             
-            JOptionPane.showMessageDialog(this, "Resource added successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("resource.msg.added"), I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Failed to add resource: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.f("resource.msg.addFailed", e.getMessage()),
+                I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
         }
     }
     
     private void deleteResource() {
         int selectedRow = resourceTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a resource to delete", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("resource.msg.selectDelete"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
             return;
         }
         
@@ -202,8 +219,8 @@ public class ResourceManagementPanel extends JPanel {
         String resourceName = (String) tableModel.getValueAt(selectedRow, 1);
         
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "Are you sure you want to delete resource \"" + resourceName + "\"?\nThis operation will also delete associated badge readers and resource group associations.", 
-            "Confirm Delete", 
+            I18n.f("resource.msg.confirmDelete", resourceName),
+            I18n.t("common.confirmDelete.title"),
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
         if (confirm == JOptionPane.YES_OPTION) {
@@ -225,10 +242,10 @@ public class ResourceManagementPanel extends JPanel {
                 }
                 
                 loadResources();
-                JOptionPane.showMessageDialog(this, "Resource deleted successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.t("resource.msg.deleted"), I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to delete resource: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("resource.msg.deleteFailed", e.getMessage()),
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
         }
@@ -237,7 +254,7 @@ public class ResourceManagementPanel extends JPanel {
     private void createBadgeReader() {
         int selectedRow = resourceTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a resource", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("resource.msg.selectResource"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
             return;
         }
         
@@ -247,9 +264,8 @@ public class ResourceManagementPanel extends JPanel {
         // Check if resource already has a badge reader
         if (resource != null && resource.getBadgeReaderId() != null && !resource.getBadgeReaderId().isEmpty()) {
             int confirm = JOptionPane.showConfirmDialog(this,
-                "Resource \"" + resource.getName() + "\" already has a badge reader: " + resource.getBadgeReaderId() + "\n\n" +
-                "Do you want to create a new badge reader? This will replace the existing one.",
-                "Confirm",
+                I18n.f("resource.msg.readerExistsConfirm", resource.getName(), resource.getBadgeReaderId()),
+                I18n.t("common.info"),
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
             if (confirm != JOptionPane.YES_OPTION) {
@@ -271,10 +287,10 @@ public class ResourceManagementPanel extends JPanel {
             }
             
             loadResources();
-            JOptionPane.showMessageDialog(this, "Badge reader created successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("resource.msg.readerCreated"), I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Failed to create badge reader: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.f("resource.msg.readerCreateFailed", e.getMessage()),
+                I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
         }
     }
     
@@ -286,7 +302,7 @@ public class ResourceManagementPanel extends JPanel {
         
         if (allResources.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
-                "No available resources, please add resources first", "Info", 
+                I18n.t("resource.msg.noResources"), I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
@@ -306,23 +322,16 @@ public class ResourceManagementPanel extends JPanel {
         
         if (resourcesWithoutReader == 0) {
             JOptionPane.showMessageDialog(this, 
-                "All resources already have badge readers configured!\n\n" +
-                "Total resources: " + totalResources + "\n" +
-                "With badge readers: " + resourcesWithReader,
-                "Info", 
+                I18n.f("resource.msg.allHaveReaders", totalResources, resourcesWithReader),
+                I18n.t("common.info"), 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
         // Confirmation dialog
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Will create badge readers for " + resourcesWithoutReader + " resources\n\n" +
-            "Statistics:\n" +
-            "• Total resources: " + totalResources + "\n" +
-            "• Already have badge readers: " + resourcesWithReader + "\n" +
-            "• Need to create: " + resourcesWithoutReader + "\n\n" +
-            "Continue?",
-            "Create Badge Readers for All Resources",
+            I18n.f("resource.msg.createReadersConfirm", resourcesWithoutReader, totalResources, resourcesWithReader),
+            I18n.t("resource.action.createReadersAll"),
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE);
         
@@ -395,24 +404,19 @@ public class ResourceManagementPanel extends JPanel {
         
         // Display results
         String message = String.format(
-            "Badge reader creation completed!\n\n" +
-            "Statistics:\n" +
-            "• Successfully created: %d\n" +
-            "• Skipped (already exists): %d\n" +
-            "• Failed: %d\n\n" +
-            "Details:\n%s",
+            I18n.t("resource.msg.createReadersDone"),
             createdCount, skippedCount, errorCount, details.toString()
         );
         
         JOptionPane.showMessageDialog(this, message, 
-            "Batch Badge Reader Creation Complete", 
+            I18n.t("resource.msg.createReadersTitle"), 
             createdCount > 0 ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE);
     }
     
     private void linkToResourceGroup() {
         int selectedRow = resourceTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a resource", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("resource.msg.selectResource"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
             return;
         }
         
@@ -425,10 +429,8 @@ public class ResourceManagementPanel extends JPanel {
         
         if (groups.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
-                "No available resource groups.\n\nPlease create resource group JSON files in data/groups/ directory first.\n" +
-                "Example: {\"name\": \"Office Area\", \"securityLevel\": 1, \"resources\": []}\n\n" +
-                "After creating, please restart the program or refresh resource groups.", 
-                "Warning", 
+                I18n.t("resource.msg.noGroupsHelp"),
+                I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -437,8 +439,8 @@ public class ResourceManagementPanel extends JPanel {
         
         // Show selection dialog
         String selectedGroup = (String) JOptionPane.showInputDialog(this,
-            "Select resource group to link resource \"" + resourceName + "\" to:",
-            "Link to Resource Group",
+            I18n.f("resource.msg.selectGroup", resourceName),
+            I18n.t("resource.action.linkGroup"),
             JOptionPane.QUESTION_MESSAGE,
             null,
             groupNames,
@@ -460,14 +462,12 @@ public class ResourceManagementPanel extends JPanel {
                 accessControlSystem.getAccessRequestProcessor().reloadData();
                 
                 JOptionPane.showMessageDialog(this, 
-                    "Resource has been linked to resource group \"" + selectedGroup + "\"\n\n" +
-                    "Resource ID: " + resourceId + "\n" +
-                    "You can now configure access permissions for this resource group in profiles.", 
-                    "Success", 
+                    I18n.f("resource.msg.linkedToGroup", selectedGroup, resourceId),
+                    I18n.t("common.success"), 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to link resource group: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("resource.msg.linkFailed", e.getMessage()),
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
         }
@@ -492,9 +492,41 @@ public class ResourceManagementPanel extends JPanel {
             // Reload in-memory data
             accessControlSystem.getAccessRequestProcessor().reloadData();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Failed to load resources: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.f("resource.msg.loadFailed", e.getMessage()),
+                I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    public void applyLanguage() {
+        formBorder.setTitle(I18n.t("resource.title"));
+        nameLabel.setText(I18n.t("resource.name"));
+        typeLabel.setText(I18n.t("resource.type"));
+        locationLabel.setText(I18n.t("resource.location"));
+        buildingLabel.setText(I18n.t("resource.building"));
+        floorLabel.setText(I18n.t("resource.floor"));
+
+        addButton.setText(I18n.t("resource.action.add"));
+        deleteButton.setText(I18n.t("resource.action.delete"));
+        createReaderButton.setText(I18n.t("resource.action.createReader"));
+        createAllReadersButton.setText(I18n.t("resource.action.createReadersAll"));
+        linkGroupButton.setText(I18n.t("resource.action.linkGroup"));
+
+        tableModel.setColumnIdentifiers(getColumnNames());
+        resourceTable.getTableHeader().repaint();
+        revalidate();
+        repaint();
+    }
+
+    private String[] getColumnNames() {
+        return new String[]{
+            I18n.t("resource.col.id"),
+            I18n.t("resource.col.name"),
+            I18n.t("resource.col.type"),
+            I18n.t("resource.col.location"),
+            I18n.t("resource.col.building"),
+            I18n.t("resource.col.floor"),
+            I18n.t("resource.col.state")
+        };
     }
 }
 

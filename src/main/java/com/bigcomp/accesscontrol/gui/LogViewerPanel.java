@@ -31,17 +31,29 @@ public class LogViewerPanel extends JPanel {
     private JTextField resourceIdField;
     private JTextField userIdField;
     private JComboBox<String> grantedCombo;
+    private TitledBorder searchBorder;
+    private TitledBorder recordsBorder;
+    private JLabel startDateLabel;
+    private JLabel endDateLabel;
+    private JLabel badgeCodeLabel;
+    private JLabel resourceIdLabel;
+    private JLabel userIdLabel;
+    private JLabel statusLabel;
+    private JButton searchButton;
+    private JButton clearCriteriaButton;
+    private JButton exportButton;
+    private JButton clearLogsButton;
     
     public LogViewerPanel(AccessControlSystem accessControlSystem) {
         this.accessControlSystem = accessControlSystem;
         this.logManager = accessControlSystem.getLogManager();
         initializeComponents();
         setupLayout();
+        applyLanguage();
     }
     
     private void initializeComponents() {
-        String[] columnNames = {"Time", "Badge Code", "Badge Reader ID", "Resource ID", "User ID", "User Name", "Status"};
-        tableModel = new DefaultTableModel(columnNames, 0) {
+        tableModel = new DefaultTableModel(getColumnNames(), 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -63,7 +75,7 @@ public class LogViewerPanel extends JPanel {
         badgeCodeField = new JTextField(15);
         resourceIdField = new JTextField(15);
         userIdField = new JTextField(15);
-        grantedCombo = new JComboBox<>(new String[]{"All", "Granted", "Denied"});
+        grantedCombo = new JComboBox<>(new String[]{I18n.t("log.status.all"), I18n.t("log.status.granted"), I18n.t("log.status.denied")});
     }
     
     private void setupLayout() {
@@ -72,7 +84,8 @@ public class LogViewerPanel extends JPanel {
         
         // Search panel
         JPanel searchPanel = new JPanel(new GridBagLayout());
-        searchPanel.setBorder(new TitledBorder("Search"));
+        searchBorder = new TitledBorder("");
+        searchPanel.setBorder(searchBorder);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(6, 6, 6, 6);
         gbc.anchor = GridBagConstraints.WEST;
@@ -82,14 +95,16 @@ public class LogViewerPanel extends JPanel {
         // First row: Date range
         gbc.gridx = 0; gbc.gridy = 0;
         gbc.weightx = 0;
-        searchPanel.add(new JLabel("Start Date (yyyy-MM-dd):"), gbc);
+        startDateLabel = new JLabel();
+        searchPanel.add(startDateLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         searchPanel.add(startDateField, gbc);
         
         gbc.gridx = 2;
         gbc.weightx = 0;
-        searchPanel.add(new JLabel("End Date (yyyy-MM-dd):"), gbc);
+        endDateLabel = new JLabel();
+        searchPanel.add(endDateLabel, gbc);
         gbc.gridx = 3;
         gbc.weightx = 1;
         searchPanel.add(endDateField, gbc);
@@ -97,14 +112,16 @@ public class LogViewerPanel extends JPanel {
         // Second row: Badge code and resource ID
         gbc.gridx = 0; gbc.gridy = 1;
         gbc.weightx = 0;
-        searchPanel.add(new JLabel("Badge Code:"), gbc);
+        badgeCodeLabel = new JLabel();
+        searchPanel.add(badgeCodeLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         searchPanel.add(badgeCodeField, gbc);
         
         gbc.gridx = 2;
         gbc.weightx = 0;
-        searchPanel.add(new JLabel("Resource ID:"), gbc);
+        resourceIdLabel = new JLabel();
+        searchPanel.add(resourceIdLabel, gbc);
         gbc.gridx = 3;
         gbc.weightx = 1;
         searchPanel.add(resourceIdField, gbc);
@@ -112,14 +129,16 @@ public class LogViewerPanel extends JPanel {
         // Third row: User ID and status
         gbc.gridx = 0; gbc.gridy = 2;
         gbc.weightx = 0;
-        searchPanel.add(new JLabel("User ID:"), gbc);
+        userIdLabel = new JLabel();
+        searchPanel.add(userIdLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         searchPanel.add(userIdField, gbc);
         
         gbc.gridx = 2;
         gbc.weightx = 0;
-        searchPanel.add(new JLabel("Status:"), gbc);
+        statusLabel = new JLabel();
+        searchPanel.add(statusLabel, gbc);
         gbc.gridx = 3;
         gbc.weightx = 1;
         searchPanel.add(grantedCombo, gbc);
@@ -129,13 +148,13 @@ public class LogViewerPanel extends JPanel {
         gbc.gridwidth = 4;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        JButton searchButton = new JButton("Search");
+        searchButton = new JButton();
         searchButton.addActionListener(e -> searchLogs());
-        JButton clearCriteriaButton = new JButton("Clear Criteria");
+        clearCriteriaButton = new JButton();
         clearCriteriaButton.addActionListener(e -> clearSearchFields());
-        JButton exportButton = new JButton("Export Logs");
+        exportButton = new JButton();
         exportButton.addActionListener(e -> exportLogs());
-        JButton clearLogsButton = new JButton("Clear Logs");
+        clearLogsButton = new JButton();
         clearLogsButton.setForeground(Color.RED);
         clearLogsButton.addActionListener(e -> clearLogs());
         buttonPanel.add(searchButton);
@@ -146,7 +165,8 @@ public class LogViewerPanel extends JPanel {
         
         // Table
         JScrollPane scrollPane = new JScrollPane(logTable);
-        scrollPane.setBorder(new TitledBorder("Records"));
+        recordsBorder = new TitledBorder("");
+        scrollPane.setBorder(recordsBorder);
         
         add(searchPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
@@ -155,6 +175,47 @@ public class LogViewerPanel extends JPanel {
         SwingUtilities.invokeLater(() -> {
             searchLogsSilent();
         });
+    }
+
+    public void applyLanguage() {
+        searchBorder.setTitle(I18n.t("log.title.search"));
+        recordsBorder.setTitle(I18n.t("log.title.records"));
+
+        startDateLabel.setText(I18n.t("log.field.startDate"));
+        endDateLabel.setText(I18n.t("log.field.endDate"));
+        badgeCodeLabel.setText(I18n.t("log.field.badgeCode"));
+        resourceIdLabel.setText(I18n.t("log.field.resourceId"));
+        userIdLabel.setText(I18n.t("log.field.userId"));
+        statusLabel.setText(I18n.t("log.field.status"));
+
+        searchButton.setText(I18n.t("log.action.search"));
+        clearCriteriaButton.setText(I18n.t("log.action.clearCriteria"));
+        exportButton.setText(I18n.t("log.action.export"));
+        clearLogsButton.setText(I18n.t("log.action.clearLogs"));
+
+        int sel = grantedCombo.getSelectedIndex();
+        grantedCombo.removeAllItems();
+        grantedCombo.addItem(I18n.t("log.status.all"));
+        grantedCombo.addItem(I18n.t("log.status.granted"));
+        grantedCombo.addItem(I18n.t("log.status.denied"));
+        grantedCombo.setSelectedIndex(Math.max(0, Math.min(sel, 2)));
+
+        tableModel.setColumnIdentifiers(getColumnNames());
+        logTable.getTableHeader().repaint();
+        revalidate();
+        repaint();
+    }
+
+    private String[] getColumnNames() {
+        return new String[]{
+            I18n.t("log.col.time"),
+            I18n.t("log.col.badgeCode"),
+            I18n.t("log.col.readerId"),
+            I18n.t("log.col.resourceId"),
+            I18n.t("log.col.userId"),
+            I18n.t("log.col.userName"),
+            I18n.t("log.col.status")
+        };
     }
 
     private void styleTable(JTable table) {
@@ -239,10 +300,10 @@ public class LogViewerPanel extends JPanel {
                 criteria.setUserId(userId);
             }
             
-            String status = (String) grantedCombo.getSelectedItem();
-            if ("Granted".equals(status)) {
+            int statusIndex = grantedCombo.getSelectedIndex();
+            if (statusIndex == 1) {
                 criteria.setGranted(true);
-            } else if ("Denied".equals(status)) {
+            } else if (statusIndex == 2) {
                 criteria.setGranted(false);
             }
             
@@ -337,10 +398,10 @@ public class LogViewerPanel extends JPanel {
                 criteria.setUserId(userId);
             }
             
-            String status = (String) grantedCombo.getSelectedItem();
-            if ("Granted".equals(status)) {
+            int statusIndex = grantedCombo.getSelectedIndex();
+            if (statusIndex == 1) {
                 criteria.setGranted(true);
-            } else if ("Denied".equals(status)) {
+            } else if (statusIndex == 2) {
                 criteria.setGranted(false);
             }
             
@@ -445,7 +506,10 @@ public class LogViewerPanel extends JPanel {
         
         JTextArea textArea = new JTextArea(report);
         textArea.setEditable(false);
-        textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        Font textAreaFont = UIManager.getFont("TextArea.font");
+        if (textAreaFont != null) {
+            textArea.setFont(textAreaFont);
+        }
         textArea.setBackground(Color.WHITE);
         
         JScrollPane scrollPane = new JScrollPane(textArea);
@@ -476,7 +540,10 @@ public class LogViewerPanel extends JPanel {
         
         JTextArea textArea = new JTextArea(report);
         textArea.setEditable(false);
-        textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        Font textAreaFont = UIManager.getFont("TextArea.font");
+        if (textAreaFont != null) {
+            textArea.setFont(textAreaFont);
+        }
         textArea.setBackground(Color.WHITE);
         
         JScrollPane scrollPane = new JScrollPane(textArea);

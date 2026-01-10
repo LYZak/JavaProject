@@ -30,11 +30,27 @@ public class ProfileManagementPanel extends JPanel {
     private JTextField profileNameField;
     private JComboBox<String> groupCombo;
     private JTextArea profileInfoArea;
+    private TitledBorder profilesBorder;
+    private TitledBorder rightsBorder;
+    private TitledBorder timeFilterBorder;
+    private TitledBorder profileBorder;
+    private JLabel groupLabel;
+    private JLabel profileNameLabel;
+    private JButton newButton;
+    private JButton modifyButton;
+    private JButton deleteButton;
+    private JButton restoreButton;
+    private JButton refreshGroupsButton;
+    private JButton addRightButton;
+    private JButton removeRightButton;
+    private JButton editTimeFilterButton;
+    private JButton saveButton;
     
     public ProfileManagementPanel(AccessControlSystem accessControlSystem) {
         this.accessControlSystem = accessControlSystem;
         initializeComponents();
         setupLayout();
+        applyLanguage();
         loadProfiles();
         loadGroups();
     }
@@ -78,19 +94,20 @@ public class ProfileManagementPanel extends JPanel {
         
         // Left: Profile list and operations
         JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setBorder(new TitledBorder("Profiles"));
+        profilesBorder = new TitledBorder("");
+        leftPanel.setBorder(profilesBorder);
         leftPanel.add(new JScrollPane(profileList), BorderLayout.CENTER);
         
         JPanel leftButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         leftButtonPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
-        JButton newButton = new JButton("New");
+        newButton = new JButton();
         newButton.addActionListener(e -> createNewProfile());
-        JButton modifyButton = new JButton("Modify");
+        modifyButton = new JButton();
         modifyButton.addActionListener(e -> modifyProfile());
-        JButton deleteButton = new JButton("Delete");
+        deleteButton = new JButton();
         deleteButton.setForeground(Color.RED);
         deleteButton.addActionListener(e -> deleteProfile());
-        JButton restoreButton = new JButton("Restore");
+        restoreButton = new JButton();
         restoreButton.addActionListener(e -> restoreProfile());
         leftButtonPanel.add(newButton);
         leftButtonPanel.add(modifyButton);
@@ -100,22 +117,24 @@ public class ProfileManagementPanel extends JPanel {
         
         // Center: Access rights management
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setBorder(new TitledBorder("Access Rights"));
+        rightsBorder = new TitledBorder("");
+        centerPanel.setBorder(rightsBorder);
         
         // Top: Add access rights
         JPanel addPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         addPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
-        addPanel.add(new JLabel("Resource Group:"));
+        groupLabel = new JLabel();
+        addPanel.add(groupLabel);
         addPanel.add(groupCombo);
-        JButton refreshGroupsButton = new JButton("Refresh Groups");
+        refreshGroupsButton = new JButton();
         refreshGroupsButton.addActionListener(e -> {
                 loadGroups();
                 JOptionPane.showMessageDialog(ProfileManagementPanel.this, 
                     "Resource group list refreshed", "Info", JOptionPane.INFORMATION_MESSAGE);
         });
-        JButton addRightButton = new JButton("Add Right");
+        addRightButton = new JButton();
         addRightButton.addActionListener(e -> addAccessRight());
-        JButton removeRightButton = new JButton("Remove Right");
+        removeRightButton = new JButton();
         removeRightButton.addActionListener(e -> removeAccessRight());
         addPanel.add(refreshGroupsButton);
         addPanel.add(addRightButton);
@@ -129,13 +148,14 @@ public class ProfileManagementPanel extends JPanel {
         
         // Bottom: Time filter editing
         JPanel timeFilterPanel = new JPanel(new BorderLayout());
-        timeFilterPanel.setBorder(new TitledBorder("Time Filter"));
+        timeFilterBorder = new TitledBorder("");
+        timeFilterPanel.setBorder(timeFilterBorder);
         JScrollPane timeFilterScroll = new JScrollPane(profileInfoArea);
         timeFilterScroll.setBorder(new EmptyBorder(8, 8, 8, 8));
         timeFilterPanel.add(timeFilterScroll, BorderLayout.CENTER);
         JPanel timeFilterButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         timeFilterButtonPanel.setBorder(new EmptyBorder(0, 8, 8, 8));
-        JButton editTimeFilterButton = new JButton("Edit Time Filter");
+        editTimeFilterButton = new JButton();
         editTimeFilterButton.addActionListener(e -> editTimeFilter());
         timeFilterButtonPanel.add(editTimeFilterButton);
         timeFilterPanel.add(timeFilterButtonPanel, BorderLayout.SOUTH);
@@ -143,7 +163,8 @@ public class ProfileManagementPanel extends JPanel {
         
         // Right: Profile information
         JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBorder(new TitledBorder("Profile"));
+        profileBorder = new TitledBorder("");
+        rightPanel.setBorder(profileBorder);
         JPanel infoPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(6, 6, 6, 6);
@@ -153,13 +174,14 @@ public class ProfileManagementPanel extends JPanel {
         
         gbc.gridx = 0; gbc.gridy = 0;
         gbc.weightx = 0;
-        infoPanel.add(new JLabel("Profile Name:"), gbc);
+        profileNameLabel = new JLabel();
+        infoPanel.add(profileNameLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         infoPanel.add(profileNameField, gbc);
         
         rightPanel.add(infoPanel, BorderLayout.NORTH);
-        JButton saveButton = new JButton("Save Profile");
+        saveButton = new JButton();
         saveButton.addActionListener(e -> saveProfile());
         JPanel savePanel = new JPanel(new BorderLayout());
         savePanel.setBorder(new EmptyBorder(8, 8, 8, 8));
@@ -215,7 +237,7 @@ public class ProfileManagementPanel extends JPanel {
         
         if (groups.isEmpty()) {
             // If no resource groups, prompt user
-            groupCombo.addItem("(No resource groups, please create in data/groups/ directory)");
+            groupCombo.addItem(I18n.t("profile.msg.noGroups"));
             groupCombo.setEnabled(false);
         } else {
             for (String name : groups.keySet()) {
@@ -269,7 +291,7 @@ public class ProfileManagementPanel extends JPanel {
     }
     
     private void createNewProfile() {
-        String name = JOptionPane.showInputDialog(this, "Please enter profile name:", "New Profile", 
+        String name = JOptionPane.showInputDialog(this, I18n.t("profile.msg.enterName"), I18n.t("profile.action.new"),
             JOptionPane.QUESTION_MESSAGE);
         if (name != null && !name.trim().isEmpty()) {
             Profile profile = new Profile(name.trim());
@@ -279,8 +301,8 @@ public class ProfileManagementPanel extends JPanel {
                 loadProfiles();
                 profileList.setSelectedValue(name.trim(), true);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to create profile: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("profile.msg.createFailed", e.getMessage()),
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -288,13 +310,13 @@ public class ProfileManagementPanel extends JPanel {
     private void deleteProfile() {
         String selected = profileList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Please select a profile to delete", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.selectDelete"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "Are you sure you want to delete profile \"" + selected + "\"?", "Confirm Delete", 
+            I18n.f("profile.msg.confirmDelete", selected), I18n.t("common.confirmDelete.title"), 
             JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             ProfileManager profileManager = accessControlSystem.getProfileManager();
@@ -302,11 +324,11 @@ public class ProfileManagementPanel extends JPanel {
                 profileManager.deleteProfile(selected);
                 loadProfiles();
                 clearProfileInfo();
-                JOptionPane.showMessageDialog(this, "Profile deleted successfully", "Success", 
+                JOptionPane.showMessageDialog(this, I18n.t("profile.msg.deleted"), I18n.t("common.success"), 
                     JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to delete profile: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("profile.msg.deleteFailed", e.getMessage()),
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -626,7 +648,7 @@ public class ProfileManagementPanel extends JPanel {
     /**
      * Time filter editing dialog (full version)
      */
-    private class TimeFilterDialog extends JDialog {
+    private static class TimeFilterDialog extends JDialog {
         private TimeFilter timeFilter;
         private TimeFilter originalFilter;
         private boolean confirmed = false;
@@ -823,5 +845,37 @@ public class ProfileManagementPanel extends JPanel {
         public boolean isConfirmed() {
             return confirmed;
         }
+    }
+
+    public void applyLanguage() {
+        profilesBorder.setTitle(I18n.t("profile.title.list"));
+        rightsBorder.setTitle(I18n.t("profile.title.rights"));
+        timeFilterBorder.setTitle(I18n.t("profile.title.timeFilter"));
+        profileBorder.setTitle(I18n.t("profile.title.profile"));
+
+        newButton.setText(I18n.t("profile.action.new"));
+        modifyButton.setText(I18n.t("profile.action.modify"));
+        deleteButton.setText(I18n.t("profile.action.delete"));
+        restoreButton.setText(I18n.t("profile.action.restore"));
+
+        groupLabel.setText(I18n.t("profile.field.group"));
+        refreshGroupsButton.setText(I18n.t("profile.action.refreshGroups"));
+        addRightButton.setText(I18n.t("profile.action.addRight"));
+        removeRightButton.setText(I18n.t("profile.action.removeRight"));
+        editTimeFilterButton.setText(I18n.t("profile.action.editTimeFilter"));
+
+        profileNameLabel.setText(I18n.t("profile.field.name"));
+        saveButton.setText(I18n.t("profile.action.save"));
+
+        accessRightsModel.setColumnIdentifiers(new String[]{I18n.t("profile.col.group"), I18n.t("profile.col.timeFilter")});
+        accessRightsTable.getTableHeader().repaint();
+
+        if (!groupCombo.isEnabled()) {
+            groupCombo.removeAllItems();
+            groupCombo.addItem(I18n.t("profile.msg.noGroups"));
+        }
+
+        revalidate();
+        repaint();
     }
 }

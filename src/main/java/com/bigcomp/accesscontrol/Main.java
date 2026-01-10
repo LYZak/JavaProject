@@ -6,7 +6,10 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
 import java.awt.Font;
+import java.awt.GraphicsEnvironment;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Main program entry point
@@ -38,7 +41,7 @@ public class Main {
             }
         }
 
-        Font baseFont = new Font("Segoe UI", Font.PLAIN, 13);
+        Font baseFont = pickBestUiFont();
         FontUIResource base = new FontUIResource(baseFont);
         Enumeration<Object> keys = UIManager.getDefaults().keys();
         while (keys.hasMoreElements()) {
@@ -54,6 +57,48 @@ public class Main {
         UIManager.put("Table.rowHeight", 28);
         UIManager.put("OptionPane.messageFont", base);
         UIManager.put("OptionPane.buttonFont", base);
+    }
+
+    private static Font pickBestUiFont() {
+        int size = 13;
+        List<String> preferred = List.of(
+            "Microsoft YaHei UI",
+            "Microsoft YaHei",
+            "SimSun",
+            "NSimSun",
+            "Noto Sans CJK SC",
+            "Noto Sans CJK TC",
+            "PingFang SC",
+            "Heiti SC",
+            "Arial Unicode MS",
+            "Segoe UI",
+            "SansSerif"
+        );
+
+        String sample = "中文示例ABC123";
+        for (String name : preferred) {
+            Font f = new Font(name, Font.PLAIN, size);
+            if (canDisplayAll(f, sample)) {
+                return f;
+            }
+        }
+
+        String[] families = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+        for (String family : families) {
+            Font f = new Font(family, Font.PLAIN, size);
+            if (canDisplayAll(f, sample)) {
+                return f;
+            }
+        }
+
+        return new Font("SansSerif", Font.PLAIN, size);
+    }
+
+    private static boolean canDisplayAll(Font font, String text) {
+        if (font == null || text == null) {
+            return false;
+        }
+        return font.canDisplayUpTo(text) == -1;
     }
 }
 

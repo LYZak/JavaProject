@@ -31,19 +31,29 @@ public class UserManagementPanel extends JPanel {
     private JTextField lastNameField;
     private JComboBox<User.Gender> genderCombo;
     private JComboBox<User.UserType> userTypeCombo;
+    private TitledBorder formBorder;
+    private JLabel firstNameLabel;
+    private JLabel lastNameLabel;
+    private JLabel genderLabel;
+    private JLabel typeLabel;
+    private JButton addButton;
+    private JButton deleteButton;
+    private JButton createBadgeButton;
+    private JButton assignProfileButton;
+    private JButton autoAssignButton;
 
     public UserManagementPanel(AccessControlSystem accessControlSystem) {
         this.accessControlSystem = accessControlSystem;
         this.dbManager = accessControlSystem.getDatabaseManager();
         initializeComponents();
         setupLayout();
+        applyLanguage();
         loadUsers();
     }
 
     private void initializeComponents() {
         // Table
-        String[] columnNames = {"ID", "Name", "Gender", "Type", "Badge ID"};
-        tableModel = new DefaultTableModel(columnNames, 0) {
+        tableModel = new DefaultTableModel(getColumnNames(), 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -68,7 +78,8 @@ public class UserManagementPanel extends JPanel {
 
         // Top: Input form
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(new TitledBorder("User"));
+        formBorder = new TitledBorder("");
+        formPanel.setBorder(formBorder);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(6, 6, 6, 6);
         gbc.anchor = GridBagConstraints.WEST;
@@ -77,28 +88,32 @@ public class UserManagementPanel extends JPanel {
 
         gbc.gridx = 0; gbc.gridy = 0;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("First Name:"), gbc);
+        firstNameLabel = new JLabel();
+        formPanel.add(firstNameLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         formPanel.add(firstNameField, gbc);
 
         gbc.gridx = 0; gbc.gridy = 1;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Last Name:"), gbc);
+        lastNameLabel = new JLabel();
+        formPanel.add(lastNameLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         formPanel.add(lastNameField, gbc);
 
         gbc.gridx = 0; gbc.gridy = 2;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Gender:"), gbc);
+        genderLabel = new JLabel();
+        formPanel.add(genderLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         formPanel.add(genderCombo, gbc);
 
         gbc.gridx = 0; gbc.gridy = 3;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Type:"), gbc);
+        typeLabel = new JLabel();
+        formPanel.add(typeLabel, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         formPanel.add(userTypeCombo, gbc);
@@ -106,15 +121,15 @@ public class UserManagementPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = 4;
         gbc.gridwidth = 2;
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        JButton addButton = new JButton("Add User");
+        addButton = new JButton();
         addButton.addActionListener(e -> addUser());
-        JButton deleteButton = new JButton("Delete User");
+        deleteButton = new JButton();
         deleteButton.addActionListener(e -> deleteUser());
-        JButton createBadgeButton = new JButton("Create Badge");
+        createBadgeButton = new JButton();
         createBadgeButton.addActionListener(e -> createBadge());
-        JButton assignProfileButton = new JButton("Assign Profile");
+        assignProfileButton = new JButton();
         assignProfileButton.addActionListener(e -> assignProfile());
-        JButton autoAssignButton = new JButton("Auto-assign");
+        autoAssignButton = new JButton();
         autoAssignButton.addActionListener(e -> autoAssignProfilesForAll());
         buttonPanel.add(addButton);
         buttonPanel.add(deleteButton);
@@ -158,7 +173,7 @@ public class UserManagementPanel extends JPanel {
             String lastName = lastNameField.getText().trim();
             
             if (firstName.isEmpty() || lastName.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please enter name", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.t("user.msg.enterName"), I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -178,17 +193,17 @@ public class UserManagementPanel extends JPanel {
             firstNameField.setText("");
             lastNameField.setText("");
             
-            JOptionPane.showMessageDialog(this, "User added successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("user.msg.added"), I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Failed to add user: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.f("user.msg.addFailed", e.getMessage()),
+                I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void deleteUser() {
         int selectedRow = userTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a user to delete", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("user.msg.selectDelete"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -196,18 +211,18 @@ public class UserManagementPanel extends JPanel {
         String userName = (String) tableModel.getValueAt(selectedRow, 1);
         
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "Are you sure you want to delete user \"" + userName + "\"?\nThis operation will also delete the user's badge and related configurations.", 
-            "Confirm Delete", 
+            I18n.f("user.msg.confirmDelete", userName), 
+            I18n.t("common.confirmDelete.title"), 
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 dbManager.deleteUser(userId);
                 loadUsers();
-                JOptionPane.showMessageDialog(this, "User deleted successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.t("user.msg.deleted"), I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to delete user: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("user.msg.deleteFailed", e.getMessage()),
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
         }
@@ -216,7 +231,7 @@ public class UserManagementPanel extends JPanel {
     private void createBadge() {
         int selectedRow = userTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a user", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("user.msg.selectUser"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -226,7 +241,7 @@ public class UserManagementPanel extends JPanel {
             Map<String, User> allUsers = dbManager.loadAllUsers();
             User user = allUsers.get(userId);
             if (user == null) {
-                JOptionPane.showMessageDialog(this, "User does not exist", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.t("user.msg.notExist"), I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
                 return;
             }
             
@@ -245,11 +260,11 @@ public class UserManagementPanel extends JPanel {
             accessControlSystem.getAccessRequestProcessor().reloadData();
             
             loadUsers();
-            JOptionPane.showMessageDialog(this, "Badge created successfully, profile automatically assigned", "Success", 
+            JOptionPane.showMessageDialog(this, I18n.t("user.msg.badgeCreatedAutoProfile"), I18n.t("common.success"), 
                 JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Failed to create badge: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.f("user.msg.badgeCreateFailed", e.getMessage()),
+                I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }
@@ -418,7 +433,7 @@ public class UserManagementPanel extends JPanel {
     private void assignProfile() {
         int selectedRow = userTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a user", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("user.msg.selectUser"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -426,12 +441,12 @@ public class UserManagementPanel extends JPanel {
         User user = dbManager.loadAllUsers().get(userId);
         
         if (user == null) {
-            JOptionPane.showMessageDialog(this, "User does not exist", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("user.msg.notExist"), I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             return;
         }
         
         if (user.getBadgeId() == null) {
-            JOptionPane.showMessageDialog(this, "This user does not have a badge yet, please create a badge first", "Warning", 
+            JOptionPane.showMessageDialog(this, I18n.t("user.msg.noBadge"), I18n.t("common.warning"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -441,8 +456,8 @@ public class UserManagementPanel extends JPanel {
         Map<String, Profile> profiles = profileManager.getAllProfiles();
         
         if (profiles.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No available profiles, please create profiles in Profile Management first", 
-                "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("user.msg.noProfiles"),
+                I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
             return;
         }
         
@@ -450,8 +465,8 @@ public class UserManagementPanel extends JPanel {
         
         // Show selection dialog
         String selectedProfile = (String) JOptionPane.showInputDialog(this,
-            "Select profile to assign to user:",
-            "Assign Profile",
+            I18n.t("user.msg.selectProfile"),
+            I18n.t("user.action.assignProfile"),
             JOptionPane.QUESTION_MESSAGE,
             null,
             profileNames,
@@ -464,8 +479,8 @@ public class UserManagementPanel extends JPanel {
                 Set<String> existingProfiles = userProfiles.get(user.getId());
                 if (existingProfiles != null && existingProfiles.contains(selectedProfile)) {
                     JOptionPane.showMessageDialog(this, 
-                        "User already has profile \"" + selectedProfile + "\"", 
-                        "Info", JOptionPane.INFORMATION_MESSAGE);
+                        I18n.f("user.msg.profileAlready", selectedProfile),
+                        I18n.t("common.info"), JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
                 
@@ -487,12 +502,11 @@ public class UserManagementPanel extends JPanel {
                 }
                 
                 JOptionPane.showMessageDialog(this, 
-                    "Profile \"" + selectedProfile + "\" has been assigned to user\n\n" +
-                    "User's current profiles:\n" + profileList.toString(), 
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
+                    I18n.f("user.msg.profileAssigned", selectedProfile, profileList.toString()),
+                    I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Failed to assign profile: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, I18n.f("user.msg.assignProfileFailed", e.getMessage()),
+                    I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
         }
@@ -509,15 +523,15 @@ public class UserManagementPanel extends JPanel {
                     user.getFullName(),
                     user.getGender().toString(),
                     user.getUserType().toString(),
-                    user.getBadgeId() != null ? user.getBadgeId() : "None"
+                    user.getBadgeId() != null ? user.getBadgeId() : I18n.t("common.none")
                 });
             }
             
             // Reload in-memory data (for access control, only users with badges are needed)
             accessControlSystem.getAccessRequestProcessor().reloadData();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Failed to load users: " + e.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.f("user.msg.loadFailed", e.getMessage()),
+                I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }
@@ -579,31 +593,54 @@ public class UserManagementPanel extends JPanel {
             accessControlSystem.getAccessRequestProcessor().reloadData();
             
             // Display results
-            String message = String.format(
-                "Auto-assign profiles completed!\n\n" +
-                "Statistics:\n" +
-                "• Successfully assigned: %d users\n" +
-                "• Skipped (already has profile): %d users\n" +
-                "• Skipped (no badge): %d users\n" +
-                "• Failed: %d users\n\n" +
-                "Details:\n%s",
-                assignedCount, skippedWithProfile, skippedNoBadge, errorCount, 
-                details.length() > 0 ? details.toString() : "None"
+            String message = I18n.f(
+                "user.msg.autoAssignSummary",
+                assignedCount, skippedWithProfile, skippedNoBadge, errorCount,
+                details.length() > 0 ? details.toString() : I18n.t("common.none")
             );
             
             JOptionPane.showMessageDialog(this, message, 
-                "Auto-assign Complete", 
+                I18n.t("user.action.autoAssign"), 
                 assignedCount > 0 ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE);
             
             // Refresh user list
             loadUsers();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, 
-                "Failed to auto-assign profiles: " + e.getMessage(), 
-                "Error", 
+                I18n.f("user.msg.autoAssignFailed", e.getMessage()),
+                I18n.t("common.error"), 
                 JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
+    }
+
+    public void applyLanguage() {
+        formBorder.setTitle(I18n.t("user.title"));
+        firstNameLabel.setText(I18n.t("user.firstName"));
+        lastNameLabel.setText(I18n.t("user.lastName"));
+        genderLabel.setText(I18n.t("user.gender"));
+        typeLabel.setText(I18n.t("user.type"));
+
+        addButton.setText(I18n.t("user.action.add"));
+        deleteButton.setText(I18n.t("user.action.delete"));
+        createBadgeButton.setText(I18n.t("user.action.createBadge"));
+        assignProfileButton.setText(I18n.t("user.action.assignProfile"));
+        autoAssignButton.setText(I18n.t("user.action.autoAssign"));
+
+        tableModel.setColumnIdentifiers(getColumnNames());
+        userTable.getTableHeader().repaint();
+        revalidate();
+        repaint();
+    }
+
+    private String[] getColumnNames() {
+        return new String[]{
+            I18n.t("user.col.id"),
+            I18n.t("user.col.name"),
+            I18n.t("user.col.gender"),
+            I18n.t("user.col.type"),
+            I18n.t("user.col.badgeId")
+        };
     }
 }
 

@@ -28,10 +28,42 @@ import javax.imageio.ImageIO;
  * Real-time Monitor Panel - Displays site map and floor plan, shows access attempts in real-time
  */
 public class RealTimeMonitorPanel extends JPanel {
+    private enum ViewType {
+        SITE("Site Layout", "site-layout.png"),
+        OFFICE("Office Layout", "office-layout.png");
+
+        private final String key;
+        private final String imageName;
+
+        ViewType(String key, String imageName) {
+            this.key = key;
+            this.imageName = imageName;
+        }
+
+        String getKey() {
+            return key;
+        }
+
+        String getImageName() {
+            return imageName;
+        }
+    }
+
     private AccessControlSystem accessControlSystem;
-    private JComboBox<String> viewCombo;
+    private JComboBox<ViewType> viewCombo;
     private MapViewPanel mapViewPanel;
     private JTextArea eventLogArea;
+    private TitledBorder logBorder;
+    private JLabel viewLabel;
+    private JLabel zoomLabel;
+    private JButton refreshButton;
+    private JButton configureButton;
+    private JButton autoConfigureButton;
+    private JButton savePositionsButton;
+    private JButton zoomOutBtn;
+    private JButton zoomInBtn;
+    private JButton resetZoomBtn;
+    private JButton clearLogButton;
     private Map<String, Point> badgeReaderPositions; // Badge reader ID -> Position
     private Map<String, FlashIndicator> flashIndicators; // Badge reader ID -> Flash indicator
     private Map<String, BadgeReader> badgeReaderMap; // Badge reader ID -> Badge reader object
@@ -47,17 +79,34 @@ public class RealTimeMonitorPanel extends JPanel {
         
         initializeComponents();
         setupLayout();
+        applyLanguage();
         registerEventListeners();
         loadBadgeReaderPositions();
     }
     
     private void initializeComponents() {
         // View selection combo box
-        viewCombo = new JComboBox<>(new String[]{"Site Layout", "Office Layout"});
-        viewCombo.setToolTipText("Site Layout: site-layout.png | Office Layout: office-layout.png");
+        viewCombo = new JComboBox<>(new ViewType[]{ViewType.SITE, ViewType.OFFICE});
+        viewCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof ViewType) {
+                    ViewType v = (ViewType) value;
+                    if (v == ViewType.SITE) {
+                        setText(I18n.t("monitor.view.site"));
+                    } else {
+                        setText(I18n.t("monitor.view.office"));
+                    }
+                }
+                return this;
+            }
+        });
         viewCombo.addActionListener(e -> {
-            String selected = (String) viewCombo.getSelectedItem();
-            mapViewPanel.setViewType(selected);
+            ViewType selected = (ViewType) viewCombo.getSelectedItem();
+            if (selected != null) {
+                mapViewPanel.setViewType(selected);
+            }
             mapViewPanel.repaint();
         });
         
@@ -67,7 +116,10 @@ public class RealTimeMonitorPanel extends JPanel {
         // Event log area
         eventLogArea = new JTextArea(10, 30);
         eventLogArea.setEditable(false);
-        eventLogArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        Font textAreaFont = UIManager.getFont("TextArea.font");
+        if (textAreaFont != null) {
+            eventLogArea.setFont(textAreaFont);
+        }
         eventLogArea.setMargin(new Insets(8, 8, 8, 8));
     }
     
@@ -78,19 +130,20 @@ public class RealTimeMonitorPanel extends JPanel {
         // Top control panel
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         topPanel.setBorder(new EmptyBorder(0, 0, 8, 0));
-        topPanel.add(new JLabel("View:"));
+        viewLabel = new JLabel();
+        topPanel.add(viewLabel);
         topPanel.add(viewCombo);
         topPanel.add(Box.createHorizontalStrut(20));
-        JButton refreshButton = new JButton("Refresh");
+        refreshButton = new JButton();
         refreshButton.addActionListener(e -> {
             loadBadgeReaderPositions();
             mapViewPanel.repaint();
         });
-        JButton configureButton = new JButton("Configure Positions");
+        configureButton = new JButton();
         configureButton.addActionListener(e -> showPositionConfigDialog());
-        JButton autoConfigureButton = new JButton("Auto-configure");
+        autoConfigureButton = new JButton();
         autoConfigureButton.addActionListener(e -> autoConfigureAllPositions());
-        JButton savePositionsButton = new JButton("Save Positions");
+        savePositionsButton = new JButton();
         savePositionsButton.addActionListener(e -> savePositions());
         topPanel.add(refreshButton);
         topPanel.add(configureButton);
@@ -99,30 +152,22 @@ public class RealTimeMonitorPanel extends JPanel {
         
         // Zoom controls
         topPanel.add(Box.createHorizontalStrut(10));
-        topPanel.add(new JLabel("Zoom:"));
-        JButton zoomOutBtn = new JButton("-");
-        zoomOutBtn.setToolTipText("Zoom Out");
-        zoomOutBtn.addActionListener(e -> {
-            mapViewPanel.zoomOut();
-        });
+        zoomLabel = new JLabel();
+        topPanel.add(zoomLabel);
+        zoomOutBtn = new JButton("-");
+        zoomOutBtn.addActionListener(e -> mapViewPanel.zoomOut());
         topPanel.add(zoomOutBtn);
         
         JLabel scaleLabel = new JLabel("100%");
         scaleLabel.setPreferredSize(new Dimension(60, 20));
         topPanel.add(scaleLabel);
         
-        JButton zoomInBtn = new JButton("+");
-        zoomInBtn.setToolTipText("Zoom In");
-        zoomInBtn.addActionListener(e -> {
-            mapViewPanel.zoomIn();
-        });
+        zoomInBtn = new JButton("+");
+        zoomInBtn.addActionListener(e -> mapViewPanel.zoomIn());
         topPanel.add(zoomInBtn);
         
-        JButton resetZoomBtn = new JButton("Reset");
-        resetZoomBtn.setToolTipText("Reset Zoom");
-        resetZoomBtn.addActionListener(e -> {
-            mapViewPanel.resetZoom();
-        });
+        resetZoomBtn = new JButton();
+        resetZoomBtn.addActionListener(e -> mapViewPanel.resetZoom());
         topPanel.add(resetZoomBtn);
         
         // Pass scaleLabel to mapViewPanel for updates
@@ -136,11 +181,12 @@ public class RealTimeMonitorPanel extends JPanel {
         
         // Right: Event log
         JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBorder(new TitledBorder("Event Log"));
+        logBorder = new TitledBorder("");
+        rightPanel.setBorder(logBorder);
         JScrollPane logScroll = new JScrollPane(eventLogArea);
         logScroll.setBorder(new EmptyBorder(8, 8, 8, 8));
         rightPanel.add(logScroll, BorderLayout.CENTER);
-        JButton clearLogButton = new JButton("Clear Log");
+        clearLogButton = new JButton();
         clearLogButton.addActionListener(e -> eventLogArea.setText(""));
         JPanel logActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         logActions.setBorder(new EmptyBorder(0, 8, 8, 8));
@@ -180,11 +226,42 @@ public class RealTimeMonitorPanel extends JPanel {
         
         // Add to event log
         String timestamp = java.time.LocalDateTime.now().toString();
-        String status = granted ? "✓ Granted" : "✗ Denied";
-        String logEntry = String.format("[%s] %s - Badge Reader: %s, Resource: %s, Message: %s%n",
-            timestamp, status, readerId, request.getResourceId(), response.getMessage());
+        String status = granted ? I18n.t("monitor.event.granted") : I18n.t("monitor.event.denied");
+        String logEntry = I18n.f("monitor.event.log", timestamp, status, readerId, request.getResourceId(), response.getMessage());
         eventLogArea.append(logEntry);
         eventLogArea.setCaretPosition(eventLogArea.getDocument().getLength());
+    }
+
+    public void applyLanguage() {
+        viewLabel.setText(I18n.t("monitor.label.view"));
+        refreshButton.setText(I18n.t("common.refresh"));
+        configureButton.setText(I18n.t("monitor.action.configure"));
+        autoConfigureButton.setText(I18n.t("monitor.action.autoConfigure"));
+        savePositionsButton.setText(I18n.t("monitor.action.savePositions"));
+
+        zoomLabel.setText(I18n.t("monitor.label.zoom"));
+        zoomOutBtn.setToolTipText(I18n.t("monitor.tip.zoomOut"));
+        zoomInBtn.setToolTipText(I18n.t("monitor.tip.zoomIn"));
+        resetZoomBtn.setText(I18n.t("monitor.action.resetZoom"));
+        resetZoomBtn.setToolTipText(I18n.t("monitor.tip.resetZoom"));
+
+        viewCombo.setToolTipText(I18n.t("monitor.tip.viewCombo"));
+        viewCombo.repaint();
+
+        logBorder.setTitle(I18n.t("monitor.title.log"));
+        clearLogButton.setText(I18n.t("monitor.action.clearLog"));
+
+        revalidate();
+        repaint();
+    }
+
+    private ViewType getSelectedViewType() {
+        ViewType v = (ViewType) viewCombo.getSelectedItem();
+        return v != null ? v : ViewType.SITE;
+    }
+
+    private String getSelectedViewKey() {
+        return getSelectedViewType().getKey();
     }
     
     private void loadBadgeReaderPositions() {
@@ -221,10 +298,10 @@ public class RealTimeMonitorPanel extends JPanel {
                     props.load(fis);
                 }
                 
-                String viewType = (String) viewCombo.getSelectedItem();
+                String viewKey = getSelectedViewKey();
                 for (String key : props.stringPropertyNames()) {
-                    if (key.startsWith(viewType + ".")) {
-                        String readerId = key.substring(viewType.length() + 1);
+                    if (key.startsWith(viewKey + ".")) {
+                        String readerId = key.substring(viewKey.length() + 1);
                         String value = props.getProperty(key);
                         String[] coords = value.split(",");
                         if (coords.length == 2) {
@@ -261,9 +338,9 @@ public class RealTimeMonitorPanel extends JPanel {
             }
             
             // Save positions for current view
-            String viewType = (String) viewCombo.getSelectedItem();
+            String viewKey = getSelectedViewKey();
             for (Map.Entry<String, Point> entry : badgeReaderPositions.entrySet()) {
-                String key = viewType + "." + entry.getKey();
+                String key = viewKey + "." + entry.getKey();
                 Point pos = entry.getValue();
                 props.setProperty(key, pos.x + "," + pos.y);
             }
@@ -308,7 +385,7 @@ public class RealTimeMonitorPanel extends JPanel {
         DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
         Map<String, Resource> resources = dbManager.loadAllResources();
         
-        String viewType = (String) viewCombo.getSelectedItem();
+        ViewType viewType = getSelectedViewType();
         int totalReaders = readers.size();
         
         // Group by resource type to assign positions
@@ -333,7 +410,7 @@ public class RealTimeMonitorPanel extends JPanel {
                 int col = i % cols;
                 
                 Point position;
-                if ("Site Layout".equals(viewType)) {
+                if (viewType == ViewType.SITE) {
                     // Site map: Group by type, distribute in different areas
                     int baseX = 150 + (yOffset % 3) * 300;
                     int baseY = 150 + (yOffset / 3) * 200;
@@ -427,9 +504,9 @@ public class RealTimeMonitorPanel extends JPanel {
     
     private Point calculatePosition(String resourceId, int index, int total) {
         // Calculate position based on view type and resource ID
-        String viewType = (String) viewCombo.getSelectedItem();
+        ViewType viewType = getSelectedViewType();
         
-        if ("Site Layout".equals(viewType)) {
+        if (viewType == ViewType.SITE) {
             // Site map: Distribute badge readers at different positions on the map
             int cols = (int) Math.ceil(Math.sqrt(total));
             int row = index / cols;
@@ -452,7 +529,7 @@ public class RealTimeMonitorPanel extends JPanel {
      * Map view panel - Draws site map or floor plan
      */
     private class MapViewPanel extends JPanel {
-        private String viewType = "Site Layout";
+        private ViewType viewType = ViewType.SITE;
         private BufferedImage backgroundImage;
         private String currentImagePath;
         private double scaleFactor = 1.0; // Scale factor
@@ -542,7 +619,10 @@ public class RealTimeMonitorPanel extends JPanel {
             return scaleFactor;
         }
         
-        public void setViewType(String viewType) {
+        public void setViewType(ViewType viewType) {
+            if (viewType == null) {
+                return;
+            }
             this.viewType = viewType;
             loadBackgroundImage();
             loadBadgeReaderPositions();
@@ -552,12 +632,7 @@ public class RealTimeMonitorPanel extends JPanel {
          * Load background image
          */
         private void loadBackgroundImage() {
-            String imageName;
-            if ("Site Layout".equals(viewType)) {
-                imageName = "site-layout.png"; // Site layout
-            } else {
-                imageName = "office-layout.png"; // Office layout
-            }
+            String imageName = viewType.getImageName();
             
             // Try to load image from multiple locations
             String[] paths = {
