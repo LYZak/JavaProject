@@ -2,6 +2,8 @@
 package com.bigcomp.accesscontrol.model;
 
 import com.bigcomp.accesscontrol.util.SystemClock;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -9,7 +11,12 @@ import java.util.UUID;
  * Badge class - Simulates physical or virtual badge
  * Contains unique identification code for user identification
  */
-public class Badge {
+public class Badge implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private static final int CODE_ROTATION_MONTHS = 6;
+    private static final int UPDATE_GRACE_DAYS = 7;
+
     private String code; // Unique identification code
     private String userId; // User ID of badge holder
     private LocalDateTime creationDate; // Creation date
@@ -63,8 +70,28 @@ public class Badge {
      * Check if badge needs update (based on last update date)
      */
     public boolean needsUpdate() {
-        // If more than 6 months since last update, needs update
-        return lastUpdateDate.isBefore(SystemClock.now().minusMonths(6));
+        LocalDateTime now = SystemClock.now();
+        LocalDateTime updateRequiredAt = getUpdateRequiredAt();
+        LocalDateTime updateDeadline = getUpdateDeadlineAt();
+        return (now.isAfter(updateRequiredAt) || now.isEqual(updateRequiredAt))
+            && (now.isBefore(updateDeadline) || now.isEqual(updateDeadline));
+    }
+
+    public LocalDateTime getUpdateRequiredAt() {
+        if (lastUpdateDate == null) {
+            return SystemClock.now();
+        }
+        return lastUpdateDate.plusMonths(CODE_ROTATION_MONTHS);
+    }
+
+    public LocalDateTime getUpdateDeadlineAt() {
+        return getUpdateRequiredAt().plusDays(UPDATE_GRACE_DAYS);
+    }
+
+    public boolean isUpdateExpired() {
+        LocalDateTime now = SystemClock.now();
+        LocalDateTime deadline = getUpdateDeadlineAt();
+        return now.isAfter(deadline);
     }
 
     // Getters and Setters
@@ -109,7 +136,7 @@ public class Badge {
     }
 
     public boolean isValid() {
-        return valid && !isExpired();
+        return valid && !isExpired() && !isUpdateExpired();
     }
 
     public void setValid(boolean valid) {

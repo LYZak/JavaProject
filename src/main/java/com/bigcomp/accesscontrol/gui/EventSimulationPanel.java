@@ -2,6 +2,7 @@
 package com.bigcomp.accesscontrol.gui;
 
 import com.bigcomp.accesscontrol.core.AccessControlSystem;
+import com.bigcomp.accesscontrol.core.Router;
 import com.bigcomp.accesscontrol.model.User;
 import com.bigcomp.accesscontrol.model.Badge;
 import com.bigcomp.accesscontrol.model.BadgeReader;
@@ -39,6 +40,10 @@ public class EventSimulationPanel extends JPanel {
     private JLabel timeLabel;
     private JButton setTimeButton;
     private JButton resetTimeButton;
+    private JLabel timeScaleLabel;
+    private JComboBox<String> timeScaleCombo;
+    private JButton stepHourButton;
+    private JButton stepDayButton;
     private Map<String, User> simulatedUsers;
     private Map<String, Badge> userBadges;
     private int totalEvents = 0;
@@ -62,9 +67,11 @@ public class EventSimulationPanel extends JPanel {
     private JButton refreshReadersButton;
     private JButton resetStatsButton;
     private JButton refreshDataButton;
+    private JButton generateScaleDataButton;
     private JLabel intervalLabel;
     private JLabel systemTimeLabel;
     private JTextArea infoText;
+    private Router.ReaderEventListener routerReaderListener;
     
     public EventSimulationPanel(AccessControlSystem accessControlSystem) {
         this.accessControlSystem = accessControlSystem;
@@ -74,6 +81,32 @@ public class EventSimulationPanel extends JPanel {
         setupLayout();
         applyLanguage();
         loadData();
+        registerRouterListener();
+    }
+
+    private void registerRouterListener() {
+        Router router = accessControlSystem.getRouter();
+        routerReaderListener = event -> SwingUtilities.invokeLater(() -> appendReaderEvent(event));
+        router.addReaderEventListener(routerReaderListener);
+    }
+
+    private void appendReaderEvent(Router.ReaderEvent event) {
+        if (statusArea == null) {
+            return;
+        }
+        String prefix = "";
+        if (event.getTimestamp() != null) {
+            prefix = "[" + event.getTimestamp().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] ";
+        }
+        String line;
+        if (event.getType() == Router.ReaderEventType.MESSAGE) {
+            line = prefix + event.getReaderId() + ": " + event.getMessage() + "\n";
+        } else if (event.getType() == Router.ReaderEventType.RESOURCE_ACTIVATED) {
+            line = prefix + event.getReaderId() + ": resource activated (" + event.getResourceId() + ")\n";
+        } else {
+            line = prefix + event.getReaderId() + ": resource deactivated (" + event.getResourceId() + ")\n";
+        }
+        statusArea.append(line);
     }
     
     private void initializeComponents() {
@@ -363,18 +396,59 @@ public class EventSimulationPanel extends JPanel {
         resetTimeButton.addActionListener(e -> resetSystemTime());
         resetTimeButton.setEnabled(SystemClock.isUsingCustomTime());
         controlPanel.add(resetTimeButton, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 6;
+        gbc.gridwidth = 1;
+        timeScaleLabel = new JLabel("Time Scale");
+        controlPanel.add(timeScaleLabel, gbc);
+        gbc.gridx = 1;
+        timeScaleCombo = new JComboBox<>(new String[]{"0.5x", "1x", "5x", "10x"});
+        timeScaleCombo.setSelectedItem("1x");
+        timeScaleCombo.addActionListener(e -> {
+            Object selected = timeScaleCombo.getSelectedItem();
+            if (selected instanceof String s) {
+                String cleaned = s.trim().toLowerCase().replace("x", "");
+                try {
+                    double scale = Double.parseDouble(cleaned);
+                    SystemClock.setTimeScale(scale);
+                    updateTimeDisplay();
+                    resetTimeButton.setEnabled(true);
+                } catch (Exception ignored) {
+                }
+            }
+        });
+        controlPanel.add(timeScaleCombo, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 7;
+        gbc.gridwidth = 2;
+        JPanel stepPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        stepHourButton = new JButton("+1h");
+        stepHourButton.addActionListener(e -> {
+            SystemClock.step(java.time.Duration.ofHours(1));
+            updateTimeDisplay();
+            resetTimeButton.setEnabled(true);
+        });
+        stepPanel.add(stepHourButton);
+        stepDayButton = new JButton("+1d");
+        stepDayButton.addActionListener(e -> {
+            SystemClock.step(java.time.Duration.ofDays(1));
+            updateTimeDisplay();
+            resetTimeButton.setEnabled(true);
+        });
+        stepPanel.add(stepDayButton);
+        controlPanel.add(stepPanel, gbc);
         
         // Update time display
         javax.swing.Timer timeUpdateTimer = new javax.swing.Timer(1000, e -> updateTimeDisplay());
         timeUpdateTimer.start();
         
-        gbc.gridx = 0; gbc.gridy = 6;
+        gbc.gridx = 0; gbc.gridy = 8;
         gbc.gridwidth = 2;
         resetStatsButton = new JButton();
         resetStatsButton.addActionListener(e -> resetStatistics());
         controlPanel.add(resetStatsButton, gbc);
         
-        gbc.gridy = 7;
+        gbc.gridy = 9;
         refreshDataButton = new JButton();
         refreshDataButton.addActionListener(e -> {
                 loadData();
@@ -382,6 +456,11 @@ public class EventSimulationPanel extends JPanel {
                     I18n.t("sim.dialog.dataRefreshed"), I18n.t("common.info"), JOptionPane.INFORMATION_MESSAGE);
         });
         controlPanel.add(refreshDataButton, gbc);
+
+        gbc.gridy = 10;
+        generateScaleDataButton = new JButton("Generate 300/400 Demo Data");
+        generateScaleDataButton.addActionListener(e -> showGenerateScaleDataDialog());
+        controlPanel.add(generateScaleDataButton, gbc);
         
         rightPanel.add(controlPanel, BorderLayout.NORTH);
         JScrollPane statusScroll = new JScrollPane(statusArea);
@@ -443,6 +522,179 @@ public class EventSimulationPanel extends JPanel {
 
         revalidate();
         repaint();
+    }
+
+    private void showGenerateScaleDataDialog() {
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "This will add demo data into the database. Continue?",
+            "Generate Demo Data",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Generate Demo Data", true);
+        dialog.setSize(360, 220);
+        dialog.setLocationRelativeTo(this);
+
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        panel.add(new JLabel("Users"), gbc);
+        gbc.gridx = 1;
+        JSpinner usersSpinner = new JSpinner(new SpinnerNumberModel(300, 1, 2000, 50));
+        panel.add(usersSpinner, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1;
+        panel.add(new JLabel("Resources/Readers"), gbc);
+        gbc.gridx = 1;
+        JSpinner resourcesSpinner = new JSpinner(new SpinnerNumberModel(400, 1, 5000, 50));
+        panel.add(resourcesSpinner, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        JButton ok = new JButton(I18n.t("common.ok"));
+        ok.addActionListener(ev -> {
+            int users = (Integer) usersSpinner.getValue();
+            int resources = (Integer) resourcesSpinner.getValue();
+            generateScaleDemoData(users, resources);
+            dialog.dispose();
+        });
+        JButton cancel = new JButton(I18n.t("common.cancel"));
+        cancel.addActionListener(ev -> dialog.dispose());
+        buttons.add(ok);
+        buttons.add(cancel);
+        panel.add(buttons, gbc);
+
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+
+    private void generateScaleDemoData(int userCount, int resourceCount) {
+        DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
+        var router = accessControlSystem.getRouter();
+        Random random = new Random();
+
+        String profileName = "profile.default.employee";
+        String groupPublic = "access.right.public_area";
+        String groupOffice = "access.right.office_area";
+        String groupEquipment = "access.right.equipment_resources";
+
+        int usersCreated = 0;
+        for (int i = 1; i <= userCount; i++) {
+            String userId = String.format("SIMU%04d", i);
+            User.Gender gender = (i % 2 == 0) ? User.Gender.MALE : User.Gender.FEMALE;
+            User.UserType userType = User.UserType.EMPLOYEE;
+            User user = new User(userId, gender, "User", String.valueOf(i), userType);
+            String badgeId = UUID.randomUUID().toString();
+            user.setBadgeId(badgeId);
+            try {
+                dbManager.addUser(user);
+                Badge badge = new Badge(userId);
+                dbManager.addBadge(badge, badgeId);
+                dbManager.linkBadgeToProfile(badgeId, profileName);
+                usersCreated++;
+            } catch (Exception ex) {
+                statusArea.append("Failed to create user " + userId + ": " + ex.getMessage() + "\n");
+            }
+        }
+
+        int resourcesCreated = 0;
+        int readersCreated = 0;
+        for (int i = 1; i <= resourceCount; i++) {
+            String resourceId = String.format("SIMR%04d", i);
+            String readerId = String.format("SIMBR%04d", i);
+
+            Resource.ResourceType type;
+            String name;
+            String location;
+            String building;
+            String floor;
+            String groupName;
+
+            int mod = i % 10;
+            if (mod == 1) {
+                type = Resource.ResourceType.GATE;
+                name = "Gate " + i;
+                location = "Site";
+                building = "Main Office Building";
+                floor = "1F";
+                groupName = groupPublic;
+            } else if (mod == 2) {
+                type = Resource.ResourceType.PARKING;
+                name = "Parking " + i;
+                location = "Parking";
+                building = "Parking Lot";
+                floor = "Ground";
+                groupName = groupPublic;
+            } else if (mod == 3) {
+                type = Resource.ResourceType.PRINTER;
+                name = "Printer " + i;
+                location = "Main Office Building";
+                building = "Main Office Building";
+                floor = (i % 2 == 0) ? "2F" : "3F";
+                groupName = groupEquipment;
+            } else if (mod == 4) {
+                type = Resource.ResourceType.BEVERAGE_DISPENSER;
+                name = "Beverage Dispenser " + i;
+                location = "Main Office Building";
+                building = "Main Office Building";
+                floor = (i % 2 == 0) ? "2F" : "3F";
+                groupName = groupEquipment;
+            } else if (mod == 5) {
+                type = Resource.ResourceType.ELEVATOR;
+                name = "Elevator " + i;
+                location = "Main Office Building";
+                building = "Main Office Building";
+                floor = "1F";
+                groupName = groupOffice;
+            } else if (mod == 6) {
+                type = Resource.ResourceType.STAIRWAY;
+                name = "Stairway " + i;
+                location = "Main Office Building";
+                building = "Main Office Building";
+                floor = "1F";
+                groupName = groupOffice;
+            } else {
+                type = Resource.ResourceType.DOOR;
+                name = (mod % 2 == 0) ? ("Office " + i) : ("Meeting Room " + i);
+                location = "Main Office Building";
+                building = "Main Office Building";
+                floor = (i % 3 == 0) ? "3F" : "2F";
+                groupName = groupOffice;
+            }
+
+            Resource resource = new Resource(resourceId, name, type, location, building, floor);
+            resource.setState(Resource.ResourceState.CONTROLLED);
+            resource.setBadgeReaderId(readerId);
+
+            try {
+                dbManager.addResource(resource);
+                resourcesCreated++;
+                BadgeReader reader = new BadgeReader(readerId, resourceId);
+                dbManager.addBadgeReader(reader);
+                router.registerBadgeReader(reader);
+                readersCreated++;
+                dbManager.linkResourceToGroup(resourceId, groupName);
+            } catch (Exception ex) {
+                statusArea.append("Failed to create resource " + resourceId + ": " + ex.getMessage() + "\n");
+            }
+        }
+
+        accessControlSystem.getAccessRequestProcessor().reloadData();
+        loadData();
+        statusArea.append("Generated demo data: users=" + usersCreated + ", resources=" + resourcesCreated + ", readers=" + readersCreated + "\n");
+        JOptionPane.showMessageDialog(this,
+            "Generated demo data: users=" + usersCreated + ", resources/readers=" + resourcesCreated,
+            "Done",
+            JOptionPane.INFORMATION_MESSAGE);
     }
 
     private String[] getUserColumnNames() {
@@ -880,6 +1132,10 @@ public class EventSimulationPanel extends JPanel {
                 
                 LocalDateTime customTime = LocalDateTime.of(year, month, day, hour, minute, 0);
                 SystemClock.setCustomTime(customTime);
+                SystemClock.setTimeScale(1.0);
+                if (timeScaleCombo != null) {
+                    timeScaleCombo.setSelectedItem("1x");
+                }
                 updateTimeDisplay();
                 resetTimeButton.setEnabled(true);
                 statusArea.append(I18n.f("sim.msg.timeSet", customTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))));
@@ -907,6 +1163,9 @@ public class EventSimulationPanel extends JPanel {
         SystemClock.clearCustomTime();
         updateTimeDisplay();
         resetTimeButton.setEnabled(false);
+        if (timeScaleCombo != null) {
+            timeScaleCombo.setSelectedItem("1x");
+        }
         statusArea.append(I18n.t("sim.msg.systemTimeReset"));
     }
     
@@ -919,6 +1178,10 @@ public class EventSimulationPanel extends JPanel {
             String timeStr = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             if (SystemClock.isUsingCustomTime()) {
                 timeStr += I18n.t("sim.text.custom");
+                double scale = SystemClock.getTimeScale();
+                if (Math.abs(scale - 1.0) > 0.0001) {
+                    timeStr += " x" + scale;
+                }
                 timeLabel.setForeground(Color.RED);
             } else {
                 timeLabel.setForeground(Color.BLACK);
@@ -935,6 +1198,10 @@ public class EventSimulationPanel extends JPanel {
         String timeStr = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         if (SystemClock.isUsingCustomTime()) {
             timeStr += I18n.t("sim.text.custom");
+            double scale = SystemClock.getTimeScale();
+            if (Math.abs(scale - 1.0) > 0.0001) {
+                timeStr += " x" + scale;
+            }
         }
         return timeStr;
     }

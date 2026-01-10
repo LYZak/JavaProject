@@ -37,5 +37,17 @@
       "excludeDaysOfWeek" : false,
       "excludeTimeRanges" : false
     }
+  },
+  "usageLimitsByResourceType" : {
+    "BEVERAGE_DISPENSER" : {
+      "perUserPerDayMax" : 1,
+      "globalPerDayMax" : 500,
+      "perUserPerDayPerResource" : true
+    }
+  },
+  "priorityPolicy" : {
+    "requireGateWithinMinutesEnabled" : true,
+    "requireGateWithinMinutes" : 60,
+    "buildings" : [ "Main Office Building" ]
   }
 }

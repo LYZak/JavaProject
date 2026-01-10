@@ -24,6 +24,10 @@ public class DatabaseManager {
         initializeDatabase();
         updateResourceGroupNames();
     }
+
+    public String getDbUrl() {
+        return dbUrl;
+    }
     
     /**
      * Update resource group names from Chinese to English in database
@@ -153,6 +157,24 @@ public class DatabaseManager {
             "FOREIGN KEY (resource_id) REFERENCES resources(id), " +
             "FOREIGN KEY (group_name) REFERENCES resource_groups(name)" +
             ")");
+
+        executeUpdate("CREATE TABLE IF NOT EXISTS usage_counters (" +
+            "scope TEXT, " +
+            "user_id TEXT, " +
+            "policy_key TEXT, " +
+            "resource_id TEXT, " +
+            "period_type TEXT, " +
+            "period_start TEXT, " +
+            "count INTEGER, " +
+            "PRIMARY KEY (scope, user_id, policy_key, resource_id, period_type, period_start)" +
+            ")");
+
+        executeUpdate("CREATE TABLE IF NOT EXISTS user_entry_state (" +
+            "user_id TEXT, " +
+            "building TEXT, " +
+            "last_gate_time TEXT, " +
+            "PRIMARY KEY (user_id, building)" +
+            ")");
     }
 
     /**
@@ -161,6 +183,74 @@ public class DatabaseManager {
     private void executeUpdate(String sql) throws SQLException {
         try (Statement stmt = connection.createStatement()) {
             stmt.executeUpdate(sql);
+        }
+    }
+
+    public int getUsageCount(String scope, String userId, String policyKey, String resourceId, String periodType, String periodStart) {
+        try {
+            String sql = "SELECT count FROM usage_counters WHERE scope = ? AND user_id = ? AND policy_key = ? AND resource_id = ? AND period_type = ? AND period_start = ?";
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setString(1, scope);
+                pstmt.setString(2, userId);
+                pstmt.setString(3, policyKey);
+                pstmt.setString(4, resourceId);
+                pstmt.setString(5, periodType);
+                pstmt.setString(6, periodStart);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getInt(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Failed to load usage count: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    public void incrementUsageCount(String scope, String userId, String policyKey, String resourceId, String periodType, String periodStart) throws SQLException {
+        int current = getUsageCount(scope, userId, policyKey, resourceId, periodType, periodStart);
+        String sql = "INSERT OR REPLACE INTO usage_counters (scope, user_id, policy_key, resource_id, period_type, period_start, count) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, scope);
+            pstmt.setString(2, userId);
+            pstmt.setString(3, policyKey);
+            pstmt.setString(4, resourceId);
+            pstmt.setString(5, periodType);
+            pstmt.setString(6, periodStart);
+            pstmt.setInt(7, current + 1);
+            pstmt.executeUpdate();
+        }
+    }
+
+    public LocalDateTime getLastGateTime(String userId, String building) {
+        try {
+            String sql = "SELECT last_gate_time FROM user_entry_state WHERE user_id = ? AND building = ?";
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setString(1, userId);
+                pstmt.setString(2, building);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        String v = rs.getString(1);
+                        if (v != null && !v.isBlank()) {
+                            return LocalDateTime.parse(v);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to load last gate time: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public void upsertLastGateTime(String userId, String building, LocalDateTime time) throws SQLException {
+        String sql = "INSERT OR REPLACE INTO user_entry_state (user_id, building, last_gate_time) VALUES (?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            pstmt.setString(2, building);
+            pstmt.setString(3, time.toString());
+            pstmt.executeUpdate();
         }
     }
 

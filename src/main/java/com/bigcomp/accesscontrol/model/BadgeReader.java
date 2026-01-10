@@ -62,9 +62,10 @@ public class BadgeReader {
         }
 
         if (badge.needsUpdate()) {
+            String oldCode = badge.getCode();
             badge.updateCode();
             // Notify system about badge update
-            pcs.firePropertyChange("badgeUpdated", null, badge);
+            pcs.firePropertyChange("badgeUpdated", oldCode, badge);
             return true;
         }
         return false;
@@ -77,12 +78,12 @@ public class BadgeReader {
     public void handleAccessResponse(AccessResponse response) {
         this.active = false; // Temporarily disable badge reader
 
+        String message = response.getMessage();
         if (response.isGranted()) {
-            // Access granted, activate resource
+            displayMessage(message == null || message.isBlank() ? "Access granted" : message);
             activateResource();
         } else {
-            // Access denied, display denial message
-            displayMessage("Access denied: " + response.getMessage());
+            displayMessage(message == null || message.isBlank() ? "Access denied" : message);
         }
 
         // Reactivate badge reader after a few seconds
@@ -100,7 +101,6 @@ public class BadgeReader {
      * Activate resource (e.g., open door)
      */
     private void activateResource() {
-        displayMessage("Access granted");
         // Notify resource is activated
         pcs.firePropertyChange("resourceActivated", null, resourceId);
         

@@ -12,10 +12,15 @@ import java.util.HashMap;
 public class Profile {
     private String name; // Profile name
     private Map<String, TimeFilter> accessRights; // Group name -> Time filter
+    private Map<String, UsageLimit> usageLimitsByGroup;
+    private Map<String, UsageLimit> usageLimitsByResourceType;
+    private PriorityPolicy priorityPolicy;
 
     public Profile(String name) {
         this.name = name;
         this.accessRights = new HashMap<>();
+        this.usageLimitsByGroup = new HashMap<>();
+        this.usageLimitsByResourceType = new HashMap<>();
     }
 
     /**
@@ -53,6 +58,30 @@ public class Profile {
      */
     public Map<String, TimeFilter> getAccessRights() {
         return accessRights;
+    }
+
+    public Map<String, UsageLimit> getUsageLimitsByGroup() {
+        return usageLimitsByGroup;
+    }
+
+    public void setUsageLimitsByGroup(Map<String, UsageLimit> usageLimitsByGroup) {
+        this.usageLimitsByGroup = usageLimitsByGroup != null ? usageLimitsByGroup : new HashMap<>();
+    }
+
+    public Map<String, UsageLimit> getUsageLimitsByResourceType() {
+        return usageLimitsByResourceType;
+    }
+
+    public void setUsageLimitsByResourceType(Map<String, UsageLimit> usageLimitsByResourceType) {
+        this.usageLimitsByResourceType = usageLimitsByResourceType != null ? usageLimitsByResourceType : new HashMap<>();
+    }
+
+    public PriorityPolicy getPriorityPolicy() {
+        return priorityPolicy;
+    }
+
+    public void setPriorityPolicy(PriorityPolicy priorityPolicy) {
+        this.priorityPolicy = priorityPolicy;
     }
 
     // Getters and Setters

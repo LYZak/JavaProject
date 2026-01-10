@@ -79,6 +79,32 @@ public class ProfileManager {
             TimeFilter filter = parseTimeFilter(entry.getValue());
             profile.addAccessRight(entry.getKey(), filter);
         }
+
+        if (data.usageLimitsByGroup != null) {
+            Map<String, UsageLimit> limits = new HashMap<>();
+            for (Map.Entry<String, UsageLimitData> entry : data.usageLimitsByGroup.entrySet()) {
+                limits.put(entry.getKey(), toUsageLimit(entry.getValue()));
+            }
+            profile.setUsageLimitsByGroup(limits);
+        }
+
+        if (data.usageLimitsByResourceType != null) {
+            Map<String, UsageLimit> limits = new HashMap<>();
+            for (Map.Entry<String, UsageLimitData> entry : data.usageLimitsByResourceType.entrySet()) {
+                limits.put(entry.getKey(), toUsageLimit(entry.getValue()));
+            }
+            profile.setUsageLimitsByResourceType(limits);
+        }
+
+        if (data.priorityPolicy != null) {
+            PriorityPolicy p = new PriorityPolicy();
+            p.setRequireGateWithinMinutesEnabled(data.priorityPolicy.requireGateWithinMinutesEnabled);
+            if (data.priorityPolicy.requireGateWithinMinutes != null) {
+                p.setRequireGateWithinMinutes(data.priorityPolicy.requireGateWithinMinutes);
+            }
+            p.setBuildings(data.priorityPolicy.buildings);
+            profile.setPriorityPolicy(p);
+        }
         
         return profile;
     }
@@ -175,6 +201,8 @@ public class ProfileManager {
         ProfileData data = new ProfileData();
         data.name = profile.getName();
         data.accessRights = new HashMap<>();
+        data.usageLimitsByGroup = new HashMap<>();
+        data.usageLimitsByResourceType = new HashMap<>();
         
         // Convert TimeFilter to TimeFilterData
         Map<String, TimeFilter> accessRights = profile.getAccessRights();
@@ -226,6 +254,25 @@ public class ProfileManager {
             
             data.accessRights.put(entry.getKey(), filterData);
         }
+
+        if (profile.getUsageLimitsByGroup() != null) {
+            for (Map.Entry<String, UsageLimit> entry : profile.getUsageLimitsByGroup().entrySet()) {
+                data.usageLimitsByGroup.put(entry.getKey(), toUsageLimitData(entry.getValue()));
+            }
+        }
+
+        if (profile.getUsageLimitsByResourceType() != null) {
+            for (Map.Entry<String, UsageLimit> entry : profile.getUsageLimitsByResourceType().entrySet()) {
+                data.usageLimitsByResourceType.put(entry.getKey(), toUsageLimitData(entry.getValue()));
+            }
+        }
+
+        if (profile.getPriorityPolicy() != null) {
+            data.priorityPolicy = new PriorityPolicyData();
+            data.priorityPolicy.requireGateWithinMinutesEnabled = profile.getPriorityPolicy().isRequireGateWithinMinutesEnabled();
+            data.priorityPolicy.requireGateWithinMinutes = profile.getPriorityPolicy().getRequireGateWithinMinutes();
+            data.priorityPolicy.buildings = profile.getPriorityPolicy().getBuildings();
+        }
         
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, data);
         // Update profile in memory (ensure using latest object)
@@ -272,6 +319,9 @@ public class ProfileManager {
     private static class ProfileData {
         public String name;
         public Map<String, TimeFilterData> accessRights;
+        public Map<String, UsageLimitData> usageLimitsByGroup;
+        public Map<String, UsageLimitData> usageLimitsByResourceType;
+        public PriorityPolicyData priorityPolicy;
     }
 
     private static class TimeFilterData {
@@ -285,6 +335,52 @@ public class ProfileManager {
         public boolean excludeDaysOfMonth;
         public boolean excludeDaysOfWeek;
         public boolean excludeTimeRanges;
+    }
+
+    private static class UsageLimitData {
+        public Integer perUserPerDayMax;
+        public Integer perUserPerWeekMax;
+        public Integer perUserPerMonthMax;
+        public Integer globalPerDayMax;
+        public Integer globalPerWeekMax;
+        public Integer globalPerMonthMax;
+        public boolean perUserPerDayPerResource;
+    }
+
+    private static class PriorityPolicyData {
+        public boolean requireGateWithinMinutesEnabled;
+        public Integer requireGateWithinMinutes;
+        public List<String> buildings;
+    }
+
+    private UsageLimit toUsageLimit(UsageLimitData data) {
+        UsageLimit limit = new UsageLimit();
+        if (data == null) {
+            return limit;
+        }
+        limit.setPerUserPerDayMax(data.perUserPerDayMax);
+        limit.setPerUserPerWeekMax(data.perUserPerWeekMax);
+        limit.setPerUserPerMonthMax(data.perUserPerMonthMax);
+        limit.setGlobalPerDayMax(data.globalPerDayMax);
+        limit.setGlobalPerWeekMax(data.globalPerWeekMax);
+        limit.setGlobalPerMonthMax(data.globalPerMonthMax);
+        limit.setPerUserPerDayPerResource(data.perUserPerDayPerResource);
+        return limit;
+    }
+
+    private UsageLimitData toUsageLimitData(UsageLimit limit) {
+        UsageLimitData data = new UsageLimitData();
+        if (limit == null) {
+            return data;
+        }
+        data.perUserPerDayMax = limit.getPerUserPerDayMax();
+        data.perUserPerWeekMax = limit.getPerUserPerWeekMax();
+        data.perUserPerMonthMax = limit.getPerUserPerMonthMax();
+        data.globalPerDayMax = limit.getGlobalPerDayMax();
+        data.globalPerWeekMax = limit.getGlobalPerWeekMax();
+        data.globalPerMonthMax = limit.getGlobalPerMonthMax();
+        data.perUserPerDayPerResource = limit.isPerUserPerDayPerResource();
+        return data;
     }
 }
 

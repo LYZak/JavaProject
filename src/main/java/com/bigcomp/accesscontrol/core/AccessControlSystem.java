@@ -20,6 +20,7 @@ public class AccessControlSystem {
     private AccessRequestProcessor arp;
     private Router router;
     private LogManager logManager;
+    private volatile boolean shutdownInvoked;
 
     public AccessControlSystem() {
         this.dbManager = new DatabaseManager();
@@ -28,6 +29,25 @@ public class AccessControlSystem {
         this.router = new Router(arp);
         this.logManager = new LogManager();
         initializeEventLogging();
+    }
+
+    public void shutdown() {
+        if (shutdownInvoked) {
+            return;
+        }
+        shutdownInvoked = true;
+
+        try {
+            arp.persistContextToCache();
+        } catch (Exception e) {
+            System.err.println("Failed to persist in-memory cache: " + e.getMessage());
+        }
+
+        try {
+            dbManager.close();
+        } catch (Exception e) {
+            System.err.println("Failed to close database: " + e.getMessage());
+        }
     }
 
     /**

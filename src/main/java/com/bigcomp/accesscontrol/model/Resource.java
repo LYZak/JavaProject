@@ -1,10 +1,14 @@
 // Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.model;
 
+import java.io.Serializable;
+
 /**
  * Resource class - Represents resources that need to be controlled (doors, elevators, printers, etc.)
  */
-public class Resource {
+public class Resource implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public enum ResourceType {
         DOOR,           // Door
         GATE,           // Gate

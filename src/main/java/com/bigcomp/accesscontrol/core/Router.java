@@ -7,10 +7,12 @@ import com.bigcomp.accesscontrol.model.Badge;
 import com.bigcomp.accesscontrol.model.BadgeReader;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import com.bigcomp.accesscontrol.util.SystemClock;
 
 /**
  * Router class - Forwards messages between badge readers and access control system
@@ -19,11 +21,13 @@ public class Router implements PropertyChangeListener {
     private AccessRequestProcessor arp; // Access Request Processor
     private Map<String, BadgeReader> badgeReaders; // Badge reader map
     private List<AccessEventListener> accessEventListeners; // Access event listener list
+    private List<ReaderEventListener> readerEventListeners;
 
     public Router(AccessRequestProcessor arp) {
         this.arp = arp;
         this.badgeReaders = new ConcurrentHashMap<>();
-        this.accessEventListeners = new ArrayList<>();
+        this.accessEventListeners = new CopyOnWriteArrayList<>();
+        this.readerEventListeners = new CopyOnWriteArrayList<>();
     }
     
     /**
@@ -49,6 +53,20 @@ public class Router implements PropertyChangeListener {
         }
     }
 
+    public void addReaderEventListener(ReaderEventListener listener) {
+        readerEventListeners.add(listener);
+    }
+
+    public void removeReaderEventListener(ReaderEventListener listener) {
+        readerEventListeners.remove(listener);
+    }
+
+    private void notifyReaderEvent(ReaderEvent event) {
+        for (ReaderEventListener listener : readerEventListeners) {
+            listener.onReaderEvent(event);
+        }
+    }
+
     /**
      * Register badge reader
      */
@@ -67,6 +85,10 @@ public class Router implements PropertyChangeListener {
         }
     }
 
+    public void submitAccessRequest(AccessRequest request) {
+        handleAccessRequest(request);
+    }
+
     /**
      * Handle property change event (from badge reader)
      */
@@ -77,7 +99,20 @@ public class Router implements PropertyChangeListener {
             handleAccessRequest(request);
         } else if ("badgeUpdated".equals(evt.getPropertyName())) {
             Badge badge = (Badge) evt.getNewValue();
-            arp.updateBadge(badge);
+            String oldCode = evt.getOldValue() instanceof String s ? s : null;
+            arp.updateBadge(oldCode, badge);
+        } else if ("message".equals(evt.getPropertyName())) {
+            if (evt.getSource() instanceof BadgeReader reader && evt.getNewValue() instanceof String message) {
+                notifyReaderEvent(new ReaderEvent(SystemClock.now(), reader.getId(), reader.getResourceId(), ReaderEventType.MESSAGE, message));
+            }
+        } else if ("resourceActivated".equals(evt.getPropertyName())) {
+            if (evt.getSource() instanceof BadgeReader reader) {
+                notifyReaderEvent(new ReaderEvent(SystemClock.now(), reader.getId(), reader.getResourceId(), ReaderEventType.RESOURCE_ACTIVATED, null));
+            }
+        } else if ("resourceDeactivated".equals(evt.getPropertyName())) {
+            if (evt.getSource() instanceof BadgeReader reader) {
+                notifyReaderEvent(new ReaderEvent(SystemClock.now(), reader.getId(), reader.getResourceId(), ReaderEventType.RESOURCE_DEACTIVATED, null));
+            }
         }
     }
 
@@ -105,6 +140,52 @@ public class Router implements PropertyChangeListener {
         void onAccessEvent(AccessRequest request, AccessResponse response);
     }
 
+    public enum ReaderEventType {
+        MESSAGE,
+        RESOURCE_ACTIVATED,
+        RESOURCE_DEACTIVATED
+    }
+
+    public static class ReaderEvent {
+        private final LocalDateTime timestamp;
+        private final String readerId;
+        private final String resourceId;
+        private final ReaderEventType type;
+        private final String message;
+
+        public ReaderEvent(LocalDateTime timestamp, String readerId, String resourceId, ReaderEventType type, String message) {
+            this.timestamp = timestamp;
+            this.readerId = readerId;
+            this.resourceId = resourceId;
+            this.type = type;
+            this.message = message;
+        }
+
+        public LocalDateTime getTimestamp() {
+            return timestamp;
+        }
+
+        public String getReaderId() {
+            return readerId;
+        }
+
+        public String getResourceId() {
+            return resourceId;
+        }
+
+        public ReaderEventType getType() {
+            return type;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+    }
+
+    public interface ReaderEventListener {
+        void onReaderEvent(ReaderEvent event);
+    }
+
     /**
      * Get all registered badge readers
      */
@@ -112,4 +193,3 @@ public class Router implements PropertyChangeListener {
         return badgeReaders;
     }
 }
-

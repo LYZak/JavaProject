@@ -1,10 +1,14 @@
 // Group 2 ChenGong ZhangZhao LiangYiKuo
 package com.bigcomp.accesscontrol.model;
 
+import java.io.Serializable;
+
 /**
  * User class - Represents a user in the system
  */
-public class User {
+public class User implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public enum Gender {
         MALE, FEMALE, OTHER
     }
