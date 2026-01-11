@@ -1,29 +1,42 @@
 {
   "name" : "Exclude Weekend",
   "accessRights" : {
-    "Office Area" : {
+    "Main Office Building - 1F 层" : {
       "years" : null,
       "months" : null,
       "daysOfMonth" : null,
-      "daysOfWeek" : [ "Sat", "Sun" ],
-      "timeRanges" : [ "8:00-18:00" ],
+      "daysOfWeek" : null,
+      "timeRanges" : null,
       "excludeYears" : false,
       "excludeMonths" : false,
       "excludeDaysOfMonth" : false,
-      "excludeDaysOfWeek" : true,
+      "excludeDaysOfWeek" : false,
       "excludeTimeRanges" : false
     },
-    "Public Area" : {
+    "Main Office Building - 3F 层" : {
       "years" : null,
       "months" : null,
       "daysOfMonth" : null,
-      "daysOfWeek" : [ "Sat", "Sun" ],
-      "timeRanges" : [ "8:00-18:00" ],
+      "daysOfWeek" : null,
+      "timeRanges" : null,
       "excludeYears" : false,
       "excludeMonths" : false,
       "excludeDaysOfMonth" : false,
-      "excludeDaysOfWeek" : true,
+      "excludeDaysOfWeek" : false,
       "excludeTimeRanges" : false
     }
-  }
+  },
+  "usageLimitsByGroup" : {
+    "Main Office Building - 1F 层" : {
+      "perUserPerDayMax" : 5,
+      "perUserPerWeekMax" : null,
+      "perUserPerMonthMax" : null,
+      "globalPerDayMax" : null,
+      "globalPerWeekMax" : null,
+      "globalPerMonthMax" : null,
+      "perUserPerDayPerResource" : false
+    }
+  },
+  "usageLimitsByResourceType" : { },
+  "priorityPolicy" : null
 }

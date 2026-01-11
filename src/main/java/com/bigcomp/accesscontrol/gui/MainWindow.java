@@ -1454,6 +1454,8 @@ final class I18n {
 
         zh.put("monitor.view.site", "场地平面图");
         en.put("monitor.view.site", "Site Layout");
+        zh.put("monitor.view.building", "楼宇平面图");
+        en.put("monitor.view.building", "Building Layout");
 
         zh.put("profile.default.employee", "员工权限");
         en.put("profile.default.employee", "Employee Permission");
@@ -1486,6 +1488,8 @@ final class I18n {
         en.put("monitor.action.autoConfigure", "Auto-configure");
         zh.put("monitor.action.savePositions", "保存位置");
         en.put("monitor.action.savePositions", "Save Positions");
+        zh.put("monitor.action.backToSite", "返回场景");
+        en.put("monitor.action.backToSite", "Back to Site");
         zh.put("monitor.action.resetZoom", "重置");
         en.put("monitor.action.resetZoom", "Reset");
         zh.put("monitor.action.zoomOut", "-");

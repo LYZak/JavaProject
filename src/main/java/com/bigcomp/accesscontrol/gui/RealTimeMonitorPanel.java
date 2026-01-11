@@ -29,23 +29,17 @@ import javax.imageio.ImageIO;
  */
 public class RealTimeMonitorPanel extends JPanel {
     private enum ViewType {
-        SITE("Site Layout", "site-layout.png"),
-        OFFICE("Office Layout", "office-layout.png");
+        SITE("site"),
+        BUILDING("building");
 
         private final String key;
-        private final String imageName;
 
-        ViewType(String key, String imageName) {
+        ViewType(String key) {
             this.key = key;
-            this.imageName = imageName;
         }
 
         String getKey() {
             return key;
-        }
-
-        String getImageName() {
-            return imageName;
         }
     }
 
@@ -71,6 +65,13 @@ public class RealTimeMonitorPanel extends JPanel {
     private String selectedReaderId; // Currently selected badge reader ID
     private Point dragStartPoint; // Drag start point
     private boolean isDragging = false;
+    private String selectedBuilding;
+    private String selectedFloor;
+    private Map<String, Resource> cachedResources = new HashMap<>();
+    private JPanel floorSidebar;
+    private JLabel buildingTitleLabel;
+    private JPanel floorButtonsPanel;
+    private JButton backToSiteButton;
     
     public RealTimeMonitorPanel(AccessControlSystem accessControlSystem) {
         this.accessControlSystem = accessControlSystem;
@@ -82,12 +83,13 @@ public class RealTimeMonitorPanel extends JPanel {
         setupLayout();
         applyLanguage();
         registerEventListeners();
+        refreshResources();
         loadBadgeReaderPositions();
     }
     
     private void initializeComponents() {
         // View selection combo box
-        viewCombo = new JComboBox<>(new ViewType[]{ViewType.SITE, ViewType.OFFICE});
+        viewCombo = new JComboBox<>(new ViewType[]{ViewType.SITE, ViewType.BUILDING});
         viewCombo.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -97,7 +99,7 @@ public class RealTimeMonitorPanel extends JPanel {
                     if (v == ViewType.SITE) {
                         setText(I18n.t("monitor.view.site"));
                     } else {
-                        setText(I18n.t("monitor.view.office"));
+                        setText(I18n.t("monitor.view.building"));
                     }
                 }
                 return this;
@@ -106,13 +108,36 @@ public class RealTimeMonitorPanel extends JPanel {
         viewCombo.addActionListener(e -> {
             ViewType selected = (ViewType) viewCombo.getSelectedItem();
             if (selected != null) {
+                if (selected == ViewType.BUILDING) {
+                    ensureBuildingAndFloorSelected();
+                }
                 mapViewPanel.setViewType(selected);
             }
             mapViewPanel.repaint();
+            updateFloorSidebar();
         });
         
         // Map view panel
         mapViewPanel = new MapViewPanel();
+
+        floorSidebar = new JPanel();
+        floorSidebar.setLayout(new BorderLayout());
+        floorSidebar.setBorder(new EmptyBorder(8, 8, 8, 8));
+
+        buildingTitleLabel = new JLabel("", SwingConstants.CENTER);
+        buildingTitleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        floorSidebar.add(buildingTitleLabel, BorderLayout.NORTH);
+
+        floorButtonsPanel = new JPanel();
+        floorButtonsPanel.setLayout(new BoxLayout(floorButtonsPanel, BoxLayout.Y_AXIS));
+        JScrollPane floorScroll = new JScrollPane(floorButtonsPanel);
+        floorScroll.setBorder(null);
+        floorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        floorSidebar.add(floorScroll, BorderLayout.CENTER);
+
+        backToSiteButton = new JButton();
+        backToSiteButton.addActionListener(e -> switchToSite());
+        floorSidebar.add(backToSiteButton, BorderLayout.SOUTH);
         
         // Event log area
         eventLogArea = new JTextArea(10, 30);
@@ -179,6 +204,10 @@ public class RealTimeMonitorPanel extends JPanel {
         mapScrollPane.setPreferredSize(new Dimension(1000, 700));
         mapScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         mapScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        JPanel mapContainer = new JPanel(new BorderLayout());
+        mapContainer.add(floorSidebar, BorderLayout.WEST);
+        mapContainer.add(mapScrollPane, BorderLayout.CENTER);
         
         // Right: Event log
         JPanel rightPanel = new JPanel(new BorderLayout());
@@ -196,12 +225,14 @@ public class RealTimeMonitorPanel extends JPanel {
         
         // Main layout: Left map, right log
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, 
-            mapScrollPane, rightPanel);
+            mapContainer, rightPanel);
         splitPane.setDividerLocation(800);
         splitPane.setResizeWeight(0.7);
         
         add(topPanel, BorderLayout.NORTH);
         add(splitPane, BorderLayout.CENTER);
+
+        updateFloorSidebar();
     }
     
     private void registerEventListeners() {
@@ -255,6 +286,8 @@ public class RealTimeMonitorPanel extends JPanel {
         clearLogButton.setText(I18n.t("monitor.action.clearLog"));
 
         mapViewPanel.updateScaleLabel();
+        backToSiteButton.setText(I18n.t("monitor.action.backToSite"));
+        updateFloorSidebar();
 
         revalidate();
         repaint();
@@ -266,7 +299,7 @@ public class RealTimeMonitorPanel extends JPanel {
     }
 
     private String getSelectedViewKey() {
-        return getSelectedViewType().getKey();
+        return computeViewKey();
     }
     
     private void loadBadgeReaderPositions() {
@@ -274,13 +307,19 @@ public class RealTimeMonitorPanel extends JPanel {
         badgeReaderMap.clear();
         Router router = accessControlSystem.getRouter();
         Map<String, BadgeReader> readers = router.getBadgeReaders();
-        
+        refreshResources();
+
         // Load saved position configuration
         loadSavedPositions();
-        
+
         // Assign default positions for badge readers without configured positions
         int index = 0;
         for (BadgeReader reader : readers.values()) {
+            Resource resource = cachedResources.get(reader.getResourceId());
+            if (!shouldIncludeReader(resource)) {
+                continue;
+            }
+
             badgeReaderMap.put(reader.getId(), reader);
             if (!badgeReaderPositions.containsKey(reader.getId())) {
                 String resourceId = reader.getResourceId();
@@ -304,17 +343,11 @@ public class RealTimeMonitorPanel extends JPanel {
                 }
                 
                 String viewKey = getSelectedViewKey();
-                for (String key : props.stringPropertyNames()) {
-                    if (key.startsWith(viewKey + ".")) {
-                        String readerId = key.substring(viewKey.length() + 1);
-                        String value = props.getProperty(key);
-                        String[] coords = value.split(",");
-                        if (coords.length == 2) {
-                            int x = Integer.parseInt(coords[0]);
-                            int y = Integer.parseInt(coords[1]);
-                            badgeReaderPositions.put(readerId, new Point(x, y));
-                        }
-                    }
+                loadPositionsFromProperties(props, viewKey);
+                if (ViewType.SITE == getSelectedViewType()) {
+                    loadPositionsFromProperties(props, "Site Layout");
+                } else {
+                    loadPositionsFromProperties(props, "Office Layout");
                 }
             }
         } catch (Exception e) {
@@ -618,30 +651,21 @@ public class RealTimeMonitorPanel extends JPanel {
          * Load background image
          */
         private void loadBackgroundImage() {
-            String imageName = viewType.getImageName();
-            
-            // Try to load image from multiple locations
-            String[] paths = {
-                "images/" + imageName,
-                "data/images/" + imageName,
-                imageName,
-                "../images/" + imageName,
-                "./images/" + imageName
-            };
-            
+            List<String> paths = getBackgroundImageCandidates(viewType);
             for (String path : paths) {
                 File imageFile = new File(path);
-                if (imageFile.exists() && imageFile.isFile()) {
-                    try {
-                        BufferedImage img = ImageIO.read(imageFile);
-                        if (img != null) {
-                            backgroundImage = img;
-                            currentImagePath = path;
-                            return;
-                        }
-                    } catch (IOException e) {
-                        System.err.println("Failed to load image: " + path + " - " + e.getMessage());
+                if (!imageFile.exists() || !imageFile.isFile()) {
+                    continue;
+                }
+                try {
+                    BufferedImage img = ImageIO.read(imageFile);
+                    if (img != null) {
+                        backgroundImage = img;
+                        currentImagePath = path;
+                        return;
                     }
+                } catch (IOException e) {
+                    System.err.println("Failed to load image: " + path + " - " + e.getMessage());
                 }
             }
             
@@ -678,7 +702,11 @@ public class RealTimeMonitorPanel extends JPanel {
                 g2d.setColor(new Color(240, 240, 240));
                 g2d.fillRect(0, 0, getWidth(), getHeight());
             }
-            
+
+            if (viewType == ViewType.SITE) {
+                drawBuildingOverlays(g2d);
+            }
+
             // Draw badge readers and flash indicators (on top of image)
             drawBadgeReaders(g2d);
         }
@@ -738,9 +766,7 @@ public class RealTimeMonitorPanel extends JPanel {
          */
         private String getReaderLabel(BadgeReader reader) {
             try {
-                DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
-                Map<String, Resource> resources = dbManager.loadAllResources();
-                Resource resource = resources.get(reader.getResourceId());
+                Resource resource = cachedResources.get(reader.getResourceId());
                 if (resource != null) {
                     return resource.getName();
                 }
@@ -767,6 +793,13 @@ public class RealTimeMonitorPanel extends JPanel {
                 repaint();
             } else {
                 selectedReaderId = null;
+                if (viewType == ViewType.SITE) {
+                    String building = findBuildingAtPoint(clickPoint);
+                    if (building != null) {
+                        enterBuilding(building);
+                        return;
+                    }
+                }
                 repaint();
             }
         }
@@ -840,6 +873,79 @@ public class RealTimeMonitorPanel extends JPanel {
             }
             return null;
         }
+
+        private String findBuildingAtPoint(Point point) {
+            Map<String, Rectangle> rects = computeBuildingRects();
+            for (Map.Entry<String, Rectangle> entry : rects.entrySet()) {
+                if (entry.getValue().contains(point)) {
+                    return entry.getKey();
+                }
+            }
+            return null;
+        }
+
+        private void drawBuildingOverlays(Graphics2D g) {
+            Map<String, Rectangle> rects = computeBuildingRects();
+            if (rects.isEmpty()) {
+                return;
+            }
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, Math.max(12, (int) (14 * scaleFactor))));
+            for (Map.Entry<String, Rectangle> entry : rects.entrySet()) {
+                String building = entry.getKey();
+                Rectangle rect = entry.getValue();
+                g.setColor(new Color(0, 90, 200, 40));
+                g.fillRoundRect(rect.x, rect.y, rect.width, rect.height, 18, 18);
+                g.setColor(new Color(0, 90, 200, 140));
+                g.setStroke(new BasicStroke((float) Math.max(1, 2 * scaleFactor)));
+                g.drawRoundRect(rect.x, rect.y, rect.width, rect.height, 18, 18);
+
+                g.setColor(new Color(20, 20, 20, 220));
+                int textX = rect.x + (int) (10 * scaleFactor);
+                int textY = rect.y + (int) (20 * scaleFactor);
+                g.drawString(building, textX, textY);
+            }
+        }
+
+        private Map<String, Rectangle> computeBuildingRects() {
+            Map<String, Rectangle> rects = new HashMap<>();
+            if (badgeReaderPositions.isEmpty()) {
+                return rects;
+            }
+            Map<String, int[]> bounds = new HashMap<>();
+            for (Map.Entry<String, Point> entry : badgeReaderPositions.entrySet()) {
+                String readerId = entry.getKey();
+                Point pos = entry.getValue();
+                BadgeReader reader = badgeReaderMap.get(readerId);
+                if (reader == null) {
+                    continue;
+                }
+                Resource resource = cachedResources.get(reader.getResourceId());
+                if (resource == null || resource.getBuilding() == null || resource.getBuilding().isBlank()) {
+                    continue;
+                }
+                String building = resource.getBuilding();
+                int[] b = bounds.computeIfAbsent(building, k -> new int[] { pos.x, pos.y, pos.x, pos.y });
+                b[0] = Math.min(b[0], pos.x);
+                b[1] = Math.min(b[1], pos.y);
+                b[2] = Math.max(b[2], pos.x);
+                b[3] = Math.max(b[3], pos.y);
+            }
+
+            int padding = 40;
+            for (Map.Entry<String, int[]> entry : bounds.entrySet()) {
+                int[] b = entry.getValue();
+                int x = b[0] - padding;
+                int y = b[1] - padding;
+                int w = (b[2] - b[0]) + padding * 2;
+                int h = (b[3] - b[1]) + padding * 2;
+                int sx = (int) (x * scaleFactor);
+                int sy = (int) (y * scaleFactor);
+                int sw = (int) (w * scaleFactor);
+                int sh = (int) (h * scaleFactor);
+                rects.put(entry.getKey(), new Rectangle(sx, sy, sw, sh));
+            }
+            return rects;
+        }
         
         /**
          * Show badge reader information
@@ -853,18 +959,14 @@ public class RealTimeMonitorPanel extends JPanel {
             StringBuilder info = new StringBuilder();
         info.append(I18n.t("monitor.info.readerId")).append(reader.getId()).append("\n");
         
-        try {
-            DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
-            Map<String, Resource> resources = dbManager.loadAllResources();
-            Resource resource = resources.get(reader.getResourceId());
-            if (resource != null) {
-                info.append(I18n.t("monitor.info.resourceName")).append(resource.getName()).append("\n");
-                info.append(I18n.t("monitor.info.resourceType")).append(I18n.t("resource.type." + resource.getType().name())).append("\n");
-                info.append(I18n.t("monitor.info.location")).append(resource.getLocation()).append("\n");
-                info.append(I18n.t("monitor.info.building")).append(resource.getBuilding()).append("\n");
-                info.append(I18n.t("monitor.info.floor")).append(resource.getFloor()).append("\n");
-            }
-        } catch (Exception e) {
+        Resource resource = cachedResources.get(reader.getResourceId());
+        if (resource != null) {
+            info.append(I18n.t("monitor.info.resourceName")).append(resource.getName()).append("\n");
+            info.append(I18n.t("monitor.info.resourceType")).append(I18n.t("resource.type." + resource.getType().name())).append("\n");
+            info.append(I18n.t("monitor.info.location")).append(resource.getLocation()).append("\n");
+            info.append(I18n.t("monitor.info.building")).append(resource.getBuilding()).append("\n");
+            info.append(I18n.t("monitor.info.floor")).append(resource.getFloor()).append("\n");
+        } else {
             info.append(I18n.t("monitor.info.resourceId")).append(reader.getResourceId()).append("\n");
         }
         
@@ -948,5 +1050,254 @@ public class RealTimeMonitorPanel extends JPanel {
             int variation = (int) (10 * Math.sin(progress * Math.PI * 2));
             return baseSize + variation;
         }
+    }
+
+    private void switchToSite() {
+        viewCombo.setSelectedItem(ViewType.SITE);
+        mapViewPanel.setViewType(ViewType.SITE);
+        mapViewPanel.repaint();
+        updateFloorSidebar();
+    }
+
+    private void enterBuilding(String building) {
+        if (building == null || building.isBlank()) {
+            return;
+        }
+        selectedBuilding = building;
+        selectedFloor = pickDefaultFloor(building);
+        viewCombo.setSelectedItem(ViewType.BUILDING);
+        mapViewPanel.setViewType(ViewType.BUILDING);
+        mapViewPanel.repaint();
+        updateFloorSidebar();
+    }
+
+    private void updateFloorSidebar() {
+        boolean buildingView = getSelectedViewType() == ViewType.BUILDING;
+        floorSidebar.setVisible(buildingView);
+        if (!buildingView) {
+            return;
+        }
+        ensureBuildingAndFloorSelected();
+        buildingTitleLabel.setText(selectedBuilding == null ? "" : selectedBuilding);
+        List<String> floors = getFloorsForBuilding(selectedBuilding);
+
+        floorButtonsPanel.removeAll();
+        ButtonGroup group = new ButtonGroup();
+        for (String floor : floors) {
+            JToggleButton btn = new JToggleButton(floor);
+            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+            btn.setMaximumSize(new Dimension(120, 28));
+            btn.setSelected(floor.equals(selectedFloor));
+            btn.addActionListener(e -> {
+                selectedFloor = floor;
+                mapViewPanel.setViewType(ViewType.BUILDING);
+                mapViewPanel.repaint();
+                updateFloorSidebar();
+            });
+            group.add(btn);
+            floorButtonsPanel.add(btn);
+            floorButtonsPanel.add(Box.createVerticalStrut(6));
+        }
+        floorButtonsPanel.revalidate();
+        floorButtonsPanel.repaint();
+    }
+
+    private List<String> getFloorsForBuilding(String building) {
+        List<String> floors = new ArrayList<>();
+        if (building == null || building.isBlank()) {
+            return floors;
+        }
+        for (Resource r : cachedResources.values()) {
+            if (r == null) {
+                continue;
+            }
+            if (!building.equals(r.getBuilding())) {
+                continue;
+            }
+            String floor = r.getFloor();
+            if (floor == null || floor.isBlank() || floors.contains(floor)) {
+                continue;
+            }
+            floors.add(floor);
+        }
+        floors.sort((a, b) -> floorSortKey(a).compareTo(floorSortKey(b)));
+        return floors;
+    }
+
+    private String floorSortKey(String floor) {
+        if (floor == null) {
+            return "z";
+        }
+        String f = floor.trim().toUpperCase();
+        if (f.matches("^B\\d+$")) {
+            int n = Integer.parseInt(f.substring(1));
+            return "0-" + String.format("%03d", n);
+        }
+        if (f.matches("^\\d+F$")) {
+            int n = Integer.parseInt(f.substring(0, f.length() - 1));
+            return "1-" + String.format("%03d", n);
+        }
+        if (f.equals("G") || f.equals("GF") || f.equals("GROUND")) {
+            return "1-000";
+        }
+        return "2-" + f;
+    }
+
+    private void refreshResources() {
+        try {
+            DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
+            cachedResources = dbManager.loadAllResources();
+        } catch (Exception e) {
+            cachedResources = new HashMap<>();
+        }
+    }
+
+    private boolean shouldIncludeReader(Resource resource) {
+        if (getSelectedViewType() == ViewType.SITE) {
+            return true;
+        }
+        if (resource == null) {
+            return false;
+        }
+        if (selectedBuilding == null || selectedFloor == null) {
+            return false;
+        }
+        return selectedBuilding.equals(resource.getBuilding()) && selectedFloor.equals(resource.getFloor());
+    }
+
+    private void ensureBuildingAndFloorSelected() {
+        if (selectedBuilding != null && selectedFloor != null) {
+            return;
+        }
+        if (cachedResources == null || cachedResources.isEmpty()) {
+            refreshResources();
+        }
+        if (cachedResources.isEmpty()) {
+            selectedBuilding = null;
+            selectedFloor = null;
+            return;
+        }
+
+        String building = null;
+        for (Resource r : cachedResources.values()) {
+            if (r != null && r.getBuilding() != null && !r.getBuilding().isBlank()) {
+                building = r.getBuilding();
+                break;
+            }
+        }
+        selectedBuilding = building;
+        selectedFloor = pickDefaultFloor(building);
+    }
+
+    private String pickDefaultFloor(String building) {
+        if (building == null) {
+            return null;
+        }
+        List<String> floors = new ArrayList<>();
+        for (Resource r : cachedResources.values()) {
+            if (r == null) {
+                continue;
+            }
+            if (!building.equals(r.getBuilding())) {
+                continue;
+            }
+            if (r.getFloor() != null && !r.getFloor().isBlank() && !floors.contains(r.getFloor())) {
+                floors.add(r.getFloor());
+            }
+        }
+        if (floors.contains("1F")) {
+            return "1F";
+        }
+        floors.sort((a, b) -> floorSortKey(a).compareTo(floorSortKey(b)));
+        return floors.isEmpty() ? null : floors.get(0);
+    }
+
+    private String computeViewKey() {
+        ViewType type = getSelectedViewType();
+        if (type == ViewType.SITE) {
+            return type.getKey();
+        }
+        ensureBuildingAndFloorSelected();
+        if (selectedBuilding == null || selectedFloor == null) {
+            return type.getKey();
+        }
+        return type.getKey() + "." + sanitizeKey(selectedBuilding) + "." + sanitizeKey(selectedFloor);
+    }
+
+    private String sanitizeKey(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty()) {
+            return "";
+        }
+        return trimmed.replace('\\', '_')
+            .replace('/', '_')
+            .replace('.', '_')
+            .replace(':', '_')
+            .replace('|', '_');
+    }
+
+    private void loadPositionsFromProperties(java.util.Properties props, String viewKeyPrefix) {
+        if (props == null || viewKeyPrefix == null || viewKeyPrefix.isBlank()) {
+            return;
+        }
+        String prefix = viewKeyPrefix + ".";
+        for (String key : props.stringPropertyNames()) {
+            if (!key.startsWith(prefix)) {
+                continue;
+            }
+            String readerId = key.substring(prefix.length());
+            String value = props.getProperty(key);
+            String[] coords = value.split(",");
+            if (coords.length != 2) {
+                continue;
+            }
+            int x = Integer.parseInt(coords[0]);
+            int y = Integer.parseInt(coords[1]);
+            badgeReaderPositions.put(readerId, new Point(x, y));
+        }
+    }
+
+    private List<String> getBackgroundImageCandidates(ViewType viewType) {
+        List<String> candidates = new ArrayList<>();
+        if (viewType == ViewType.SITE) {
+            addImageCandidates(candidates, "site-layout.png");
+            addImageCandidates(candidates, "site.png");
+            addImageCandidates(candidates, "site.jpg");
+            return candidates;
+        }
+
+        ensureBuildingAndFloorSelected();
+        if (selectedBuilding == null || selectedFloor == null) {
+            addImageCandidates(candidates, "office-layout.png");
+            return candidates;
+        }
+
+        String buildingKey = selectedBuilding.trim();
+        String floorKey = selectedFloor.trim();
+        String[] nameVariants = new String[] {
+            buildingKey + "/" + floorKey + ".png",
+            buildingKey + "/" + floorKey + ".jpg",
+            buildingKey + "-" + floorKey + ".png",
+            buildingKey + "-" + floorKey + ".jpg"
+        };
+        for (String name : nameVariants) {
+            candidates.add("data/images/" + name);
+            candidates.add("images/" + name);
+            candidates.add(name);
+        }
+        addImageCandidates(candidates, "office-layout.png");
+        addImageCandidates(candidates, "office-layout.jpg");
+        return candidates;
+    }
+
+    private void addImageCandidates(List<String> candidates, String imageName) {
+        candidates.add("images/" + imageName);
+        candidates.add("data/images/" + imageName);
+        candidates.add(imageName);
+        candidates.add("../images/" + imageName);
+        candidates.add("./images/" + imageName);
     }
 }
