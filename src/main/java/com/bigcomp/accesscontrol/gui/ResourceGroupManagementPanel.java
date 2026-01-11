@@ -199,15 +199,9 @@ public class ResourceGroupManagementPanel extends JPanel {
                 if (evt.getClickCount() == 2) {
                     int row = availableResourceTable.rowAtPoint(evt.getPoint());
                     if (row >= 0) {
-                        String resourceId = (String) availableResourceTableModel.getValueAt(row, 0);
-                        String status = (String) availableResourceTableModel.getValueAt(row, 4);
-                        if (I18n.t("group.status.notAdded").equals(status)) {
-                            addResourceToGroupById(resourceId);
-                        } else {
-                            JOptionPane.showMessageDialog(ResourceGroupManagementPanel.this,
-                                I18n.t("group.msg.resourceAlreadyIn"), I18n.t("common.info"),
-                                JOptionPane.INFORMATION_MESSAGE);
-                        }
+                        int modelRow = availableResourceTable.convertRowIndexToModel(row);
+                        String resourceId = (String) availableResourceTableModel.getValueAt(modelRow, 0);
+                        addResourceToGroupById(resourceId);
                     }
                 }
             }
@@ -313,8 +307,7 @@ public class ResourceGroupManagementPanel extends JPanel {
             I18n.t("group.col.resourceId"),
             I18n.t("group.col.resourceName"),
             I18n.t("group.col.type"),
-            I18n.t("group.col.location"),
-            I18n.t("group.col.status")
+            I18n.t("group.col.location")
         };
     }
 
@@ -351,26 +344,31 @@ public class ResourceGroupManagementPanel extends JPanel {
         
         DatabaseManager dbManager = accessControlSystem.getDatabaseManager();
         Map<String, Resource> allResources = dbManager.loadAllResources();
-        
-        // Get resource IDs already included in currently selected resource group
-        Set<String> groupResourceIds = new HashSet<>();
-        String selected = groupList.getSelectedValue();
-        if (selected != null) {
+
+        Set<String> groupedResourceIds = new HashSet<>();
+        try {
+            groupedResourceIds.addAll(dbManager.loadResourceGroups().keySet());
+        } catch (Exception e) {
+        }
+        try {
             GroupManager groupManager = new GroupManager();
-            ResourceGroup group = groupManager.getGroup(selected);
-            if (group != null) {
-                groupResourceIds.addAll(group.getResourceIds());
+            for (ResourceGroup group : groupManager.getAllGroups().values()) {
+                if (group != null) {
+                    groupedResourceIds.addAll(group.getResourceIds());
+                }
             }
+        } catch (Exception e) {
         }
         
         for (Resource resource : allResources.values()) {
-            boolean inGroup = groupResourceIds.contains(resource.getId());
+            if (groupedResourceIds.contains(resource.getId())) {
+                continue;
+            }
             availableResourceTableModel.addRow(new Object[]{
                 resource.getId(),
                 resource.getName(),
                 I18n.t("resource.type." + resource.getType().name()),
-                resource.getLocation(),
-                inGroup ? I18n.t("group.status.added") : I18n.t("group.status.notAdded")
+                resource.getLocation()
             });
         }
     }
@@ -620,6 +618,13 @@ public class ResourceGroupManagementPanel extends JPanel {
                 JOptionPane.INFORMATION_MESSAGE);
             return;
         }
+
+        String existingGroupName = dbManager.loadResourceGroups().get(resourceId);
+        if (existingGroupName != null && !existingGroupName.isBlank() && !existingGroupName.equals(selected)) {
+            JOptionPane.showMessageDialog(this, I18n.f("group.msg.resourceInOtherGroup", I18n.t(existingGroupName)), I18n.t("common.warning"),
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         
         group.addResource(resourceId);
         try {
@@ -665,10 +670,11 @@ public class ResourceGroupManagementPanel extends JPanel {
         int skippedCount = 0;
         
         for (int row : selectedRows) {
-            String resourceId = (String) availableResourceTableModel.getValueAt(row, 0);
-            String status = (String) availableResourceTableModel.getValueAt(row, 4);
-            
-            if (I18n.t("group.status.added").equals(status)) {
+            int modelRow = availableResourceTable.convertRowIndexToModel(row);
+            String resourceId = (String) availableResourceTableModel.getValueAt(modelRow, 0);
+
+            String existingGroupName = dbManager.loadResourceGroups().get(resourceId);
+            if (existingGroupName != null && !existingGroupName.isBlank() && !existingGroupName.equals(selected)) {
                 skippedCount++;
                 continue;
             }
@@ -1000,25 +1006,77 @@ public class ResourceGroupManagementPanel extends JPanel {
     
     private int[] createAllPossibleGroups(Map<String, Resource> resources, 
                                        GroupManager groupManager) throws Exception {
+        Map<String, List<String>> groupMap = new HashMap<>();
+        for (Resource resource : resources.values()) {
+            String groupKey = getAllStrategyGroupKey(resource);
+            if (groupKey != null && !groupKey.isEmpty()) {
+                groupMap.computeIfAbsent(groupKey, k -> new ArrayList<>())
+                    .add(resource.getId());
+            }
+        }
+        return createGroupsByGroupMap(resources, groupManager, groupMap);
+    }
+
+    private int[] createGroupsByGroupMap(Map<String, Resource> resources,
+                                        GroupManager groupManager,
+                                        Map<String, List<String>> groupMap) throws Exception {
         int created = 0;
         int skipped = 0;
-        
-        String[] strategies = {
-            "group.strategy.building",
-            "group.strategy.floor",
-            "group.strategy.type",
-            "group.strategy.buildingFloor",
-            "group.strategy.buildingType",
-            "group.strategy.floorType"
-        };
-        
-        for (String strategy : strategies) {
-            int[] results = createGroupsByStrategy(resources, groupManager, strategy);
-            created += results[0];
-            skipped += results[1];
+        for (Map.Entry<String, List<String>> entry : groupMap.entrySet()) {
+            String groupName = entry.getKey();
+            List<String> resourceIds = entry.getValue();
+
+            ResourceGroup existingGroup = groupManager.getGroup(groupName);
+            if (existingGroup != null) {
+                boolean hasNewResources = false;
+                for (String resourceId : resourceIds) {
+                    if (!existingGroup.getResourceIds().contains(resourceId)) {
+                        existingGroup.addResource(resourceId);
+                        hasNewResources = true;
+                        try {
+                            dbManager.linkResourceToGroup(resourceId, groupName);
+                        } catch (Exception e) {
+                        }
+                    }
+                }
+                if (hasNewResources) {
+                    groupManager.saveGroup(existingGroup);
+                    created++;
+                } else {
+                    skipped++;
+                }
+                continue;
+            }
+
+            ResourceGroup group = new ResourceGroup(groupName, calculateSecurityLevel(resourceIds, resources));
+            for (String resourceId : resourceIds) {
+                group.addResource(resourceId);
+            }
+
+            groupManager.saveGroup(group);
+
+            for (String resourceId : resourceIds) {
+                try {
+                    dbManager.linkResourceToGroup(resourceId, groupName);
+                } catch (Exception e) {
+                }
+            }
+            created++;
         }
-        
         return new int[]{created, skipped};
+    }
+
+    private String getAllStrategyGroupKey(Resource resource) {
+        if (resource == null) {
+            return null;
+        }
+        String building = resource.getBuilding();
+        String floor = resource.getFloor();
+        String type = resource.getType() != null ? resource.getType().toString() : null;
+        if (building == null || building.isBlank() || floor == null || floor.isBlank() || type == null || type.isBlank()) {
+            return null;
+        }
+        return building + " - " + floor + " - " + type;
     }
     
     private String getGroupKey(Resource resource, String strategyKey) {

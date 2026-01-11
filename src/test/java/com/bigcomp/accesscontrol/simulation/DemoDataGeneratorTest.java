@@ -6,6 +6,9 @@ import com.bigcomp.accesscontrol.database.DatabaseManager;
 import com.bigcomp.accesscontrol.profile.ProfileManager;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -24,15 +27,19 @@ class DemoDataGeneratorTest {
         when(system.getAccessRequestProcessor()).thenReturn(arp);
 
         DemoDataGenerator generator = new DemoDataGenerator();
-        DemoDataGenerator.Result result = generator.generate(system, 10, 12, 1L, null);
+        DemoDataGenerator.Result result = generator.generate(system, 120, 12, 1L, null);
 
-        assertEquals(10, result.getUsersCreated());
+        assertEquals(120, result.getUsersCreated());
         assertEquals(12, result.getResourcesCreated());
         assertEquals(12, result.getReadersCreated());
 
-        assertTrue(db.loadAllUsers().size() >= 10);
+        assertTrue(db.loadAllUsers().size() >= 120);
         assertTrue(db.loadAllResources().size() >= 12);
         assertTrue(router.getBadgeReaders().size() >= 12);
+
+        Set<String> types = db.loadAllUsers().values().stream()
+            .map(u -> u.getUserType().name())
+            .collect(Collectors.toSet());
+        assertTrue(types.size() >= 2);
     }
 }
-

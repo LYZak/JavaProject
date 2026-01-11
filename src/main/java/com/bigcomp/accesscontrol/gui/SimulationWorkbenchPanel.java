@@ -35,6 +35,7 @@ public class SimulationWorkbenchPanel extends JPanel {
     private static final int MODE_MANUAL = 2;
 
     private final AccessControlSystem accessControlSystem;
+    private final Runnable afterDemoDataGenerated;
     private final SimulationMetrics metrics = new SimulationMetrics();
 
     private JTable userTable;
@@ -66,15 +67,16 @@ public class SimulationWorkbenchPanel extends JPanel {
     private JSpinner stressStepSecondsSpinner;
 
     private JComboBox<String> eventActionCombo;
-    private JComboBox<String> eventUserCombo;
-    private JComboBox<String> eventReaderCombo;
-    private JComboBox<String> eventResourceCombo;
+    private JComboBox<ManualUserOption> eventUserCombo;
+    private JComboBox<Resource> eventResourceCombo;
     private JSpinner eventCountSpinner;
     private JButton queueAddButton;
+    private JButton manualRefreshButton;
     private JButton queueRunButton;
     private JButton queueClearButton;
     private JButton queueImportButton;
     private JList<String> queueList;
+    private boolean manualHintShown;
 
     private JSpinner genUsersSpinner;
     private JSpinner genResourcesSpinner;
@@ -89,7 +91,12 @@ public class SimulationWorkbenchPanel extends JPanel {
     private final javax.swing.Timer uiTimer;
 
     public SimulationWorkbenchPanel(AccessControlSystem accessControlSystem) {
+        this(accessControlSystem, null);
+    }
+
+    public SimulationWorkbenchPanel(AccessControlSystem accessControlSystem, Runnable afterDemoDataGenerated) {
         this.accessControlSystem = accessControlSystem;
+        this.afterDemoDataGenerated = afterDemoDataGenerated;
         setLayout(new BorderLayout());
         setBorder(new EmptyBorder(12, 12, 12, 12));
 
@@ -163,7 +170,8 @@ public class SimulationWorkbenchPanel extends JPanel {
     private JComponent buildReadersPanel() {
         readerTable = new JTable(new javax.swing.table.DefaultTableModel(new Object[]{
             I18n.t("simw.col.readerId"),
-            I18n.t("simw.col.resourceId")
+            I18n.t("simw.col.resourceName"),
+            I18n.t("simw.col.groupName")
         }, 0));
         readerTable.setAutoCreateRowSorter(true);
         return new JScrollPane(readerTable);
@@ -465,30 +473,52 @@ public class SimulationWorkbenchPanel extends JPanel {
         eventActionCombo = new JComboBox<>(new String[]{
             I18n.t("simw.event.swipe"),
             I18n.t("simw.event.updateBadge"),
-            I18n.t("simw.event.submitRequest"),
             I18n.t("simw.event.stepHour"),
             I18n.t("simw.event.stepDay"),
             I18n.t("simw.event.setResourceUncontrolled"),
             I18n.t("simw.event.setResourceControlled")
         });
+        eventActionCombo.addActionListener(e -> updateManualFieldEnablement());
         eventUserCombo = new JComboBox<>();
-        eventReaderCombo = new JComboBox<>();
+        eventUserCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof ManualUserOption u) {
+                    setText(u.displayName);
+                }
+                return this;
+            }
+        });
         eventResourceCombo = new JComboBox<>();
+        eventResourceCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Resource r) {
+                    setText(r.getName());
+                }
+                return this;
+            }
+        });
         eventCountSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 100000, 10));
 
         queueAddButton = new JButton(I18n.t("simw.action.queue"));
         queueAddButton.addActionListener(e -> queueEvent());
 
+        manualRefreshButton = new JButton(I18n.t("simw.action.refreshData"));
+        manualRefreshButton.addActionListener(e -> refreshData());
+
         panel.add(eventActionCombo);
         panel.add(new JLabel(I18n.t("simw.field.user")));
         panel.add(eventUserCombo);
-        panel.add(new JLabel(I18n.t("simw.field.reader")));
-        panel.add(eventReaderCombo);
         panel.add(new JLabel(I18n.t("simw.field.resource")));
         panel.add(eventResourceCombo);
         panel.add(new JLabel(I18n.t("simw.field.count")));
         panel.add(eventCountSpinner);
         panel.add(queueAddButton);
+        panel.add(manualRefreshButton);
+        updateManualFieldEnablement();
         return panel;
     }
 
@@ -531,6 +561,28 @@ public class SimulationWorkbenchPanel extends JPanel {
             rightSplit.setRightComponent(manual ? queuePanel : queuePlaceholder);
             SwingUtilities.invokeLater(() -> rightSplit.setDividerLocation(manual ? 0.75 : 1.0));
         }
+
+        if (manual) {
+            SwingUtilities.invokeLater(this::refreshData);
+            if (!manualHintShown) {
+                manualHintShown = true;
+                appendFeed(I18n.t("simw.msg.manualHowToRun") + "\n");
+            }
+        }
+    }
+
+    private void updateManualFieldEnablement() {
+        String action = (String) eventActionCombo.getSelectedItem();
+        String normalized = normalizeAction(action);
+        boolean needsUser = "Swipe".equals(normalized) || "UpdateBadge".equals(normalized);
+        boolean needsResource = "Swipe".equals(normalized)
+            || "UpdateBadge".equals(normalized)
+            || "SetResource(UNCONTROLLED)".equals(normalized)
+            || "SetResource(CONTROLLED)".equals(normalized);
+        boolean needsCount = !"StepTime(+1h)".equals(normalized) && !"StepTime(+1d)".equals(normalized);
+        if (eventUserCombo != null) eventUserCombo.setEnabled(needsUser);
+        if (eventResourceCombo != null) eventResourceCombo.setEnabled(needsResource);
+        if (eventCountSpinner != null) eventCountSpinner.setEnabled(needsCount);
     }
 
     private void startEngine() {
@@ -607,23 +659,62 @@ public class SimulationWorkbenchPanel extends JPanel {
     }
 
     private void queueEvent() {
-        String action = (String) eventActionCombo.getSelectedItem();
-        String user = (String) eventUserCombo.getSelectedItem();
-        String reader = (String) eventReaderCombo.getSelectedItem();
-        String resource = (String) eventResourceCombo.getSelectedItem();
-        int count = (Integer) eventCountSpinner.getValue();
-        String line = action + " user=" + user + " reader=" + reader + " resource=" + resource + " x" + count;
-        eventQueueModel.addElement(line);
+        String actionUi = (String) eventActionCombo.getSelectedItem();
+        String action = normalizeAction(actionUi);
+        ManualUserOption user = (ManualUserOption) eventUserCombo.getSelectedItem();
+        Resource resource = (Resource) eventResourceCombo.getSelectedItem();
+        int count = 1;
+        if (eventCountSpinner != null && eventCountSpinner.isEnabled()) {
+            count = (Integer) eventCountSpinner.getValue();
+        }
+        if (count < 1) {
+            count = 1;
+        }
+
+        boolean needsUser = "Swipe".equals(action) || "UpdateBadge".equals(action);
+        boolean needsResource = "Swipe".equals(action)
+            || "UpdateBadge".equals(action)
+            || "SetResource(UNCONTROLLED)".equals(action)
+            || "SetResource(CONTROLLED)".equals(action);
+
+        if (needsUser && user == null) {
+            JOptionPane.showMessageDialog(this, I18n.f("simw.msg.manualMissingSelection", I18n.t("simw.field.user")), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (needsResource && resource == null) {
+            JOptionPane.showMessageDialog(this, I18n.f("simw.msg.manualMissingSelection", I18n.t("simw.field.resource")), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (("Swipe".equals(action) || "UpdateBadge".equals(action)) && (resource.getBadgeReaderId() == null || resource.getBadgeReaderId().isBlank())) {
+            JOptionPane.showMessageDialog(this, I18n.t("simw.msg.manualResourceNoReader"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        List<String> tokens = new ArrayList<>();
+        tokens.add(action);
+        if (needsUser) {
+            tokens.add("user=" + user.displayName);
+            tokens.add("userId=" + user.userId);
+        }
+        if (needsResource) tokens.add("resource=" + resource.getName());
+        tokens.add("x" + count);
+        eventQueueModel.addElement(String.join(" ", tokens));
     }
 
     private void runQueue() {
         if (eventQueueModel.isEmpty()) {
             return;
         }
+        ManualExecutionContext ctx = buildManualExecutionContext();
+        int ok = 0;
+        int skipped = 0;
         for (int i = 0; i < eventQueueModel.size(); i++) {
-            executeQueuedLine(eventQueueModel.get(i));
+            boolean executed = executeQueuedLine(eventQueueModel.get(i), ctx);
+            if (executed) ok++;
+            else skipped++;
         }
-        appendFeed(I18n.t("simw.msg.queueExecuted") + "\n");
+        appendFeed(I18n.f("simw.msg.queueRunSummary", ok, skipped) + "\n");
+        refreshData();
     }
 
     private void runQueueWithProgress() {
@@ -632,16 +723,21 @@ public class SimulationWorkbenchPanel extends JPanel {
         }
         progressBar.setValue(0);
         progressBar.setString(I18n.t("simw.progress.running"));
-        SwingWorker<Void, Integer> worker = new SwingWorker<>() {
+        SwingWorker<int[], Integer> worker = new SwingWorker<>() {
             @Override
-            protected Void doInBackground() {
+            protected int[] doInBackground() {
+                ManualExecutionContext ctx = buildManualExecutionContext();
                 int total = eventQueueModel.size();
+                int ok = 0;
+                int skipped = 0;
                 for (int i = 0; i < total; i++) {
-                    executeQueuedLine(eventQueueModel.get(i));
+                    boolean executed = executeQueuedLine(eventQueueModel.get(i), ctx);
+                    if (executed) ok++;
+                    else skipped++;
                     int percent = (int) ((i + 1) * 100L / total);
                     publish(percent);
                 }
-                return null;
+                return new int[]{ok, skipped};
             }
 
             @Override
@@ -655,7 +751,13 @@ public class SimulationWorkbenchPanel extends JPanel {
             protected void done() {
                 progressBar.setValue(100);
                 progressBar.setString(I18n.t("simw.progress.done"));
-                appendFeed(I18n.t("simw.msg.queueExecuted") + "\n");
+                try {
+                    int[] r = get();
+                    appendFeed(I18n.f("simw.msg.queueRunSummary", r[0], r[1]) + "\n");
+                } catch (Exception e) {
+                    appendFeed(I18n.t("simw.msg.queueExecuted") + "\n");
+                }
+                refreshData();
             }
         };
         worker.execute();
@@ -682,70 +784,243 @@ public class SimulationWorkbenchPanel extends JPanel {
         appendFeed(I18n.f("simw.msg.importedLines", lines.size()) + "\n");
     }
 
-    private void executeQueuedLine(String line) {
-        String[] parts = line.split("\\s+");
-        if (parts.length < 4) {
-            return;
-        }
-        String action = normalizeAction(parts[0]);
-        String userPart = parts[1];
-        String readerPart = parts[2];
-        String resourcePart = parts[3];
-        String countPart = parts.length >= 5 ? parts[4] : "x1";
+    static final class ManualUserOption {
+        final String userId;
+        final String displayName;
+        final String badgeCode;
 
-        String badgeCode = userPart.replace("user=", "");
-        String readerId = readerPart.replace("reader=", "");
-        String resourceId = resourcePart.replace("resource=", "");
+        ManualUserOption(String userId, String displayName, String badgeCode) {
+            this.userId = userId;
+            this.displayName = displayName;
+            this.badgeCode = badgeCode;
+        }
+    }
+
+    static final class ParsedQueueLine {
+        final String rawAction;
+        final String userValue;
+        final String userId;
+        final String resourceName;
+        final int count;
+        final String error;
+
+        ParsedQueueLine(String rawAction, String userValue, String userId, String resourceName, int count, String error) {
+            this.rawAction = rawAction;
+            this.userValue = userValue;
+            this.userId = userId;
+            this.resourceName = resourceName;
+            this.count = count;
+            this.error = error;
+        }
+    }
+
+    private static final class ManualExecutionContext {
+        final DatabaseManager db;
+        final Router router;
+        final Map<String, BadgeReader> readersById;
+        final Map<String, Badge> badgesByCode;
+        final Map<String, Badge> badgesByUserId;
+        final Map<String, Badge> badgesByUserName;
+        final Map<String, Resource> resourcesByName;
+
+        ManualExecutionContext(DatabaseManager db, Router router, Map<String, BadgeReader> readersById, Map<String, Badge> badgesByCode, Map<String, Badge> badgesByUserId, Map<String, Badge> badgesByUserName, Map<String, Resource> resourcesByName) {
+            this.db = db;
+            this.router = router;
+            this.readersById = readersById;
+            this.badgesByCode = badgesByCode;
+            this.badgesByUserId = badgesByUserId;
+            this.badgesByUserName = badgesByUserName;
+            this.resourcesByName = resourcesByName;
+        }
+    }
+
+    static ParsedQueueLine parseQueueLine(String line) {
+        if (line == null || line.isBlank()) {
+            return new ParsedQueueLine("", null, null, null, 0, "blank");
+        }
+        String[] parts = line.trim().split("\\s+");
+        if (parts.length == 0) {
+            return new ParsedQueueLine("", null, null, null, 0, "blank");
+        }
+        String action = parts[0];
+        String userValue = null;
+        String userId = null;
+        String resourceName = null;
         int count = 1;
-        try {
-            count = Integer.parseInt(countPart.replace("x", ""));
-        } catch (Exception ignored) {
-        }
-
-        BadgeReader reader = accessControlSystem.getRouter().getBadgeReaders().get(readerId);
-        DatabaseManager db = accessControlSystem.getDatabaseManager();
-        Badge badge = db.loadAllBadges().values().stream().filter(b -> badgeCode.equals(b.getCode())).findFirst().orElse(null);
-
-        for (int i = 0; i < count; i++) {
-            if ("Swipe".equals(action) && reader != null && badge != null) {
-                reader.swipeBadge(badge);
-            } else if ("UpdateBadge".equals(action) && reader != null && badge != null) {
-                reader.updateBadge(badge);
-            } else if ("SubmitRequest".equals(action) && badge != null) {
-                accessControlSystem.getRouter().submitAccessRequest(new com.bigcomp.accesscontrol.model.AccessRequest(
-                    badge.getCode(),
-                    readerId,
-                    resourceId,
-                    SystemClock.now()
-                ));
-            } else if ("StepTime(+1h)".equals(action)) {
-                SystemClock.step(Duration.ofHours(1));
-            } else if ("StepTime(+1d)".equals(action)) {
-                SystemClock.step(Duration.ofDays(1));
-            } else if ("SetResource(UNCONTROLLED)".equals(action)) {
-                Resource res = db.loadAllResources().get(resourceId);
-                if (res != null) {
-                    res.setState(Resource.ResourceState.UNCONTROLLED);
-                    try {
-                        db.addResource(res);
-                        accessControlSystem.getAccessRequestProcessor().reloadData();
-                    } catch (Exception ex) {
-                        appendFeed(I18n.f("simw.msg.updateResourceFailed", ex.getMessage()) + "\n");
-                    }
+        for (int i = 1; i < parts.length; i++) {
+            String p = parts[i];
+            if (p.startsWith("userId=")) {
+                userId = p.substring("userId=".length());
+                continue;
+            }
+            if (p.startsWith("user=")) {
+                StringBuilder sb = new StringBuilder(p.substring("user=".length()));
+                while (i + 1 < parts.length && !isQueueKeyBoundary(parts[i + 1])) {
+                    sb.append(" ").append(parts[++i]);
                 }
-            } else if ("SetResource(CONTROLLED)".equals(action)) {
-                Resource res = db.loadAllResources().get(resourceId);
-                if (res != null) {
-                    res.setState(Resource.ResourceState.CONTROLLED);
-                    try {
-                        db.addResource(res);
-                        accessControlSystem.getAccessRequestProcessor().reloadData();
-                    } catch (Exception ex) {
-                        appendFeed(I18n.f("simw.msg.updateResourceFailed", ex.getMessage()) + "\n");
+                userValue = sb.toString();
+                continue;
+            }
+            if (p.startsWith("resource=")) {
+                StringBuilder sb = new StringBuilder(p.substring("resource=".length()));
+                while (i + 1 < parts.length && !isQueueKeyBoundary(parts[i + 1])) {
+                    sb.append(" ").append(parts[++i]);
+                }
+                resourceName = sb.toString();
+                continue;
+            }
+            if (p.startsWith("x")) {
+                try {
+                    int v = Integer.parseInt(p.substring(1));
+                    if (v >= 1) {
+                        count = v;
                     }
+                } catch (Exception ignored) {
                 }
             }
         }
+        return new ParsedQueueLine(action, userValue, userId, resourceName, count, null);
+    }
+
+    private static boolean isQueueKeyBoundary(String token) {
+        if (token == null || token.isBlank()) {
+            return true;
+        }
+        if (token.startsWith("user=") || token.startsWith("userId=") || token.startsWith("resource=")) {
+            return true;
+        }
+        return token.startsWith("x");
+    }
+
+    private ManualExecutionContext buildManualExecutionContext() {
+        DatabaseManager db = accessControlSystem.getDatabaseManager();
+        Router router = accessControlSystem.getRouter();
+        Map<String, Badge> byCode = new HashMap<>();
+        Map<String, Badge> byUserId = new HashMap<>();
+        for (Badge b : db.loadAllBadges().values()) {
+            if (b.getCode() != null && !b.getCode().isBlank()) {
+                byCode.put(b.getCode(), b);
+            }
+            if (b.getUserId() != null && !b.getUserId().isBlank()) {
+                byUserId.put(b.getUserId(), b);
+            }
+        }
+        Map<String, Badge> byUserName = new HashMap<>();
+        for (User user : db.loadAllUsers().values()) {
+            if (user == null) {
+                continue;
+            }
+            Badge badge = byUserId.get(user.getId());
+            if (badge != null) {
+                String name = user.getFullName();
+                if (name != null && !name.isBlank()) {
+                    byUserName.put(name, badge);
+                }
+            }
+        }
+        Map<String, Resource> byName = new HashMap<>();
+        for (Resource r : db.loadAllResources().values()) {
+            if (r.getName() != null && !r.getName().isBlank()) {
+                byName.put(r.getName(), r);
+            }
+        }
+        return new ManualExecutionContext(db, router, new HashMap<>(router.getBadgeReaders()), byCode, byUserId, byUserName, byName);
+    }
+
+    private boolean executeQueuedLine(String line, ManualExecutionContext ctx) {
+        ParsedQueueLine parsed = parseQueueLine(line);
+        if (parsed.error != null) {
+            appendFeed(I18n.f("simw.msg.queueLineSkipped", line, parsed.error) + "\n");
+            return false;
+        }
+        String action = normalizeAction(parsed.rawAction);
+        int count = parsed.count < 1 ? 1 : parsed.count;
+
+        boolean needsUser = "Swipe".equals(action) || "UpdateBadge".equals(action);
+        boolean needsResource = "Swipe".equals(action)
+            || "UpdateBadge".equals(action)
+            || "SetResource(UNCONTROLLED)".equals(action)
+            || "SetResource(CONTROLLED)".equals(action);
+
+        if (needsUser && ((parsed.userId == null || parsed.userId.isBlank()) && (parsed.userValue == null || parsed.userValue.isBlank()))) {
+            appendFeed(I18n.f("simw.msg.queueLineSkipped", line, "missing user") + "\n");
+            return false;
+        }
+        if (needsResource && (parsed.resourceName == null || parsed.resourceName.isBlank())) {
+            appendFeed(I18n.f("simw.msg.queueLineSkipped", line, "missing resource") + "\n");
+            return false;
+        }
+
+        if ("StepTime(+1h)".equals(action)) {
+            SystemClock.step(Duration.ofHours(1));
+            return true;
+        }
+        if ("StepTime(+1d)".equals(action)) {
+            SystemClock.step(Duration.ofDays(1));
+            return true;
+        }
+
+        Resource resource = needsResource ? ctx.resourcesByName.get(parsed.resourceName) : null;
+        if (needsResource && resource == null) {
+            appendFeed(I18n.f("simw.msg.queueLineSkipped", line, "resource not found") + "\n");
+            return false;
+        }
+
+        Badge badge = null;
+        if (needsUser) {
+            if (parsed.userId != null && !parsed.userId.isBlank()) {
+                badge = ctx.badgesByUserId.get(parsed.userId);
+            }
+            if (badge == null && parsed.userValue != null && !parsed.userValue.isBlank()) {
+                badge = ctx.badgesByUserName.get(parsed.userValue);
+            }
+            if (badge == null && parsed.userValue != null && !parsed.userValue.isBlank()) {
+                badge = ctx.badgesByCode.get(parsed.userValue);
+            }
+        }
+        if (needsUser && badge == null) {
+            appendFeed(I18n.f("simw.msg.queueLineSkipped", line, "badge not found") + "\n");
+            return false;
+        }
+
+        if ("SetResource(UNCONTROLLED)".equals(action) || "SetResource(CONTROLLED)".equals(action)) {
+            resource.setState("SetResource(UNCONTROLLED)".equals(action) ? Resource.ResourceState.UNCONTROLLED : Resource.ResourceState.CONTROLLED);
+            try {
+                ctx.db.addResource(resource);
+                accessControlSystem.getAccessRequestProcessor().reloadData();
+                return true;
+            } catch (Exception ex) {
+                appendFeed(I18n.f("simw.msg.updateResourceFailed", ex.getMessage()) + "\n");
+                return false;
+            }
+        }
+
+        String readerId = resource.getBadgeReaderId();
+        if (readerId == null || readerId.isBlank()) {
+            appendFeed(I18n.f("simw.msg.queueLineSkipped", line, "resource has no reader") + "\n");
+            return false;
+        }
+        BadgeReader reader = ctx.readersById.get(readerId);
+        if (reader == null) {
+            appendFeed(I18n.f("simw.msg.queueLineSkipped", line, "reader not found") + "\n");
+            return false;
+        }
+
+        boolean executedAny = false;
+        for (int i = 0; i < count; i++) {
+            if ("Swipe".equals(action)) {
+                metrics.recordSubmitted();
+                reader.swipeBadge(badge);
+                executedAny = true;
+            } else if ("UpdateBadge".equals(action)) {
+                reader.updateBadge(badge);
+                executedAny = true;
+            } else {
+                appendFeed(I18n.f("simw.msg.queueLineSkipped", line, "unknown action") + "\n");
+                return false;
+            }
+        }
+        return executedAny;
     }
 
     private String normalizeAction(String action) {
@@ -754,14 +1029,12 @@ public class SimulationWorkbenchPanel extends JPanel {
         }
         if (action.equals(I18n.t("simw.event.swipe"))) return "Swipe";
         if (action.equals(I18n.t("simw.event.updateBadge"))) return "UpdateBadge";
-        if (action.equals(I18n.t("simw.event.submitRequest"))) return "SubmitRequest";
         if (action.equals(I18n.t("simw.event.stepHour"))) return "StepTime(+1h)";
         if (action.equals(I18n.t("simw.event.stepDay"))) return "StepTime(+1d)";
         if (action.equals(I18n.t("simw.event.setResourceUncontrolled"))) return "SetResource(UNCONTROLLED)";
         if (action.equals(I18n.t("simw.event.setResourceControlled"))) return "SetResource(CONTROLLED)";
         if (action.equals("刷卡")) return "Swipe";
         if (action.equals("更新徽章")) return "UpdateBadge";
-        if (action.equals("提交请求")) return "SubmitRequest";
         if (action.equals("时间步进(+1小时)")) return "StepTime(+1h)";
         if (action.equals("时间步进(+1天)")) return "StepTime(+1d)";
         if (action.equals("资源设为(不受控)")) return "SetResource(UNCONTROLLED)";
@@ -804,6 +1077,9 @@ public class SimulationWorkbenchPanel extends JPanel {
                 progressBar.setValue(100);
                 progressBar.setString(I18n.t("simw.progress.done"));
                 refreshData();
+                if (afterDemoDataGenerated != null) {
+                    afterDemoDataGenerated.run();
+                }
             }
         };
         worker.execute();
@@ -852,8 +1128,15 @@ public class SimulationWorkbenchPanel extends JPanel {
     private void loadReadersIntoTable() {
         javax.swing.table.DefaultTableModel model = (javax.swing.table.DefaultTableModel) readerTable.getModel();
         model.setRowCount(0);
+        DatabaseManager db = accessControlSystem.getDatabaseManager();
+        Map<String, Resource> resources = db.loadAllResources();
+        Map<String, String> resourceGroups = db.loadResourceGroups();
         for (BadgeReader reader : accessControlSystem.getRouter().getBadgeReaders().values()) {
-            model.addRow(new Object[]{reader.getId(), reader.getResourceId()});
+            Resource resource = resources.get(reader.getResourceId());
+            String resourceName = resource != null && resource.getName() != null ? resource.getName() : reader.getResourceId();
+            String groupKey = resource != null ? resourceGroups.get(resource.getId()) : null;
+            String groupName = groupKey != null && !groupKey.isBlank() ? I18n.t(groupKey) : I18n.t("common.none");
+            model.addRow(new Object[]{reader.getId(), resourceName, groupName});
         }
     }
 
@@ -861,25 +1144,28 @@ public class SimulationWorkbenchPanel extends JPanel {
         eventUserCombo.removeAllItems();
         javax.swing.table.DefaultTableModel um = (javax.swing.table.DefaultTableModel) userTable.getModel();
         for (int r = 0; r < um.getRowCount(); r++) {
-            Object code = um.getValueAt(r, 2);
-            if (code != null && !code.toString().isBlank()) {
-                eventUserCombo.addItem(code.toString());
+            Object userId = um.getValueAt(r, 0);
+            Object userName = um.getValueAt(r, 1);
+            Object badgeCode = um.getValueAt(r, 2);
+            if (userId != null && userName != null && badgeCode != null && !badgeCode.toString().isBlank()) {
+                eventUserCombo.addItem(new ManualUserOption(userId.toString(), userName.toString(), badgeCode.toString()));
             }
+        }
+        if (eventUserCombo.getItemCount() == 0) {
+            appendFeed(I18n.t("simw.msg.manualNoBadgeUsers") + "\n");
         }
 
-        eventReaderCombo.removeAllItems();
         eventResourceCombo.removeAllItems();
-        javax.swing.table.DefaultTableModel rm = (javax.swing.table.DefaultTableModel) readerTable.getModel();
-        for (int r = 0; r < rm.getRowCount(); r++) {
-            Object readerId = rm.getValueAt(r, 0);
-            Object resourceId = rm.getValueAt(r, 1);
-            if (readerId != null) {
-                eventReaderCombo.addItem(readerId.toString());
-            }
-            if (resourceId != null) {
-                eventResourceCombo.addItem(resourceId.toString());
+        for (Resource resource : accessControlSystem.getDatabaseManager().loadAllResources().values()) {
+            if (resource.getName() != null && !resource.getName().isBlank()) {
+                eventResourceCombo.addItem(resource);
             }
         }
+        if (eventResourceCombo.getItemCount() == 0) {
+            appendFeed(I18n.t("simw.msg.manualNoResources") + "\n");
+        }
+
+        updateManualFieldEnablement();
     }
 
     private void registerRouterListeners() {

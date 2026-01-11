@@ -2,11 +2,13 @@
 package com.bigcomp.accesscontrol.gui;
 
 import com.bigcomp.accesscontrol.core.AccessControlSystem;
+import com.bigcomp.accesscontrol.model.Resource;
 import com.bigcomp.accesscontrol.profile.Profile;
 import com.bigcomp.accesscontrol.profile.ProfileManager;
 import com.bigcomp.accesscontrol.profile.TimeFilter;
 import com.bigcomp.accesscontrol.profile.GroupManager;
 import com.bigcomp.accesscontrol.profile.ResourceGroup;
+import com.bigcomp.accesscontrol.profile.PriorityPolicy;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -15,8 +17,10 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Profile Management Panel
@@ -30,6 +34,26 @@ public class ProfileManagementPanel extends JPanel {
     private JTextField profileNameField;
     private JComboBox<String> groupCombo;
     private JTextArea profileInfoArea;
+    private JTextArea profileDetailsArea;
+    private JTextField limitPerUserPerDayField;
+    private JTextField limitPerUserPerWeekField;
+    private JTextField limitPerUserPerMonthField;
+    private JTextField limitGlobalPerDayField;
+    private JTextField limitGlobalPerWeekField;
+    private JTextField limitGlobalPerMonthField;
+    private JCheckBox limitPerUserPerDayPerResourceCheck;
+    private JButton saveUsageLimitButton;
+    private JButton clearUsageLimitButton;
+    private JCheckBox priorityEnabledCheck;
+    private JSpinner priorityMinutesSpinner;
+    private DefaultListModel<String> priorityBuildingsModel;
+    private JList<String> priorityBuildingsList;
+    private JLabel priorityHintLabel;
+    private JButton savePriorityButton;
+    private JButton clearPriorityButton;
+    private JTabbedPane bottomTabs;
+    private TitledBorder usageLimitBorder;
+    private TitledBorder priorityPolicyBorder;
     private TitledBorder profilesBorder;
     private TitledBorder rightsBorder;
     private TitledBorder timeFilterBorder;
@@ -73,11 +97,17 @@ public class ProfileManagementPanel extends JPanel {
                  return false;
              }
          };
-         accessRightsModel.setColumnIdentifiers(new String[]{I18n.t("profile.col.group"), I18n.t("profile.col.timeFilter")});
+        accessRightsModel.setColumnIdentifiers(new String[]{I18n.t("profile.col.group"), I18n.t("profile.col.timeFilter"), I18n.t("profile.col.usageLimit")});
         accessRightsTable = new JTable(accessRightsModel);
         accessRightsTable.setAutoCreateRowSorter(true);
         accessRightsTable.setFillsViewportHeight(true);
         styleTable(accessRightsTable);
+        accessRightsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        accessRightsTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                showSelectedAccessRightDetails();
+            }
+        });
         
         // Input fields
         profileNameField = new JTextField(20);
@@ -86,6 +116,37 @@ public class ProfileManagementPanel extends JPanel {
         profileInfoArea.setEditable(false);
         profileInfoArea.setLineWrap(true);
         profileInfoArea.setWrapStyleWord(true);
+
+        profileDetailsArea = new JTextArea();
+        profileDetailsArea.setEditable(false);
+        profileDetailsArea.setLineWrap(true);
+        profileDetailsArea.setWrapStyleWord(true);
+        profileDetailsArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+
+        limitPerUserPerDayField = new JTextField(8);
+        limitPerUserPerWeekField = new JTextField(8);
+        limitPerUserPerMonthField = new JTextField(8);
+        limitGlobalPerDayField = new JTextField(8);
+        limitGlobalPerWeekField = new JTextField(8);
+        limitGlobalPerMonthField = new JTextField(8);
+        limitPerUserPerDayPerResourceCheck = new JCheckBox();
+        saveUsageLimitButton = new JButton();
+        saveUsageLimitButton.addActionListener(e -> saveSelectedGroupUsageLimit());
+        clearUsageLimitButton = new JButton();
+        clearUsageLimitButton.addActionListener(e -> clearSelectedGroupUsageLimit());
+        setUsageLimitEditorEnabled(false);
+
+        priorityEnabledCheck = new JCheckBox();
+        priorityMinutesSpinner = new JSpinner(new SpinnerNumberModel(60, 1, 1440, 1));
+        priorityBuildingsModel = new DefaultListModel<>();
+        priorityBuildingsList = new JList<>(priorityBuildingsModel);
+        priorityBuildingsList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        priorityHintLabel = new JLabel();
+        savePriorityButton = new JButton();
+        savePriorityButton.addActionListener(e -> savePriorityPolicy());
+        clearPriorityButton = new JButton();
+        clearPriorityButton.addActionListener(e -> clearPriorityPolicy());
+        setPriorityPolicyEditorEnabled(false);
     }
     
     private void setupLayout() {
@@ -159,7 +220,114 @@ public class ProfileManagementPanel extends JPanel {
         editTimeFilterButton.addActionListener(e -> editTimeFilter());
         timeFilterButtonPanel.add(editTimeFilterButton);
         timeFilterPanel.add(timeFilterButtonPanel, BorderLayout.SOUTH);
-        centerPanel.add(timeFilterPanel, BorderLayout.SOUTH);
+
+        JPanel usageLimitPanel = new JPanel(new BorderLayout());
+        usageLimitBorder = new TitledBorder("");
+        usageLimitPanel.setBorder(usageLimitBorder);
+        JPanel limitForm = new JPanel(new GridBagLayout());
+        GridBagConstraints lg = new GridBagConstraints();
+        lg.insets = new Insets(4, 8, 4, 8);
+        lg.anchor = GridBagConstraints.WEST;
+        lg.fill = GridBagConstraints.HORIZONTAL;
+        lg.weightx = 1;
+
+        int row = 0;
+        lg.gridx = 0; lg.gridy = row; lg.weightx = 0;
+        limitForm.add(new JLabel(I18n.t("profile.limit.perUserPerDay")), lg);
+        lg.gridx = 1; lg.weightx = 1;
+        limitForm.add(limitPerUserPerDayField, lg);
+        lg.gridx = 2; lg.weightx = 0;
+        limitForm.add(new JLabel(I18n.t("profile.limit.globalPerDay")), lg);
+        lg.gridx = 3; lg.weightx = 1;
+        limitForm.add(limitGlobalPerDayField, lg);
+
+        row++;
+        lg.gridx = 0; lg.gridy = row; lg.weightx = 0;
+        limitForm.add(new JLabel(I18n.t("profile.limit.perUserPerWeek")), lg);
+        lg.gridx = 1; lg.weightx = 1;
+        limitForm.add(limitPerUserPerWeekField, lg);
+        lg.gridx = 2; lg.weightx = 0;
+        limitForm.add(new JLabel(I18n.t("profile.limit.globalPerWeek")), lg);
+        lg.gridx = 3; lg.weightx = 1;
+        limitForm.add(limitGlobalPerWeekField, lg);
+
+        row++;
+        lg.gridx = 0; lg.gridy = row; lg.weightx = 0;
+        limitForm.add(new JLabel(I18n.t("profile.limit.perUserPerMonth")), lg);
+        lg.gridx = 1; lg.weightx = 1;
+        limitForm.add(limitPerUserPerMonthField, lg);
+        lg.gridx = 2; lg.weightx = 0;
+        limitForm.add(new JLabel(I18n.t("profile.limit.globalPerMonth")), lg);
+        lg.gridx = 3; lg.weightx = 1;
+        limitForm.add(limitGlobalPerMonthField, lg);
+
+        row++;
+        lg.gridx = 0; lg.gridy = row; lg.weightx = 0;
+        limitForm.add(new JLabel(I18n.t("profile.limit.perUserPerDayPerResource")), lg);
+        lg.gridx = 1; lg.weightx = 1; lg.gridwidth = 3;
+        limitForm.add(limitPerUserPerDayPerResourceCheck, lg);
+        lg.gridwidth = 1;
+
+        JPanel limitButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        limitButtons.setBorder(new EmptyBorder(4, 8, 8, 8));
+        limitButtons.add(saveUsageLimitButton);
+        limitButtons.add(clearUsageLimitButton);
+
+        usageLimitPanel.add(limitForm, BorderLayout.CENTER);
+        usageLimitPanel.add(limitButtons, BorderLayout.SOUTH);
+
+        JPanel priorityPanel = new JPanel(new BorderLayout());
+        priorityPolicyBorder = new TitledBorder("");
+        priorityPanel.setBorder(priorityPolicyBorder);
+
+        JPanel priorityForm = new JPanel(new GridBagLayout());
+        GridBagConstraints pg = new GridBagConstraints();
+        pg.insets = new Insets(4, 8, 4, 8);
+        pg.anchor = GridBagConstraints.WEST;
+        pg.fill = GridBagConstraints.HORIZONTAL;
+        pg.weightx = 1;
+
+        int prow = 0;
+        pg.gridx = 0; pg.gridy = prow; pg.weightx = 0;
+        priorityForm.add(new JLabel(I18n.t("profile.priority.enabled")), pg);
+        pg.gridx = 1; pg.weightx = 1; pg.gridwidth = 3;
+        priorityForm.add(priorityEnabledCheck, pg);
+        pg.gridwidth = 1;
+
+        prow++;
+        pg.gridx = 0; pg.gridy = prow; pg.weightx = 0;
+        priorityForm.add(new JLabel(I18n.t("profile.priority.minutes")), pg);
+        pg.gridx = 1; pg.weightx = 1;
+        priorityForm.add(priorityMinutesSpinner, pg);
+
+        prow++;
+        pg.gridx = 0; pg.gridy = prow; pg.weightx = 0;
+        priorityForm.add(new JLabel(I18n.t("profile.priority.buildings")), pg);
+        pg.gridx = 1; pg.weightx = 1; pg.gridwidth = 3;
+        JScrollPane buildingScroll = new JScrollPane(priorityBuildingsList);
+        buildingScroll.setPreferredSize(new Dimension(260, 120));
+        priorityForm.add(buildingScroll, pg);
+        pg.gridwidth = 1;
+
+        prow++;
+        pg.gridx = 0; pg.gridy = prow; pg.weightx = 1; pg.gridwidth = 4;
+        priorityHintLabel.setBorder(new EmptyBorder(0, 0, 4, 0));
+        priorityForm.add(priorityHintLabel, pg);
+        pg.gridwidth = 1;
+
+        JPanel priorityButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        priorityButtons.setBorder(new EmptyBorder(4, 8, 8, 8));
+        priorityButtons.add(savePriorityButton);
+        priorityButtons.add(clearPriorityButton);
+
+        priorityPanel.add(priorityForm, BorderLayout.CENTER);
+        priorityPanel.add(priorityButtons, BorderLayout.SOUTH);
+
+        bottomTabs = new JTabbedPane();
+        bottomTabs.addTab(I18n.t("profile.title.timeFilter"), timeFilterPanel);
+        bottomTabs.addTab(I18n.t("profile.title.usageLimits"), usageLimitPanel);
+        bottomTabs.addTab(I18n.t("profile.title.priorityPolicy"), priorityPanel);
+        centerPanel.add(bottomTabs, BorderLayout.SOUTH);
         
         // Right: Profile information
         JPanel rightPanel = new JPanel(new BorderLayout());
@@ -181,6 +349,9 @@ public class ProfileManagementPanel extends JPanel {
         infoPanel.add(profileNameField, gbc);
         
         rightPanel.add(infoPanel, BorderLayout.NORTH);
+        JScrollPane detailsScroll = new JScrollPane(profileDetailsArea);
+        detailsScroll.setBorder(new EmptyBorder(8, 8, 8, 8));
+        rightPanel.add(detailsScroll, BorderLayout.CENTER);
         saveButton = new JButton();
         saveButton.addActionListener(e -> saveProfile());
         JPanel savePanel = new JPanel(new BorderLayout());
@@ -270,7 +441,17 @@ public class ProfileManagementPanel extends JPanel {
                 String groupName = entry.getKey();
                 TimeFilter filter = entry.getValue();
                 String filterDesc = describeTimeFilter(filter);
-                accessRightsModel.addRow(new Object[]{groupName, filterDesc});
+                com.bigcomp.accesscontrol.profile.UsageLimit limit = profile.getUsageLimitsByGroup() != null ? profile.getUsageLimitsByGroup().get(groupName) : null;
+                String limitDesc = describeUsageLimit(limit);
+                accessRightsModel.addRow(new Object[]{groupName, filterDesc, limitDesc});
+            }
+            profileDetailsArea.setText(formatProfileDetails(profile));
+            profileDetailsArea.setCaretPosition(0);
+            loadPriorityPolicyEditor(profile);
+            if (accessRightsModel.getRowCount() > 0) {
+                accessRightsTable.setRowSelectionInterval(0, 0);
+            } else {
+                profileInfoArea.setText(I18n.t("profile.details.noRights"));
             }
         }
     }
@@ -287,11 +468,484 @@ public class ProfileManagementPanel extends JPanel {
         
         return parts.isEmpty() ? I18n.t("profile.msg.noRestrictions") : String.join(", ", parts);
     }
+
+    private String describeUsageLimit(com.bigcomp.accesscontrol.profile.UsageLimit limit) {
+        if (limit == null) {
+            return I18n.t("common.none");
+        }
+        List<String> parts = new ArrayList<>();
+        if (limit.getPerUserPerDayMax() != null) parts.add(I18n.f("profile.limit.short.perUserPerDay", limit.getPerUserPerDayMax()));
+        if (limit.getPerUserPerWeekMax() != null) parts.add(I18n.f("profile.limit.short.perUserPerWeek", limit.getPerUserPerWeekMax()));
+        if (limit.getPerUserPerMonthMax() != null) parts.add(I18n.f("profile.limit.short.perUserPerMonth", limit.getPerUserPerMonthMax()));
+        if (limit.getGlobalPerDayMax() != null) parts.add(I18n.f("profile.limit.short.globalPerDay", limit.getGlobalPerDayMax()));
+        if (limit.getGlobalPerWeekMax() != null) parts.add(I18n.f("profile.limit.short.globalPerWeek", limit.getGlobalPerWeekMax()));
+        if (limit.getGlobalPerMonthMax() != null) parts.add(I18n.f("profile.limit.short.globalPerMonth", limit.getGlobalPerMonthMax()));
+        if (parts.isEmpty()) {
+            return I18n.t("profile.msg.noRestrictions");
+        }
+        return String.join(", ", parts);
+    }
     
     private void clearProfileInfo() {
         profileNameField.setText("");
         accessRightsModel.setRowCount(0);
         profileInfoArea.setText("");
+        if (profileDetailsArea != null) {
+            profileDetailsArea.setText("");
+        }
+        clearUsageLimitEditor();
+        clearPriorityPolicyEditor();
+    }
+
+    private void showSelectedAccessRightDetails() {
+        String selectedProfileName = profileList.getSelectedValue();
+        if (selectedProfileName == null) {
+            profileInfoArea.setText("");
+            clearUsageLimitEditor();
+            return;
+        }
+        Profile profile = accessControlSystem.getProfileManager().getProfile(selectedProfileName);
+        if (profile == null) {
+            profileInfoArea.setText("");
+            clearUsageLimitEditor();
+            return;
+        }
+        int viewRow = accessRightsTable.getSelectedRow();
+        if (viewRow < 0) {
+            profileInfoArea.setText(I18n.t("profile.details.selectRightHint"));
+            clearUsageLimitEditor();
+            return;
+        }
+        int modelRow = accessRightsTable.convertRowIndexToModel(viewRow);
+        Object groupKeyObj = accessRightsModel.getValueAt(modelRow, 0);
+        if (groupKeyObj == null) {
+            profileInfoArea.setText("");
+            clearUsageLimitEditor();
+            return;
+        }
+        String groupKey = groupKeyObj.toString();
+        TimeFilter filter = profile.getAccessRights().get(groupKey);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(I18n.t("profile.details.group")).append(": ").append(renderGroupName(groupKey)).append('\n');
+        ResourceGroup group = new GroupManager().getGroup(groupKey);
+        if (group != null) {
+            sb.append(I18n.t("profile.details.groupSecurity")).append(": ").append(group.getSecurityLevel()).append('\n');
+            sb.append(I18n.t("profile.details.groupResourceCount")).append(": ").append(group.getResourceIds().size()).append('\n');
+        }
+        sb.append('\n');
+        sb.append(I18n.t("profile.details.timeFilter")).append(":\n");
+        sb.append(formatTimeFilterDetailed(filter));
+        profileInfoArea.setText(sb.toString());
+        profileInfoArea.setCaretPosition(0);
+        loadUsageLimitEditor(profile, groupKey);
+    }
+
+    private void loadUsageLimitEditor(Profile profile, String groupKey) {
+        if (profile == null || groupKey == null || groupKey.isBlank()) {
+            clearUsageLimitEditor();
+            return;
+        }
+        com.bigcomp.accesscontrol.profile.UsageLimit limit = profile.getUsageLimitsByGroup() != null ? profile.getUsageLimitsByGroup().get(groupKey) : null;
+        limitPerUserPerDayField.setText(limit != null && limit.getPerUserPerDayMax() != null ? String.valueOf(limit.getPerUserPerDayMax()) : "");
+        limitPerUserPerWeekField.setText(limit != null && limit.getPerUserPerWeekMax() != null ? String.valueOf(limit.getPerUserPerWeekMax()) : "");
+        limitPerUserPerMonthField.setText(limit != null && limit.getPerUserPerMonthMax() != null ? String.valueOf(limit.getPerUserPerMonthMax()) : "");
+        limitGlobalPerDayField.setText(limit != null && limit.getGlobalPerDayMax() != null ? String.valueOf(limit.getGlobalPerDayMax()) : "");
+        limitGlobalPerWeekField.setText(limit != null && limit.getGlobalPerWeekMax() != null ? String.valueOf(limit.getGlobalPerWeekMax()) : "");
+        limitGlobalPerMonthField.setText(limit != null && limit.getGlobalPerMonthMax() != null ? String.valueOf(limit.getGlobalPerMonthMax()) : "");
+        limitPerUserPerDayPerResourceCheck.setSelected(limit != null && limit.isPerUserPerDayPerResource());
+        setUsageLimitEditorEnabled(true);
+    }
+
+    private void clearUsageLimitEditor() {
+        if (limitPerUserPerDayField == null) {
+            return;
+        }
+        limitPerUserPerDayField.setText("");
+        limitPerUserPerWeekField.setText("");
+        limitPerUserPerMonthField.setText("");
+        limitGlobalPerDayField.setText("");
+        limitGlobalPerWeekField.setText("");
+        limitGlobalPerMonthField.setText("");
+        limitPerUserPerDayPerResourceCheck.setSelected(false);
+        setUsageLimitEditorEnabled(false);
+    }
+
+    private void setUsageLimitEditorEnabled(boolean enabled) {
+        if (limitPerUserPerDayField == null) {
+            return;
+        }
+        limitPerUserPerDayField.setEnabled(enabled);
+        limitPerUserPerWeekField.setEnabled(enabled);
+        limitPerUserPerMonthField.setEnabled(enabled);
+        limitGlobalPerDayField.setEnabled(enabled);
+        limitGlobalPerWeekField.setEnabled(enabled);
+        limitGlobalPerMonthField.setEnabled(enabled);
+        limitPerUserPerDayPerResourceCheck.setEnabled(enabled);
+        saveUsageLimitButton.setEnabled(enabled);
+        clearUsageLimitButton.setEnabled(enabled);
+    }
+
+    private void saveSelectedGroupUsageLimit() {
+        String selectedProfileName = profileList.getSelectedValue();
+        int viewRow = accessRightsTable.getSelectedRow();
+        if (selectedProfileName == null || viewRow < 0) {
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.selectRightToEdit"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int modelRow = accessRightsTable.convertRowIndexToModel(viewRow);
+        Object groupKeyObj = accessRightsModel.getValueAt(modelRow, 0);
+        if (groupKeyObj == null) {
+            return;
+        }
+        String groupKey = groupKeyObj.toString();
+        Profile profile = accessControlSystem.getProfileManager().getProfile(selectedProfileName);
+        if (profile == null) {
+            return;
+        }
+        try {
+            com.bigcomp.accesscontrol.profile.UsageLimit limit = new com.bigcomp.accesscontrol.profile.UsageLimit();
+            limit.setPerUserPerDayMax(parseNullableNonNegativeInt(limitPerUserPerDayField.getText()));
+            limit.setPerUserPerWeekMax(parseNullableNonNegativeInt(limitPerUserPerWeekField.getText()));
+            limit.setPerUserPerMonthMax(parseNullableNonNegativeInt(limitPerUserPerMonthField.getText()));
+            limit.setGlobalPerDayMax(parseNullableNonNegativeInt(limitGlobalPerDayField.getText()));
+            limit.setGlobalPerWeekMax(parseNullableNonNegativeInt(limitGlobalPerWeekField.getText()));
+            limit.setGlobalPerMonthMax(parseNullableNonNegativeInt(limitGlobalPerMonthField.getText()));
+            limit.setPerUserPerDayPerResource(limitPerUserPerDayPerResourceCheck.isSelected());
+            profile.getUsageLimitsByGroup().put(groupKey, limit);
+            accessControlSystem.getProfileManager().saveProfile(profile);
+
+            Profile refreshed = accessControlSystem.getProfileManager().getProfile(selectedProfileName);
+            if (refreshed != null) {
+                profileDetailsArea.setText(formatProfileDetails(refreshed));
+                profileDetailsArea.setCaretPosition(0);
+            }
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.usageSaved"), I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, I18n.f("profile.msg.usageInvalid", ex.getMessage()), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, I18n.f("profile.msg.saveProfileFailed", e.getMessage()), I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void clearSelectedGroupUsageLimit() {
+        String selectedProfileName = profileList.getSelectedValue();
+        int viewRow = accessRightsTable.getSelectedRow();
+        if (selectedProfileName == null || viewRow < 0) {
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.selectRightToEdit"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int modelRow = accessRightsTable.convertRowIndexToModel(viewRow);
+        Object groupKeyObj = accessRightsModel.getValueAt(modelRow, 0);
+        if (groupKeyObj == null) {
+            return;
+        }
+        String groupKey = groupKeyObj.toString();
+        Profile profile = accessControlSystem.getProfileManager().getProfile(selectedProfileName);
+        if (profile == null) {
+            return;
+        }
+        try {
+            if (profile.getUsageLimitsByGroup() != null) {
+                profile.getUsageLimitsByGroup().remove(groupKey);
+            }
+            accessControlSystem.getProfileManager().saveProfile(profile);
+
+            Profile refreshed = accessControlSystem.getProfileManager().getProfile(selectedProfileName);
+            if (refreshed != null) {
+                loadUsageLimitEditor(refreshed, groupKey);
+                profileDetailsArea.setText(formatProfileDetails(refreshed));
+                profileDetailsArea.setCaretPosition(0);
+            } else {
+                clearUsageLimitEditor();
+            }
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.usageCleared"), I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, I18n.f("profile.msg.saveProfileFailed", e.getMessage()), I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private Integer parseNullableNonNegativeInt(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String s = raw.trim();
+        if (s.isEmpty()) {
+            return null;
+        }
+        int v;
+        try {
+            v = Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(raw);
+        }
+        if (v < 0) {
+            throw new IllegalArgumentException(raw);
+        }
+        return v;
+    }
+
+    private void loadPriorityPolicyEditor(Profile profile) {
+        if (profile == null) {
+            clearPriorityPolicyEditor();
+            return;
+        }
+        Set<String> buildings = collectBuildingsFromResources();
+        priorityBuildingsModel.clear();
+        List<String> ordered = new ArrayList<>(buildings);
+        ordered.sort(String::compareToIgnoreCase);
+        for (String b : ordered) {
+            priorityBuildingsModel.addElement(b);
+        }
+
+        PriorityPolicy policy = profile.getPriorityPolicy();
+        if (policy == null) {
+            priorityEnabledCheck.setSelected(false);
+            priorityMinutesSpinner.setValue(60);
+            priorityBuildingsList.clearSelection();
+            setPriorityPolicyEditorEnabled(true);
+            return;
+        }
+        priorityEnabledCheck.setSelected(policy.isRequireGateWithinMinutesEnabled());
+        priorityMinutesSpinner.setValue(policy.getRequireGateWithinMinutes());
+        priorityBuildingsList.clearSelection();
+        if (policy.getBuildings() != null && !policy.getBuildings().isEmpty()) {
+            List<Integer> indices = new ArrayList<>();
+            for (int i = 0; i < priorityBuildingsModel.size(); i++) {
+                String v = priorityBuildingsModel.getElementAt(i);
+                if (policy.getBuildings().contains(v)) {
+                    indices.add(i);
+                }
+            }
+            int[] sel = new int[indices.size()];
+            for (int i = 0; i < indices.size(); i++) {
+                sel[i] = indices.get(i);
+            }
+            priorityBuildingsList.setSelectedIndices(sel);
+        }
+        setPriorityPolicyEditorEnabled(true);
+    }
+
+    private void clearPriorityPolicyEditor() {
+        if (priorityEnabledCheck == null) {
+            return;
+        }
+        priorityEnabledCheck.setSelected(false);
+        priorityMinutesSpinner.setValue(60);
+        priorityBuildingsModel.clear();
+        priorityBuildingsList.clearSelection();
+        setPriorityPolicyEditorEnabled(false);
+    }
+
+    private void setPriorityPolicyEditorEnabled(boolean enabled) {
+        if (priorityEnabledCheck == null) {
+            return;
+        }
+        priorityEnabledCheck.setEnabled(enabled);
+        priorityMinutesSpinner.setEnabled(enabled);
+        priorityBuildingsList.setEnabled(enabled);
+        savePriorityButton.setEnabled(enabled);
+        clearPriorityButton.setEnabled(enabled);
+        if (priorityHintLabel != null) {
+            priorityHintLabel.setEnabled(enabled);
+        }
+    }
+
+    private void savePriorityPolicy() {
+        String selectedProfileName = profileList.getSelectedValue();
+        if (selectedProfileName == null) {
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.selectProfileFirst"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        Profile profile = accessControlSystem.getProfileManager().getProfile(selectedProfileName);
+        if (profile == null) {
+            return;
+        }
+        PriorityPolicy policy = profile.getPriorityPolicy();
+        if (policy == null) {
+            policy = new PriorityPolicy();
+            profile.setPriorityPolicy(policy);
+        }
+        policy.setRequireGateWithinMinutesEnabled(priorityEnabledCheck.isSelected());
+        policy.setRequireGateWithinMinutes((Integer) priorityMinutesSpinner.getValue());
+
+        List<String> selectedBuildings = priorityBuildingsList.getSelectedValuesList();
+        if (selectedBuildings == null || selectedBuildings.isEmpty()) {
+            policy.setBuildings(null);
+        } else {
+            policy.setBuildings(new ArrayList<>(selectedBuildings));
+        }
+        try {
+            accessControlSystem.getProfileManager().saveProfile(profile);
+            Profile refreshed = accessControlSystem.getProfileManager().getProfile(selectedProfileName);
+            if (refreshed != null) {
+                profileDetailsArea.setText(formatProfileDetails(refreshed));
+                profileDetailsArea.setCaretPosition(0);
+            }
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.prioritySaved"), I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, I18n.f("profile.msg.saveProfileFailed", e.getMessage()), I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void clearPriorityPolicy() {
+        String selectedProfileName = profileList.getSelectedValue();
+        if (selectedProfileName == null) {
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.selectProfileFirst"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        Profile profile = accessControlSystem.getProfileManager().getProfile(selectedProfileName);
+        if (profile == null) {
+            return;
+        }
+        try {
+            profile.setPriorityPolicy(null);
+            accessControlSystem.getProfileManager().saveProfile(profile);
+            Profile refreshed = accessControlSystem.getProfileManager().getProfile(selectedProfileName);
+            if (refreshed != null) {
+                loadPriorityPolicyEditor(refreshed);
+                profileDetailsArea.setText(formatProfileDetails(refreshed));
+                profileDetailsArea.setCaretPosition(0);
+            } else {
+                clearPriorityPolicyEditor();
+            }
+            JOptionPane.showMessageDialog(this, I18n.t("profile.msg.priorityCleared"), I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, I18n.f("profile.msg.saveProfileFailed", e.getMessage()), I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private Set<String> collectBuildingsFromResources() {
+        Set<String> buildings = new HashSet<>();
+        Map<String, Resource> resources = accessControlSystem.getDatabaseManager().loadAllResources();
+        for (Resource r : resources.values()) {
+            if (r != null && r.getBuilding() != null && !r.getBuilding().isBlank()) {
+                buildings.add(r.getBuilding());
+            }
+        }
+        return buildings;
+    }
+
+    private String formatProfileDetails(Profile profile) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(I18n.t("profile.details.title")).append('\n');
+        sb.append(I18n.t("profile.details.name")).append(": ").append(profile.getName()).append('\n');
+        sb.append('\n');
+
+        Map<String, TimeFilter> rights = profile.getAccessRights();
+        sb.append(I18n.f("profile.details.rightCount", rights != null ? rights.size() : 0)).append('\n');
+        if (rights == null || rights.isEmpty()) {
+            sb.append(I18n.t("profile.details.noRights")).append('\n');
+        } else {
+            for (Map.Entry<String, TimeFilter> e : rights.entrySet()) {
+                sb.append("- ").append(renderGroupName(e.getKey())).append(": ").append(describeTimeFilter(e.getValue())).append('\n');
+            }
+        }
+        sb.append('\n');
+
+        Map<String, com.bigcomp.accesscontrol.profile.UsageLimit> limitsByGroup = profile.getUsageLimitsByGroup();
+        sb.append(I18n.t("profile.details.usageByGroup")).append(": ").append(limitsByGroup != null ? limitsByGroup.size() : 0).append('\n');
+        if (limitsByGroup != null && !limitsByGroup.isEmpty()) {
+            for (Map.Entry<String, com.bigcomp.accesscontrol.profile.UsageLimit> e : limitsByGroup.entrySet()) {
+                sb.append("- ").append(renderGroupName(e.getKey())).append(": ").append(formatUsageLimit(e.getValue())).append('\n');
+            }
+        }
+        sb.append('\n');
+
+        Map<String, com.bigcomp.accesscontrol.profile.UsageLimit> limitsByType = profile.getUsageLimitsByResourceType();
+        sb.append(I18n.t("profile.details.usageByType")).append(": ").append(limitsByType != null ? limitsByType.size() : 0).append('\n');
+        if (limitsByType != null && !limitsByType.isEmpty()) {
+            for (Map.Entry<String, com.bigcomp.accesscontrol.profile.UsageLimit> e : limitsByType.entrySet()) {
+                String typeLabel = I18n.t("resource.type." + e.getKey());
+                if (typeLabel.equals("resource.type." + e.getKey())) {
+                    typeLabel = e.getKey();
+                }
+                sb.append("- ").append(typeLabel).append(": ").append(formatUsageLimit(e.getValue())).append('\n');
+            }
+        }
+        sb.append('\n');
+
+        com.bigcomp.accesscontrol.profile.PriorityPolicy policy = profile.getPriorityPolicy();
+        if (policy == null) {
+            sb.append(I18n.t("profile.details.priorityPolicy")).append(": ").append(I18n.t("common.none")).append('\n');
+        } else {
+            sb.append(I18n.t("profile.details.priorityPolicy")).append('\n');
+            sb.append(I18n.t("profile.details.priorityEnabled")).append(": ").append(policy.isRequireGateWithinMinutesEnabled()).append('\n');
+            sb.append(I18n.t("profile.details.priorityMinutes")).append(": ").append(policy.getRequireGateWithinMinutes()).append('\n');
+            sb.append(I18n.t("profile.details.priorityBuildings")).append(": ");
+            if (policy.getBuildings() == null || policy.getBuildings().isEmpty()) {
+                sb.append(I18n.t("common.none"));
+            } else {
+                sb.append(String.join(", ", policy.getBuildings()));
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
+
+    private String renderGroupName(String groupKey) {
+        String translated = I18n.t(groupKey);
+        if (translated != null && !translated.equals(groupKey)) {
+            return translated + " (" + groupKey + ")";
+        }
+        return groupKey;
+    }
+
+    private String formatTimeFilterDetailed(TimeFilter filter) {
+        if (filter == null) {
+            return I18n.t("profile.details.noTimeFilter") + "\n";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(I18n.t("profile.details.years")).append(": ").append(formatSet(filter.getYears(), filter.isExcludeYears())).append('\n');
+        sb.append(I18n.t("profile.details.months")).append(": ").append(formatSet(filter.getMonths(), filter.isExcludeMonths())).append('\n');
+        sb.append(I18n.t("profile.details.daysOfMonth")).append(": ").append(formatSet(filter.getDaysOfMonth(), filter.isExcludeDaysOfMonth())).append('\n');
+        sb.append(I18n.t("profile.details.daysOfWeek")).append(": ").append(formatSet(filter.getDaysOfWeek(), filter.isExcludeDaysOfWeek())).append('\n');
+        sb.append(I18n.t("profile.details.timeRanges")).append(": ").append(formatTimeRanges(filter.getTimeRanges(), filter.isExcludeTimeRanges())).append('\n');
+        return sb.toString();
+    }
+
+    private String formatTimeRanges(List<TimeFilter.TimeRange> ranges, boolean exclude) {
+        if (ranges == null || ranges.isEmpty()) {
+            return I18n.t("common.all");
+        }
+        List<String> parts = new ArrayList<>();
+        for (TimeFilter.TimeRange r : ranges) {
+            parts.add(formatMinutes(r.getStartMinutes()) + "-" + formatMinutes(r.getEndMinutes()));
+        }
+        String joined = String.join(", ", parts);
+        return exclude ? (I18n.t("common.exclude") + " " + joined) : joined;
+    }
+
+    private String formatMinutes(int minutes) {
+        int h = Math.max(0, minutes) / 60;
+        int m = Math.max(0, minutes) % 60;
+        return String.format("%02d:%02d", h, m);
+    }
+
+    private String formatSet(Object setObj, boolean exclude) {
+        if (setObj == null) {
+            return I18n.t("common.all");
+        }
+        String s = setObj.toString();
+        if (s.isBlank() || "[]".equals(s)) {
+            return I18n.t("common.all");
+        }
+        return exclude ? (I18n.t("common.exclude") + " " + s) : s;
+    }
+
+    private String formatUsageLimit(com.bigcomp.accesscontrol.profile.UsageLimit limit) {
+        if (limit == null) {
+            return I18n.t("common.none");
+        }
+        List<String> parts = new ArrayList<>();
+        if (limit.getPerUserPerDayMax() != null) parts.add("perUserPerDay=" + limit.getPerUserPerDayMax());
+        if (limit.getPerUserPerWeekMax() != null) parts.add("perUserPerWeek=" + limit.getPerUserPerWeekMax());
+        if (limit.getPerUserPerMonthMax() != null) parts.add("perUserPerMonth=" + limit.getPerUserPerMonthMax());
+        if (limit.getGlobalPerDayMax() != null) parts.add("globalPerDay=" + limit.getGlobalPerDayMax());
+        if (limit.getGlobalPerWeekMax() != null) parts.add("globalPerWeek=" + limit.getGlobalPerWeekMax());
+        if (limit.getGlobalPerMonthMax() != null) parts.add("globalPerMonth=" + limit.getGlobalPerMonthMax());
+        parts.add("perUserPerDayPerResource=" + limit.isPerUserPerDayPerResource());
+        return String.join(", ", parts);
     }
     
     private void createNewProfile() {
@@ -857,6 +1511,12 @@ public class ProfileManagementPanel extends JPanel {
         rightsBorder.setTitle(I18n.t("profile.title.rights"));
         timeFilterBorder.setTitle(I18n.t("profile.title.timeFilter"));
         profileBorder.setTitle(I18n.t("profile.title.profile"));
+        if (usageLimitBorder != null) {
+            usageLimitBorder.setTitle(I18n.t("profile.title.usageLimits"));
+        }
+        if (priorityPolicyBorder != null) {
+            priorityPolicyBorder.setTitle(I18n.t("profile.title.priorityPolicy"));
+        }
 
         newButton.setText(I18n.t("profile.action.new"));
         modifyButton.setText(I18n.t("profile.action.modify"));
@@ -871,13 +1531,39 @@ public class ProfileManagementPanel extends JPanel {
 
         profileNameLabel.setText(I18n.t("profile.field.name"));
         saveButton.setText(I18n.t("profile.action.save"));
+        if (saveUsageLimitButton != null) {
+            saveUsageLimitButton.setText(I18n.t("profile.action.saveUsageLimit"));
+        }
+        if (clearUsageLimitButton != null) {
+            clearUsageLimitButton.setText(I18n.t("profile.action.clearUsageLimit"));
+        }
+        if (limitPerUserPerDayPerResourceCheck != null) {
+            limitPerUserPerDayPerResourceCheck.setText(I18n.t("profile.limit.perUserPerDayPerResourceHint"));
+        }
+        if (priorityEnabledCheck != null) {
+            priorityEnabledCheck.setText(I18n.t("profile.priority.enabledHint"));
+        }
+        if (priorityHintLabel != null) {
+            priorityHintLabel.setText(I18n.t("profile.priority.hint"));
+        }
+        if (savePriorityButton != null) {
+            savePriorityButton.setText(I18n.t("profile.action.savePriorityPolicy"));
+        }
+        if (clearPriorityButton != null) {
+            clearPriorityButton.setText(I18n.t("profile.action.clearPriorityPolicy"));
+        }
 
-        accessRightsModel.setColumnIdentifiers(new String[]{I18n.t("profile.col.group"), I18n.t("profile.col.timeFilter")});
+        accessRightsModel.setColumnIdentifiers(new String[]{I18n.t("profile.col.group"), I18n.t("profile.col.timeFilter"), I18n.t("profile.col.usageLimit")});
         accessRightsTable.getTableHeader().repaint();
 
         if (!groupCombo.isEnabled()) {
             groupCombo.removeAllItems();
             groupCombo.addItem(I18n.t("profile.msg.noGroups"));
+        }
+        if (bottomTabs != null) {
+            bottomTabs.setTitleAt(0, I18n.t("profile.title.timeFilter"));
+            bottomTabs.setTitleAt(1, I18n.t("profile.title.usageLimits"));
+            bottomTabs.setTitleAt(2, I18n.t("profile.title.priorityPolicy"));
         }
 
         revalidate();

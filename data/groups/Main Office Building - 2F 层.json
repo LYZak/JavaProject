@@ -1,0 +1,5 @@
+{
+  "name" : "Main Office Building - 2F 层",
+  "securityLevel" : 2,
+  "resources" : [ "0a7b150c-13a9-4c01-bd24-601d9e4546fa", "715e699d-3040-442f-9f38-68c70a0f67d0", "813e4e52-5a00-413c-a891-05013da581ff", "b75dbdaf-0548-4dd8-ae94-981684ee6a79", "2ce55221-e6ac-4e68-a139-89c65c486551", "b1f6d680-200e-42be-a15e-ca718304cff7", "49c27197-4186-4607-bdc4-b91c1fbfb68b", "7bfe268b-3120-4387-ad55-4e08de557456", "c7db699a-0fcc-4dd1-93dd-ded492ecc52d", "46c3835b-f0b7-46f9-a1a8-e60f92cc743a", "08a7dff8-aa46-40b0-bd88-7a7c8416c011", "51af542a-7613-42be-920d-f6a3b455a10b", "1243ed84-de07-4125-9e0e-719db7e75dbc", "87583732-aff9-43ab-81be-ea7312152eb0", "7cca50aa-de0d-4292-babb-80ab0f12add2", "8e762bad-5107-4ccb-91e4-20cb7d5cd5aa", "9287f79c-a896-4a17-adbe-ae5c1cd8fb29", "ecb54cca-7179-4f82-905b-04bc2c58c746", "8af984fb-ae86-4385-8e7e-b9b56beaf03f" ]
+}

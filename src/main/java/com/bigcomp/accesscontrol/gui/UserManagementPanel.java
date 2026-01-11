@@ -14,6 +14,7 @@ import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +39,7 @@ public class UserManagementPanel extends JPanel {
     private JLabel typeLabel;
     private JButton addButton;
     private JButton deleteButton;
+    private JButton batchDeleteButton;
     private JButton createBadgeButton;
     private JButton assignProfileButton;
     private JButton autoAssignButton;
@@ -60,7 +62,7 @@ public class UserManagementPanel extends JPanel {
             }
         };
         userTable = new JTable(tableModel);
-        userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        userTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         userTable.setAutoCreateRowSorter(true);
         userTable.setFillsViewportHeight(true);
         styleTable(userTable);
@@ -146,6 +148,8 @@ public class UserManagementPanel extends JPanel {
         addButton.addActionListener(e -> addUser());
         deleteButton = new JButton();
         deleteButton.addActionListener(e -> deleteUser());
+        batchDeleteButton = new JButton();
+        batchDeleteButton.addActionListener(e -> deleteSelectedUsers());
         createBadgeButton = new JButton();
         createBadgeButton.addActionListener(e -> createBadge());
         assignProfileButton = new JButton();
@@ -154,6 +158,7 @@ public class UserManagementPanel extends JPanel {
         autoAssignButton.addActionListener(e -> autoAssignProfilesForAll());
         buttonPanel.add(addButton);
         buttonPanel.add(deleteButton);
+        buttonPanel.add(batchDeleteButton);
         buttonPanel.add(createBadgeButton);
         buttonPanel.add(assignProfileButton);
         buttonPanel.add(autoAssignButton);
@@ -228,8 +233,9 @@ public class UserManagementPanel extends JPanel {
             return;
         }
 
-        String userId = (String) tableModel.getValueAt(selectedRow, 0);
-        String userName = (String) tableModel.getValueAt(selectedRow, 1);
+        int modelRow = userTable.convertRowIndexToModel(selectedRow);
+        String userId = (String) tableModel.getValueAt(modelRow, 0);
+        String userName = (String) tableModel.getValueAt(modelRow, 1);
         
         int confirm = JOptionPane.showConfirmDialog(this, 
             I18n.f("user.msg.confirmDelete", userName), 
@@ -249,6 +255,66 @@ public class UserManagementPanel extends JPanel {
         }
     }
 
+    private void deleteSelectedUsers() {
+        int[] selectedViewRows = userTable.getSelectedRows();
+        if (selectedViewRows.length == 0) {
+            JOptionPane.showMessageDialog(this, I18n.t("user.msg.selectDelete"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String[] userIds = new String[selectedViewRows.length];
+        String[] userNames = new String[selectedViewRows.length];
+        for (int i = 0; i < selectedViewRows.length; i++) {
+            int modelRow = userTable.convertRowIndexToModel(selectedViewRows[i]);
+            userIds[i] = (String) tableModel.getValueAt(modelRow, 0);
+            userNames[i] = (String) tableModel.getValueAt(modelRow, 1);
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            I18n.f("user.msg.confirmBatchDelete", selectedViewRows.length),
+            I18n.t("common.confirmDelete.title"),
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        int successCount = 0;
+        StringBuilder failures = new StringBuilder();
+        for (int i = 0; i < userIds.length; i++) {
+            try {
+                dbManager.deleteUser(userIds[i]);
+                successCount++;
+            } catch (Exception e) {
+                if (failures.length() > 0) {
+                    failures.append("\n");
+                }
+                failures.append(I18n.f("user.msg.batchDeleteFailItem", userNames[i], e.getMessage()));
+            }
+        }
+        loadUsers();
+
+        if (failures.length() == 0) {
+            JOptionPane.showMessageDialog(
+                this,
+                I18n.f("user.msg.batchDeleted", successCount),
+                I18n.t("common.success"),
+                JOptionPane.INFORMATION_MESSAGE
+            );
+            return;
+        }
+
+        int failedCount = userIds.length - successCount;
+        JOptionPane.showMessageDialog(
+            this,
+            I18n.f("user.msg.batchDeleteSummary", successCount, failedCount, failures.toString()),
+            I18n.t("common.warning"),
+            JOptionPane.WARNING_MESSAGE
+        );
+    }
+
     private void createBadge() {
         int selectedRow = userTable.getSelectedRow();
         if (selectedRow < 0) {
@@ -256,7 +322,8 @@ public class UserManagementPanel extends JPanel {
             return;
         }
 
-        String userId = (String) tableModel.getValueAt(selectedRow, 0);
+        int modelRow = userTable.convertRowIndexToModel(selectedRow);
+        String userId = (String) tableModel.getValueAt(modelRow, 0);
         try {
             // Get user information
             Map<String, User> allUsers = dbManager.loadAllUsers();
@@ -458,7 +525,8 @@ public class UserManagementPanel extends JPanel {
             return;
         }
 
-        String userId = (String) tableModel.getValueAt(selectedRow, 0);
+        int modelRow = userTable.convertRowIndexToModel(selectedRow);
+        String userId = (String) tableModel.getValueAt(modelRow, 0);
         User user = dbManager.loadAllUsers().get(userId);
         
         if (user == null) {
@@ -538,13 +606,25 @@ public class UserManagementPanel extends JPanel {
         try {
             // Use loadAllUsers() to load all users, including those without badges
             Map<String, User> users = dbManager.loadAllUsers();
+            Map<String, Set<String>> userProfiles = dbManager.loadUserProfiles();
             for (User user : users.values()) {
+                Set<String> profiles = userProfiles.get(user.getId());
+                String profilesText = I18n.t("common.none");
+                if (profiles != null && !profiles.isEmpty()) {
+                    List<String> translated = new ArrayList<>();
+                    for (String p : profiles) {
+                        translated.add(I18n.t(p));
+                    }
+                    translated.sort(String::compareToIgnoreCase);
+                    profilesText = String.join(", ", translated);
+                }
                 tableModel.addRow(new Object[]{
                     user.getId(),
                     user.getFullName(),
                     I18n.t("user.gender." + user.getGender().name()),
                     I18n.t("user.type." + user.getUserType().name()),
-                    user.getBadgeId() != null ? user.getBadgeId() : I18n.t("common.none")
+                    user.getBadgeId() != null ? user.getBadgeId() : I18n.t("common.none"),
+                    profilesText
                 });
             }
             
@@ -646,6 +726,7 @@ public class UserManagementPanel extends JPanel {
 
         addButton.setText(I18n.t("user.action.add"));
         deleteButton.setText(I18n.t("user.action.delete"));
+        batchDeleteButton.setText(I18n.t("user.action.batchDelete"));
         createBadgeButton.setText(I18n.t("user.action.createBadge"));
         assignProfileButton.setText(I18n.t("user.action.assignProfile"));
         autoAssignButton.setText(I18n.t("user.action.autoAssign"));
@@ -656,13 +737,18 @@ public class UserManagementPanel extends JPanel {
         repaint();
     }
 
+    public void refreshData() {
+        SwingUtilities.invokeLater(this::loadUsers);
+    }
+
     private String[] getColumnNames() {
         return new String[]{
             I18n.t("user.col.id"),
             I18n.t("user.col.name"),
             I18n.t("user.col.gender"),
             I18n.t("user.col.type"),
-            I18n.t("user.col.badgeId")
+            I18n.t("user.col.badgeId"),
+            I18n.t("user.col.profiles")
         };
     }
 }

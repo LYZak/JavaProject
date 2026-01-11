@@ -52,16 +52,18 @@ public class DemoDataGenerator {
 
         int usersCreated = 0;
         for (int i = 1; i <= userCount; i++) {
-            String userId = String.format("SIMU%04d", i);
-            User.Gender gender = (i % 2 == 0) ? User.Gender.MALE : User.Gender.FEMALE;
-            User.UserType userType = User.UserType.EMPLOYEE;
+            String userId = UUID.randomUUID().toString();
+            User.Gender gender = pickGender(random);
+            User.UserType userType = pickUserType(random);
             User user = new User(userId, gender, "User", String.valueOf(i), userType);
-            String badgeId = UUID.randomUUID().toString();
-            user.setBadgeId(badgeId);
             try {
                 dbManager.addUser(user);
+
+                String badgeId = UUID.randomUUID().toString();
                 Badge badge = new Badge(userId);
                 dbManager.addBadge(badge, badgeId);
+                user.setBadgeId(badgeId);
+                dbManager.addUser(user);
                 dbManager.linkBadgeToProfile(badgeId, profileName);
                 usersCreated++;
                 if (progress != null && i % 25 == 0) {
@@ -78,8 +80,7 @@ public class DemoDataGenerator {
         int resourcesCreated = 0;
         int readersCreated = 0;
         for (int i = 1; i <= resourceCount; i++) {
-            String resourceId = String.format("SIMR%04d", i);
-            String readerId = String.format("SIMBR%04d", i);
+            String resourceId = UUID.randomUUID().toString();
 
             Resource.ResourceType type;
             String name;
@@ -142,15 +143,17 @@ public class DemoDataGenerator {
 
             Resource resource = new Resource(resourceId, name, type, location, building, floor);
             resource.setState(Resource.ResourceState.CONTROLLED);
-            resource.setBadgeReaderId(readerId);
 
             try {
                 dbManager.addResource(resource);
                 resourcesCreated++;
+                String readerId = UUID.randomUUID().toString();
                 BadgeReader reader = new BadgeReader(readerId, resourceId);
                 dbManager.addBadgeReader(reader);
                 router.registerBadgeReader(reader);
                 readersCreated++;
+                resource.setBadgeReaderId(readerId);
+                dbManager.addResource(resource);
                 dbManager.linkResourceToGroup(resourceId, groupName);
 
                 if (progress != null && i % 25 == 0) {
@@ -169,5 +172,21 @@ public class DemoDataGenerator {
             progress.onProgress(100, "Done");
         }
         return new Result(usersCreated, resourcesCreated, readersCreated);
+    }
+
+    private static User.Gender pickGender(Random random) {
+        int p = random.nextInt(100);
+        if (p < 48) return User.Gender.MALE;
+        if (p < 96) return User.Gender.FEMALE;
+        return User.Gender.OTHER;
+    }
+
+    private static User.UserType pickUserType(Random random) {
+        int p = random.nextInt(100);
+        if (p < 50) return User.UserType.EMPLOYEE;
+        if (p < 65) return User.UserType.CONTRACTOR;
+        if (p < 75) return User.UserType.INTERN;
+        if (p < 90) return User.UserType.VISITOR;
+        return User.UserType.PROJECT_MANAGER;
     }
 }

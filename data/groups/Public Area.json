@@ -1,5 +1,0 @@
-{
-  "name" : "Public Area",
-  "securityLevel" : 1,
-  "resources" : [ "RES001", "RES002", "RES003", "RES006" ]
-}

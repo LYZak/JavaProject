@@ -5,7 +5,9 @@ import com.bigcomp.accesscontrol.model.AccessRequest;
 import com.bigcomp.accesscontrol.model.Badge;
 import com.bigcomp.accesscontrol.model.Resource;
 import com.bigcomp.accesscontrol.model.User;
+import com.bigcomp.accesscontrol.profile.Profile;
 import com.bigcomp.accesscontrol.profile.ProfileManager;
+import com.bigcomp.accesscontrol.profile.TimeFilter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -34,7 +36,7 @@ class AccessRequestProcessorCacheTest {
 
         Path dbFile = tempDir.resolve("test.db");
         DatabaseManager dbManager = new DatabaseManager("jdbc:sqlite:" + dbFile.toString());
-        ProfileManager profileManager = new ProfileManager();
+        ProfileManager profileManager = new ProfileManager(tempDir.resolve("profiles").toString());
         try {
 
         String userId = "U1";
@@ -43,6 +45,9 @@ class AccessRequestProcessorCacheTest {
         String resourceId = "R1";
         String groupName = "access.right.office_area";
         String profileName = "profile.default.employee";
+        Profile profile = new Profile(profileName);
+        profile.addAccessRight(groupName, new TimeFilter());
+        profileManager.saveProfile(profile);
 
         User user = new User(userId, User.Gender.FEMALE, "Jane", "Doe", User.UserType.EMPLOYEE);
         user.setBadgeId(badgeId);
@@ -82,7 +87,7 @@ class AccessRequestProcessorCacheTest {
 
         Path dbFile = tempDir.resolve("test.db");
         DatabaseManager dbManager = new DatabaseManager("jdbc:sqlite:" + dbFile.toString());
-        ProfileManager profileManager = new ProfileManager();
+        ProfileManager profileManager = new ProfileManager(tempDir.resolve("profiles").toString());
         try {
 
         String userId = "U1";
@@ -91,6 +96,9 @@ class AccessRequestProcessorCacheTest {
         String resourceId = "R1";
         String groupName = "access.right.office_area";
         String profileName = "profile.default.employee";
+        Profile profile = new Profile(profileName);
+        profile.addAccessRight(groupName, new TimeFilter());
+        profileManager.saveProfile(profile);
 
         User user = new User(userId, User.Gender.FEMALE, "Jane", "Doe", User.UserType.EMPLOYEE);
         user.setBadgeId(badgeId);

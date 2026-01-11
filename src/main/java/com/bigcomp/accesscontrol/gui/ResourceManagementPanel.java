@@ -14,6 +14,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.UUID;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -37,6 +38,7 @@ public class ResourceManagementPanel extends JPanel {
     private JLabel floorLabel;
     private JButton addButton;
     private JButton deleteButton;
+    private JButton batchDeleteButton;
     private JButton createReaderButton;
     private JButton createAllReadersButton;
     private JButton linkGroupButton;
@@ -58,7 +60,7 @@ public class ResourceManagementPanel extends JPanel {
             }
         };
         resourceTable = new JTable(tableModel);
-        resourceTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        resourceTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         resourceTable.setAutoCreateRowSorter(true);
         resourceTable.setFillsViewportHeight(true);
         styleTable(resourceTable);
@@ -142,6 +144,8 @@ public class ResourceManagementPanel extends JPanel {
         addButton.addActionListener(e -> addResource());
         deleteButton = new JButton();
         deleteButton.addActionListener(e -> deleteResource());
+        batchDeleteButton = new JButton();
+        batchDeleteButton.addActionListener(e -> deleteSelectedResources());
         createReaderButton = new JButton();
         createReaderButton.addActionListener(e -> createBadgeReader());
         createAllReadersButton = new JButton();
@@ -150,6 +154,7 @@ public class ResourceManagementPanel extends JPanel {
         linkGroupButton.addActionListener(e -> linkToResourceGroup());
         buttonPanel.add(addButton);
         buttonPanel.add(deleteButton);
+        buttonPanel.add(batchDeleteButton);
         buttonPanel.add(createReaderButton);
         buttonPanel.add(createAllReadersButton);
         buttonPanel.add(linkGroupButton);
@@ -225,8 +230,9 @@ public class ResourceManagementPanel extends JPanel {
             return;
         }
         
-        String resourceId = (String) tableModel.getValueAt(selectedRow, 0);
-        String resourceName = (String) tableModel.getValueAt(selectedRow, 1);
+        int modelRow = resourceTable.convertRowIndexToModel(selectedRow);
+        String resourceId = (String) tableModel.getValueAt(modelRow, 0);
+        String resourceName = (String) tableModel.getValueAt(modelRow, 1);
         
         int confirm = JOptionPane.showConfirmDialog(this, 
             I18n.f("resource.msg.confirmDelete", resourceName),
@@ -260,6 +266,77 @@ public class ResourceManagementPanel extends JPanel {
             }
         }
     }
+
+    private void deleteSelectedResources() {
+        int[] selectedViewRows = resourceTable.getSelectedRows();
+        if (selectedViewRows.length == 0) {
+            JOptionPane.showMessageDialog(this, I18n.t("resource.msg.selectDelete"), I18n.t("common.warning"), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String[] resourceIds = new String[selectedViewRows.length];
+        String[] resourceNames = new String[selectedViewRows.length];
+        for (int i = 0; i < selectedViewRows.length; i++) {
+            int modelRow = resourceTable.convertRowIndexToModel(selectedViewRows[i]);
+            resourceIds[i] = (String) tableModel.getValueAt(modelRow, 0);
+            resourceNames[i] = (String) tableModel.getValueAt(modelRow, 1);
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            I18n.f("resource.msg.confirmBatchDelete", selectedViewRows.length),
+            I18n.t("common.confirmDelete.title"),
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        var router = accessControlSystem.getRouter();
+        Map<String, String> readerIdByResourceId = new HashMap<>();
+        for (BadgeReader reader : router.getBadgeReaders().values()) {
+            readerIdByResourceId.put(reader.getResourceId(), reader.getId());
+        }
+
+        int successCount = 0;
+        StringBuilder failures = new StringBuilder();
+        for (int i = 0; i < resourceIds.length; i++) {
+            try {
+                String resourceId = resourceIds[i];
+                String readerId = readerIdByResourceId.get(resourceId);
+                if (readerId != null) {
+                    router.unregisterBadgeReader(readerId);
+                }
+                dbManager.deleteResource(resourceId);
+                successCount++;
+            } catch (Exception e) {
+                if (failures.length() > 0) {
+                    failures.append("\n");
+                }
+                failures.append(I18n.f("resource.msg.batchDeleteFailItem", resourceNames[i], e.getMessage()));
+            }
+        }
+        loadResources();
+
+        if (failures.length() == 0) {
+            JOptionPane.showMessageDialog(
+                this,
+                I18n.f("resource.msg.batchDeleted", successCount),
+                I18n.t("common.success"),
+                JOptionPane.INFORMATION_MESSAGE
+            );
+            return;
+        }
+
+        int failedCount = resourceIds.length - successCount;
+        JOptionPane.showMessageDialog(
+            this,
+            I18n.f("resource.msg.batchDeleteSummary", successCount, failedCount, failures.toString()),
+            I18n.t("common.warning"),
+            JOptionPane.WARNING_MESSAGE
+        );
+    }
     
     private void createBadgeReader() {
         int selectedRow = resourceTable.getSelectedRow();
@@ -268,7 +345,8 @@ public class ResourceManagementPanel extends JPanel {
             return;
         }
         
-        String resourceId = (String) tableModel.getValueAt(selectedRow, 0);
+        int modelRow = resourceTable.convertRowIndexToModel(selectedRow);
+        String resourceId = (String) tableModel.getValueAt(modelRow, 0);
         Resource resource = dbManager.loadAllResources().get(resourceId);
         
         // Check if resource already has a badge reader
@@ -430,8 +508,9 @@ public class ResourceManagementPanel extends JPanel {
             return;
         }
         
-        String resourceId = (String) tableModel.getValueAt(selectedRow, 0);
-        String resourceName = (String) tableModel.getValueAt(selectedRow, 1);
+        int modelRow = resourceTable.convertRowIndexToModel(selectedRow);
+        String resourceId = (String) tableModel.getValueAt(modelRow, 0);
+        String resourceName = (String) tableModel.getValueAt(modelRow, 1);
         
         // Get all available resource groups
         GroupManager groupManager = new GroupManager();
@@ -517,6 +596,7 @@ public class ResourceManagementPanel extends JPanel {
 
         addButton.setText(I18n.t("resource.action.add"));
         deleteButton.setText(I18n.t("resource.action.delete"));
+        batchDeleteButton.setText(I18n.t("resource.action.batchDelete"));
         createReaderButton.setText(I18n.t("resource.action.createReader"));
         createAllReadersButton.setText(I18n.t("resource.action.createReadersAll"));
         linkGroupButton.setText(I18n.t("resource.action.linkGroup"));
@@ -525,6 +605,10 @@ public class ResourceManagementPanel extends JPanel {
         resourceTable.getTableHeader().repaint();
         revalidate();
         repaint();
+    }
+
+    public void refreshData() {
+        SwingUtilities.invokeLater(this::loadResources);
     }
 
     private String[] getColumnNames() {

@@ -1,0 +1,5 @@
+{
+  "name" : "Parking Lot - Ground 层",
+  "securityLevel" : 1,
+  "resources" : [ "b0591a0f-a5c6-4c92-b893-9d51d8f1a4da", "cdc6f9a1-a7c1-4db8-a639-497a80d2f94b", "4559ddc4-146e-4795-934b-389ea44d10f7", "850c8962-9f45-4aa4-9f24-0111562de84b", "efabfe47-19e8-43db-a45f-5498415d978c", "788dd0e0-5b8f-4125-b501-356f2e66f766" ]
+}
