@@ -622,9 +622,9 @@ final class I18n {
         zh.put("user.msg.selectDelete", "请选择要删除的用户");
         en.put("user.msg.selectDelete", "Please select a user to delete");
         zh.put("user.msg.confirmDelete", "确定要删除用户“{0}”吗？\n该操作也会删除该用户的徽章及相关配置。");
-        en.put("user.msg.confirmDelete", "Are you sure you want to delete user \"{0}\"?\nThis operation will also delete the user's badge and related configurations.");
+        en.put("user.msg.confirmDelete", "Are you sure you want to delete user \"{0}\"?\nThis operation will also delete the user''s badge and related configurations.");
         zh.put("user.msg.confirmBatchDelete", "确定要删除选中的 {0} 个用户吗？\n该操作也会删除对应用户的徽章及相关配置。");
-        en.put("user.msg.confirmBatchDelete", "Are you sure you want to delete the selected {0} users?\nThis operation will also delete the users' badges and related configurations.");
+        en.put("user.msg.confirmBatchDelete", "Are you sure you want to delete the selected {0} users?\nThis operation will also delete the users'' badges and related configurations.");
         zh.put("user.msg.deleted", "用户删除成功");
         en.put("user.msg.deleted", "User deleted successfully");
         zh.put("user.msg.batchDeleted", "已删除 {0} 个用户");
@@ -652,7 +652,7 @@ final class I18n {
         zh.put("user.msg.profileAlready", "用户已经拥有配置文件“{0}”");
         en.put("user.msg.profileAlready", "User already has profile \"{0}\"");
         zh.put("user.msg.profileAssigned", "已为用户分配配置文件“{0}”\n\n用户当前配置文件：\n{1}");
-        en.put("user.msg.profileAssigned", "Profile \"{0}\" has been assigned to user\n\nUser's current profiles:\n{1}");
+        en.put("user.msg.profileAssigned", "Profile \"{0}\" has been assigned to user\n\nUser''s current profiles:\n{1}");
         zh.put("user.msg.assignProfileFailed", "分配配置文件失败：{0}");
         en.put("user.msg.assignProfileFailed", "Failed to assign profile: {0}");
         zh.put("user.msg.loadFailed", "加载用户失败：{0}");

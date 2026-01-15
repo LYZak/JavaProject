@@ -289,6 +289,10 @@ public class ResourceGroupManagementPanel extends JPanel {
         if (availableResourceTable != null) {
             availableResourceTable.getTableHeader().repaint();
         }
+        SwingUtilities.invokeLater(() -> {
+            loadSelectedGroup();
+            refreshAvailableResourceTable();
+        });
         revalidate();
         repaint();
     }

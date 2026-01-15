@@ -1507,6 +1507,19 @@ public class ProfileManagementPanel extends JPanel {
     }
 
     public void applyLanguage() {
+        String selectedProfileName = profileList.getSelectedValue();
+        int selectedRightViewRow = accessRightsTable.getSelectedRow();
+        String selectedGroupKey = null;
+        if (selectedRightViewRow >= 0) {
+            int modelRow = accessRightsTable.convertRowIndexToModel(selectedRightViewRow);
+            if (modelRow >= 0 && modelRow < accessRightsModel.getRowCount()) {
+                Object groupKeyObj = accessRightsModel.getValueAt(modelRow, 0);
+                if (groupKeyObj != null) {
+                    selectedGroupKey = groupKeyObj.toString();
+                }
+            }
+        }
+
         profilesBorder.setTitle(I18n.t("profile.title.list"));
         rightsBorder.setTitle(I18n.t("profile.title.rights"));
         timeFilterBorder.setTitle(I18n.t("profile.title.timeFilter"));
@@ -1565,6 +1578,26 @@ public class ProfileManagementPanel extends JPanel {
             bottomTabs.setTitleAt(1, I18n.t("profile.title.usageLimits"));
             bottomTabs.setTitleAt(2, I18n.t("profile.title.priorityPolicy"));
         }
+
+        String selectedGroupKeyFinal = selectedGroupKey;
+        SwingUtilities.invokeLater(() -> {
+            if (selectedProfileName != null) {
+                loadSelectedProfile();
+                if (selectedGroupKeyFinal != null) {
+                    for (int row = 0; row < accessRightsModel.getRowCount(); row++) {
+                        Object groupKeyObj = accessRightsModel.getValueAt(row, 0);
+                        if (selectedGroupKeyFinal.equals(groupKeyObj)) {
+                            int viewRow = accessRightsTable.convertRowIndexToView(row);
+                            if (viewRow >= 0) {
+                                accessRightsTable.setRowSelectionInterval(viewRow, viewRow);
+                            }
+                            break;
+                        }
+                    }
+                }
+                showSelectedAccessRightDetails();
+            }
+        });
 
         revalidate();
         repaint();

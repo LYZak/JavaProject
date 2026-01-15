@@ -199,6 +199,7 @@ public class LogViewerPanel extends JPanel {
 
         tableModel.setColumnIdentifiers(getColumnNames());
         logTable.getTableHeader().repaint();
+        SwingUtilities.invokeLater(this::searchLogsSilent);
         revalidate();
         repaint();
     }

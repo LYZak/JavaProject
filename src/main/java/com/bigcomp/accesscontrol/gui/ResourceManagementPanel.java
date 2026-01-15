@@ -603,6 +603,7 @@ public class ResourceManagementPanel extends JPanel {
 
         tableModel.setColumnIdentifiers(getColumnNames());
         resourceTable.getTableHeader().repaint();
+        refreshData();
         revalidate();
         repaint();
     }

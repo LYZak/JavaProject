@@ -15,6 +15,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.Map;
@@ -559,19 +560,39 @@ public class UserManagementPanel extends JPanel {
             return;
         }
         
-        String[] profileNames = profiles.keySet().toArray(new String[0]);
+        List<String> profileKeys = new ArrayList<>(profiles.keySet());
+        Map<String, Integer> translatedCount = new HashMap<>();
+        Map<String, String> translatedByKey = new HashMap<>();
+
+        for (String profileKey : profileKeys) {
+            String translated = I18n.t(profileKey);
+            translatedByKey.put(profileKey, translated);
+            translatedCount.put(translated, translatedCount.getOrDefault(translated, 0) + 1);
+        }
+
+        List<ProfileOption> profileOptions = new ArrayList<>();
+        for (String profileKey : profileKeys) {
+            String translated = translatedByKey.get(profileKey);
+            String displayText = translatedCount.getOrDefault(translated, 0) > 1
+                ? translated + " (" + profileKey + ")"
+                : translated;
+            profileOptions.add(new ProfileOption(profileKey, displayText));
+        }
+        profileOptions.sort(Comparator.comparing(ProfileOption::toString, String.CASE_INSENSITIVE_ORDER));
+        ProfileOption[] options = profileOptions.toArray(new ProfileOption[0]);
         
         // Show selection dialog
-        String selectedProfile = (String) JOptionPane.showInputDialog(this,
+        ProfileOption selectedOption = (ProfileOption) JOptionPane.showInputDialog(this,
             I18n.t("user.msg.selectProfile"),
             I18n.t("user.action.assignProfile"),
             JOptionPane.QUESTION_MESSAGE,
             null,
-            profileNames,
-            profileNames.length > 0 ? profileNames[0] : null);
+            options,
+            options.length > 0 ? options[0] : null);
         
-        if (selectedProfile != null) {
+        if (selectedOption != null) {
             try {
+                String selectedProfile = selectedOption.profileKey;
                 dbManager.setSingleProfileForBadge(user.getBadgeId(), selectedProfile);
                 accessControlSystem.getAccessRequestProcessor().reloadData();
                 
@@ -589,6 +610,21 @@ public class UserManagementPanel extends JPanel {
                     I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
+        }
+    }
+
+    private static final class ProfileOption {
+        private final String profileKey;
+        private final String displayText;
+
+        private ProfileOption(String profileKey, String displayText) {
+            this.profileKey = profileKey;
+            this.displayText = displayText;
+        }
+
+        @Override
+        public String toString() {
+            return displayText;
         }
     }
     
