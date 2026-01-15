@@ -64,6 +64,7 @@ public class RealTimeMonitorPanel extends JPanel {
     private Map<String, BadgeReader> badgeReaderMap; // Badge reader ID -> Badge reader object
     private String selectedReaderId; // Currently selected badge reader ID
     private Point dragStartPoint; // Drag start point
+    private Point dragOffsetPoint; // Drag offset (mouse point - reader center) in view coordinates
     private boolean isDragging = false;
     private String selectedBuilding;
     private String selectedFloor;
@@ -596,6 +597,7 @@ public class RealTimeMonitorPanel extends JPanel {
             });
             
             setCursor(new Cursor(Cursor.HAND_CURSOR));
+            loadBackgroundImage();
         }
         
         public void setScaleLabel(JLabel label) {
@@ -814,6 +816,13 @@ public class RealTimeMonitorPanel extends JPanel {
             if (clickedReader != null) {
                 selectedReaderId = clickedReader;
                 dragStartPoint = clickPoint;
+                dragOffsetPoint = new Point(0, 0);
+                Point originalPos = badgeReaderPositions.get(clickedReader);
+                if (originalPos != null) {
+                    int scaledX = (int) Math.round(originalPos.x * scaleFactor);
+                    int scaledY = (int) Math.round(originalPos.y * scaleFactor);
+                    dragOffsetPoint = new Point(clickPoint.x - scaledX, clickPoint.y - scaledY);
+                }
                 isDragging = false;
                 repaint();
             }
@@ -825,8 +834,15 @@ public class RealTimeMonitorPanel extends JPanel {
         private void handleMouseRelease(MouseEvent e) {
             if (isDragging && selectedReaderId != null) {
                 // Drag ended, update position
-                Point newPos = e.getPoint();
-                badgeReaderPositions.put(selectedReaderId, newPos);
+                Point viewPos = e.getPoint();
+                Point adjustedView = dragOffsetPoint != null
+                    ? new Point(viewPos.x - dragOffsetPoint.x, viewPos.y - dragOffsetPoint.y)
+                    : viewPos;
+                Point originalPos = new Point(
+                    (int) Math.round(adjustedView.x / scaleFactor),
+                    (int) Math.round(adjustedView.y / scaleFactor)
+                );
+                badgeReaderPositions.put(selectedReaderId, originalPos);
                 repaint();
             }
             isDragging = false;
@@ -842,11 +858,13 @@ public class RealTimeMonitorPanel extends JPanel {
                 
                 if (dx > 5 || dy > 5) { // Drag threshold
                     isDragging = true;
-                    Point scaledPos = e.getPoint();
-                    // Convert scaled position back to original position
+                    Point viewPos = e.getPoint();
+                    Point adjustedView = dragOffsetPoint != null
+                        ? new Point(viewPos.x - dragOffsetPoint.x, viewPos.y - dragOffsetPoint.y)
+                        : viewPos;
                     Point originalPos = new Point(
-                        (int) (scaledPos.x / scaleFactor),
-                        (int) (scaledPos.y / scaleFactor)
+                        (int) Math.round(adjustedView.x / scaleFactor),
+                        (int) Math.round(adjustedView.y / scaleFactor)
                     );
                     badgeReaderPositions.put(selectedReaderId, originalPos);
                     repaint();

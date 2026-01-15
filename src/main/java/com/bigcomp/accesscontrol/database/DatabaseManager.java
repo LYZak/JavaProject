@@ -76,6 +76,8 @@ public class DatabaseManager {
         try {
             connection = DriverManager.getConnection(dbUrl);
             createTables();
+            ensureBadgeProfilesSchema();
+            enforceSingleProfileForAllUsers();
         } catch (SQLException e) {
             System.err.println("Database initialization failed: " + e.getMessage());
             e.printStackTrace();
@@ -183,6 +185,198 @@ public class DatabaseManager {
     private void executeUpdate(String sql) throws SQLException {
         try (Statement stmt = connection.createStatement()) {
             stmt.executeUpdate(sql);
+        }
+    }
+
+    private void ensureBadgeProfilesSchema() {
+        try {
+            if (!isBadgeProfilesSchemaCorrect()) {
+                rebuildBadgeProfilesTable();
+            } else {
+                dropUniqueBadgeOnlyIndexIfPresent();
+            }
+        } catch (SQLException e) {
+            System.err.println("Note: Could not verify/migrate badge_profiles schema: " + e.getMessage());
+        }
+    }
+
+    private boolean isBadgeProfilesSchemaCorrect() throws SQLException {
+        String sql = "PRAGMA table_info(badge_profiles)";
+        boolean hasBadgeId = false;
+        boolean hasProfileName = false;
+        int badgeIdPk = 0;
+        int profileNamePk = 0;
+
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                String name = rs.getString("name");
+                int pk = rs.getInt("pk");
+                if ("badge_id".equalsIgnoreCase(name)) {
+                    hasBadgeId = true;
+                    badgeIdPk = pk;
+                } else if ("profile_name".equalsIgnoreCase(name)) {
+                    hasProfileName = true;
+                    profileNamePk = pk;
+                }
+            }
+        }
+
+        return hasBadgeId && hasProfileName && badgeIdPk == 1 && profileNamePk == 2;
+    }
+
+    private void rebuildBadgeProfilesTable() throws SQLException {
+        boolean previousAutoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try (Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate("ALTER TABLE badge_profiles RENAME TO badge_profiles_old");
+            stmt.executeUpdate("CREATE TABLE badge_profiles (" +
+                "badge_id TEXT NOT NULL, " +
+                "profile_name TEXT NOT NULL, " +
+                "PRIMARY KEY (badge_id, profile_name), " +
+                "FOREIGN KEY (badge_id) REFERENCES badges(id), " +
+                "FOREIGN KEY (profile_name) REFERENCES profiles(name)" +
+                ")");
+            stmt.executeUpdate("INSERT OR IGNORE INTO badge_profiles (badge_id, profile_name) " +
+                "SELECT badge_id, profile_name FROM badge_profiles_old");
+            stmt.executeUpdate("DROP TABLE badge_profiles_old");
+            connection.commit();
+        } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        } finally {
+            connection.setAutoCommit(previousAutoCommit);
+        }
+    }
+
+    private void dropUniqueBadgeOnlyIndexIfPresent() throws SQLException {
+        String sql = "PRAGMA index_list(badge_profiles)";
+        List<String> toDrop = new ArrayList<>();
+
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                String indexName = rs.getString("name");
+                int unique = rs.getInt("unique");
+                if (unique != 1) {
+                    continue;
+                }
+
+                String indexInfoSql = "PRAGMA index_info('" + indexName.replace("'", "''") + "')";
+                List<String> columns = new ArrayList<>();
+                try (Statement stmt2 = connection.createStatement();
+                     ResultSet rs2 = stmt2.executeQuery(indexInfoSql)) {
+                    while (rs2.next()) {
+                        columns.add(rs2.getString("name"));
+                    }
+                }
+
+                if (columns.size() == 1 && "badge_id".equalsIgnoreCase(columns.get(0))) {
+                    toDrop.add(indexName);
+                }
+            }
+        }
+
+        try (Statement stmt = connection.createStatement()) {
+            for (String indexName : toDrop) {
+                stmt.executeUpdate("DROP INDEX IF EXISTS \"" + indexName.replace("\"", "\"\"") + "\"");
+            }
+        }
+    }
+
+    private void enforceSingleProfileForAllUsers() {
+        try {
+            String sql = "SELECT user_type, badge_id FROM users WHERE badge_id IS NOT NULL AND badge_id <> ''";
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) {
+                        String userType = rs.getString("user_type");
+                        String badgeId = rs.getString("badge_id");
+                        if (badgeId == null || badgeId.isBlank()) {
+                            continue;
+                        }
+
+                        List<String> profiles = new ArrayList<>();
+                        String loadSql = "SELECT profile_name FROM badge_profiles WHERE badge_id = ?";
+                        try (PreparedStatement load = connection.prepareStatement(loadSql)) {
+                            load.setString(1, badgeId);
+                            try (ResultSet rs2 = load.executeQuery()) {
+                                while (rs2.next()) {
+                                    profiles.add(rs2.getString("profile_name"));
+                                }
+                            }
+                        }
+
+                        if (profiles.size() <= 1) {
+                            continue;
+                        }
+
+                        String keep = resolvePreferredProfileForUserType(userType, profiles);
+
+                        String deleteSql = "DELETE FROM badge_profiles WHERE badge_id = ? AND profile_name <> ?";
+                        try (PreparedStatement del = connection.prepareStatement(deleteSql)) {
+                            del.setString(1, badgeId);
+                            del.setString(2, keep);
+                            del.executeUpdate();
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Note: Could not enforce single profile for users: " + e.getMessage());
+        }
+    }
+
+    private String resolvePreferredProfileForUserType(String userType, List<String> profiles) {
+        String preferred = getDefaultProfileNameForUserType(userType);
+        if (preferred != null) {
+            for (String profile : profiles) {
+                if (preferred.equals(profile)) {
+                    return profile;
+                }
+            }
+        }
+        profiles.sort(String::compareToIgnoreCase);
+        return profiles.get(0);
+    }
+
+    private String getDefaultProfileNameForUserType(String userType) {
+        if (userType == null) {
+            return null;
+        }
+        switch (userType) {
+            case "EMPLOYEE":
+                return "profile.default.employee";
+            case "CONTRACTOR":
+                return "profile.default.contractor";
+            case "INTERN":
+                return "profile.default.intern";
+            case "VISITOR":
+                return "profile.default.visitor";
+            case "PROJECT_MANAGER":
+                return "profile.default.project_manager";
+            default:
+                return null;
+        }
+    }
+
+    public void setSingleProfileForBadge(String badgeId, String profileName) throws SQLException {
+        boolean previousAutoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try {
+            String deleteSql = "DELETE FROM badge_profiles WHERE badge_id = ?";
+            try (PreparedStatement del = connection.prepareStatement(deleteSql)) {
+                del.setString(1, badgeId);
+                del.executeUpdate();
+            }
+
+            linkBadgeToProfile(badgeId, profileName);
+            connection.commit();
+        } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        } finally {
+            connection.setAutoCommit(previousAutoCommit);
         }
     }
 
@@ -487,8 +681,8 @@ public class DatabaseManager {
     public Map<String, Set<String>> loadUserProfiles() {
         Map<String, Set<String>> result = new HashMap<>();
         try {
-            String sql = "SELECT b.user_id, bp.profile_name FROM badges b " +
-                "JOIN badge_profiles bp ON b.id = bp.badge_id";
+            String sql = "SELECT u.id AS user_id, bp.profile_name FROM users u " +
+                "JOIN badge_profiles bp ON u.badge_id = bp.badge_id";
             try (Statement stmt = connection.createStatement();
                  ResultSet rs = stmt.executeQuery(sql)) {
                 while (rs.next()) {
@@ -567,7 +761,20 @@ public class DatabaseManager {
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, badgeId);
             pstmt.setString(2, profileName);
-            pstmt.executeUpdate();
+            int updated = pstmt.executeUpdate();
+            if (updated == 0) {
+                String verifySql = "SELECT COUNT(*) FROM badge_profiles WHERE badge_id = ? AND profile_name = ?";
+                try (PreparedStatement verify = connection.prepareStatement(verifySql)) {
+                    verify.setString(1, badgeId);
+                    verify.setString(2, profileName);
+                    try (ResultSet rs = verify.executeQuery()) {
+                        if (rs.next() && rs.getInt(1) > 0) {
+                            return;
+                        }
+                    }
+                }
+                throw new SQLException("Failed to link badge to profile (insert ignored unexpectedly).");
+            }
         }
     }
 

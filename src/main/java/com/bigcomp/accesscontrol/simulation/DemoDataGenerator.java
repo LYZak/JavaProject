@@ -64,7 +64,7 @@ public class DemoDataGenerator {
                 dbManager.addBadge(badge, badgeId);
                 user.setBadgeId(badgeId);
                 dbManager.addUser(user);
-                dbManager.linkBadgeToProfile(badgeId, profileName);
+                dbManager.setSingleProfileForBadge(badgeId, profileName);
                 usersCreated++;
                 if (progress != null && i % 25 == 0) {
                     int percent = (int) Math.min(50, (usersCreated * 50L) / Math.max(1, userCount));

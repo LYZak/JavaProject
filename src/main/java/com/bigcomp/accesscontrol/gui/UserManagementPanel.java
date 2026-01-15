@@ -15,6 +15,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.Map;
 import java.util.Set;
@@ -213,13 +214,21 @@ public class UserManagementPanel extends JPanel {
             );
 
             dbManager.addUser(user);
+            Badge badge = new Badge(userId);
+            String badgeId = UUID.randomUUID().toString();
+            dbManager.addBadge(badge, badgeId);
+            user.setBadgeId(badgeId);
+            dbManager.addUser(user);
+            autoAssignProfileByUserType(user, badgeId);
+
+            accessControlSystem.getAccessRequestProcessor().reloadData();
             loadUsers();
             
             // Clear input fields
             firstNameField.setText("");
             lastNameField.setText("");
             
-            JOptionPane.showMessageDialog(this, I18n.t("user.msg.added"), I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("user.msg.badgeCreatedAutoProfile"), I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, I18n.f("user.msg.addFailed", e.getMessage()),
                 I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
@@ -380,7 +389,7 @@ public class UserManagementPanel extends JPanel {
             
             if (profile != null) {
                 // Assign profile
-                dbManager.linkBadgeToProfile(badgeId, profileName);
+                dbManager.setSingleProfileForBadge(badgeId, profileName);
                 System.out.println("Auto-assigned profile: " + user.getFullName() + " (" + 
                     user.getUserType() + ") -> " + profileName);
             }
@@ -563,36 +572,18 @@ public class UserManagementPanel extends JPanel {
         
         if (selectedProfile != null) {
             try {
-                // Check if user already has this profile
-                Map<String, Set<String>> userProfiles = dbManager.loadUserProfiles();
-                Set<String> existingProfiles = userProfiles.get(user.getId());
-                if (existingProfiles != null && existingProfiles.contains(selectedProfile)) {
-                    JOptionPane.showMessageDialog(this, 
-                        I18n.f("user.msg.profileAlready", selectedProfile),
-                        I18n.t("common.info"), JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
-                
-                // Assign profile (will be added to existing profiles, not overwritten)
-                dbManager.linkBadgeToProfile(user.getBadgeId(), selectedProfile);
+                dbManager.setSingleProfileForBadge(user.getBadgeId(), selectedProfile);
                 accessControlSystem.getAccessRequestProcessor().reloadData();
                 
                 // Display all current profiles for user
-                userProfiles = dbManager.loadUserProfiles();
-                existingProfiles = userProfiles.get(user.getId());
-                StringBuilder profileList = new StringBuilder();
-                if (existingProfiles != null && !existingProfiles.isEmpty()) {
-                    for (String profile : existingProfiles) {
-                        if (profileList.length() > 0) {
-                            profileList.append(", ");
-                        }
-                        profileList.append(I18n.t(profile));
-                    }
-                }
+                Map<String, Set<String>> userProfiles = dbManager.loadUserProfiles();
+                Set<String> existingProfiles = userProfiles.get(user.getId());
+                String profileList = renderProfileList(existingProfiles);
                 
                 JOptionPane.showMessageDialog(this, 
-                    I18n.f("user.msg.profileAssigned", I18n.t(selectedProfile), profileList.toString()),
+                    I18n.f("user.msg.profileAssigned", I18n.t(selectedProfile), profileList),
                     I18n.t("common.success"), JOptionPane.INFORMATION_MESSAGE);
+                loadUsers();
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, I18n.f("user.msg.assignProfileFailed", e.getMessage()),
                     I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
@@ -609,15 +600,7 @@ public class UserManagementPanel extends JPanel {
             Map<String, Set<String>> userProfiles = dbManager.loadUserProfiles();
             for (User user : users.values()) {
                 Set<String> profiles = userProfiles.get(user.getId());
-                String profilesText = I18n.t("common.none");
-                if (profiles != null && !profiles.isEmpty()) {
-                    List<String> translated = new ArrayList<>();
-                    for (String p : profiles) {
-                        translated.add(I18n.t(p));
-                    }
-                    translated.sort(String::compareToIgnoreCase);
-                    profilesText = String.join(", ", translated);
-                }
+                String profilesText = renderProfileList(profiles);
                 tableModel.addRow(new Object[]{
                     user.getId(),
                     user.getFullName(),
@@ -635,6 +618,34 @@ public class UserManagementPanel extends JPanel {
                 I18n.t("common.error"), JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
+    }
+
+    private String renderProfileList(Set<String> profiles) {
+        if (profiles == null || profiles.isEmpty()) {
+            return I18n.t("common.none");
+        }
+
+        Map<String, Integer> translatedCount = new HashMap<>();
+        Map<String, String> translatedByKey = new HashMap<>();
+
+        for (String profileKey : profiles) {
+            String translated = I18n.t(profileKey);
+            translatedByKey.put(profileKey, translated);
+            translatedCount.put(translated, translatedCount.getOrDefault(translated, 0) + 1);
+        }
+
+        List<String> rendered = new ArrayList<>();
+        for (String profileKey : profiles) {
+            String translated = translatedByKey.get(profileKey);
+            if (translatedCount.getOrDefault(translated, 0) > 1) {
+                rendered.add(translated + " (" + profileKey + ")");
+            } else {
+                rendered.add(translated);
+            }
+        }
+
+        rendered.sort(String::compareToIgnoreCase);
+        return String.join(", ", rendered);
     }
     
     /**
@@ -677,7 +688,7 @@ public class UserManagementPanel extends JPanel {
                         }
                         
                         // Assign profile
-                        dbManager.linkBadgeToProfile(user.getBadgeId(), profileName);
+                        dbManager.setSingleProfileForBadge(user.getBadgeId(), profileName);
                         assignedCount++;
                         details.append(I18n.f("user.msg.autoAssignDetailSuccess", 
                             user.getFullName(), 

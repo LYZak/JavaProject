@@ -449,7 +449,7 @@ public class SystemTestRunner {
                 // Need to find badge ID by badge code
                 String badgeId = findBadgeIdByCode(badge.getCode());
                 if (badgeId != null) {
-                    dbManager.linkBadgeToProfile(badgeId, profileName);
+                    dbManager.setSingleProfileForBadge(badgeId, profileName);
                     System.out.println("  Assigned profile: " + user.getFullName() + " -> " + profileName);
                 }
             }

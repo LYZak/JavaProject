@@ -599,7 +599,7 @@ public class EventSimulationPanel extends JPanel {
                 dbManager.addUser(user);
                 Badge badge = new Badge(userId);
                 dbManager.addBadge(badge, badgeId);
-                dbManager.linkBadgeToProfile(badgeId, profileName);
+                dbManager.setSingleProfileForBadge(badgeId, profileName);
                 usersCreated++;
             } catch (Exception ex) {
                 statusArea.append("Failed to create user " + userId + ": " + ex.getMessage() + "\n");
