@@ -1,4 +1,4 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol.util;
 
 import com.bigcomp.accesscontrol.database.DatabaseManager;

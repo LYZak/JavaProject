@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol.gui;
 
 import com.bigcomp.accesscontrol.model.Badge;

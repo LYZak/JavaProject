@@ -1,4 +1,4 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol.util;
 
 import com.bigcomp.accesscontrol.core.AccessControlSystem;
@@ -9,7 +9,6 @@ import com.bigcomp.accesscontrol.model.User;
 import com.bigcomp.accesscontrol.profile.Profile;
 import com.bigcomp.accesscontrol.profile.ProfileManager;
 import com.bigcomp.accesscontrol.profile.TimeFilter;
-import com.bigcomp.accesscontrol.util.SystemClock;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -20,12 +19,10 @@ import java.util.Set;
  * Used to diagnose why access requests are denied
  */
 public class AccessDiagnostic {
-    private AccessControlSystem accessControlSystem;
     private DatabaseManager dbManager;
     private ProfileManager profileManager;
     
     public AccessDiagnostic(AccessControlSystem accessControlSystem) {
-        this.accessControlSystem = accessControlSystem;
         this.dbManager = accessControlSystem.getDatabaseManager();
         this.profileManager = accessControlSystem.getProfileManager();
     }

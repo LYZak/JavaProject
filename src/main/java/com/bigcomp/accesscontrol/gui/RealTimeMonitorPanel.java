@@ -1,4 +1,4 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol.gui;
 
 import com.bigcomp.accesscontrol.core.AccessControlSystem;
@@ -251,7 +251,7 @@ public class RealTimeMonitorPanel extends JPanel {
         
         // Create or update flash indicator
         FlashIndicator indicator = flashIndicators.computeIfAbsent(readerId, 
-            k -> new FlashIndicator(readerId));
+            k -> new FlashIndicator());
         indicator.trigger(granted);
         
         // Refresh map display
@@ -551,7 +551,6 @@ public class RealTimeMonitorPanel extends JPanel {
     private class MapViewPanel extends JPanel {
         private ViewType viewType = ViewType.SITE;
         private BufferedImage backgroundImage;
-        private String currentImagePath;
         private double scaleFactor = 1.0; // Scale factor
         private static final double MIN_SCALE = 0.25; // Minimum scale
         private static final double MAX_SCALE = 3.0; // Maximum scale
@@ -663,7 +662,6 @@ public class RealTimeMonitorPanel extends JPanel {
                     BufferedImage img = ImageIO.read(imageFile);
                     if (img != null) {
                         backgroundImage = img;
-                        currentImagePath = path;
                         return;
                     }
                 } catch (IOException e) {
@@ -673,7 +671,6 @@ public class RealTimeMonitorPanel extends JPanel {
             
             // If image doesn't exist, use null
             backgroundImage = null;
-            currentImagePath = null;
         }
         
         @Override
@@ -1020,14 +1017,12 @@ public class RealTimeMonitorPanel extends JPanel {
      * Flash indicator - Visual feedback for access attempts
      */
     private class FlashIndicator {
-        private String readerId;
         private boolean active;
         private boolean granted;
         private long triggerTime;
         private static final long FLASH_DURATION = 2000; // Flash duration (milliseconds)
         
-        public FlashIndicator(String readerId) {
-            this.readerId = readerId;
+        public FlashIndicator() {
             this.active = false;
         }
         

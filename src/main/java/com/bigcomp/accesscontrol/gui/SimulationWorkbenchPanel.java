@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol.gui;
 
 import com.bigcomp.accesscontrol.core.AccessControlSystem;
@@ -27,10 +28,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class SimulationWorkbenchPanel extends JPanel {
-    private static final int MODE_REALTIME = 0;
     private static final int MODE_STRESS = 1;
     private static final int MODE_MANUAL = 2;
 
@@ -701,22 +700,6 @@ public class SimulationWorkbenchPanel extends JPanel {
         eventQueueModel.addElement(String.join(" ", tokens));
     }
 
-    private void runQueue() {
-        if (eventQueueModel.isEmpty()) {
-            return;
-        }
-        ManualExecutionContext ctx = buildManualExecutionContext();
-        int ok = 0;
-        int skipped = 0;
-        for (int i = 0; i < eventQueueModel.size(); i++) {
-            boolean executed = executeQueuedLine(eventQueueModel.get(i), ctx);
-            if (executed) ok++;
-            else skipped++;
-        }
-        appendFeed(I18n.f("simw.msg.queueRunSummary", ok, skipped) + "\n");
-        refreshData();
-    }
-
     private void runQueueWithProgress() {
         if (eventQueueModel.isEmpty()) {
             return;
@@ -816,16 +799,14 @@ public class SimulationWorkbenchPanel extends JPanel {
 
     private static final class ManualExecutionContext {
         final DatabaseManager db;
-        final Router router;
         final Map<String, BadgeReader> readersById;
         final Map<String, Badge> badgesByCode;
         final Map<String, Badge> badgesByUserId;
         final Map<String, Badge> badgesByUserName;
         final Map<String, Resource> resourcesByName;
 
-        ManualExecutionContext(DatabaseManager db, Router router, Map<String, BadgeReader> readersById, Map<String, Badge> badgesByCode, Map<String, Badge> badgesByUserId, Map<String, Badge> badgesByUserName, Map<String, Resource> resourcesByName) {
+        ManualExecutionContext(DatabaseManager db, Map<String, BadgeReader> readersById, Map<String, Badge> badgesByCode, Map<String, Badge> badgesByUserId, Map<String, Badge> badgesByUserName, Map<String, Resource> resourcesByName) {
             this.db = db;
-            this.router = router;
             this.readersById = readersById;
             this.badgesByCode = badgesByCode;
             this.badgesByUserId = badgesByUserId;
@@ -924,7 +905,7 @@ public class SimulationWorkbenchPanel extends JPanel {
                 byName.put(r.getName(), r);
             }
         }
-        return new ManualExecutionContext(db, router, new HashMap<>(router.getBadgeReaders()), byCode, byUserId, byUserName, byName);
+        return new ManualExecutionContext(db, new HashMap<>(router.getBadgeReaders()), byCode, byUserId, byUserName, byName);
     }
 
     private boolean executeQueuedLine(String line, ManualExecutionContext ctx) {

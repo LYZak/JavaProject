@@ -1,10 +1,10 @@
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol.simulation.engine;
 
 import com.bigcomp.accesscontrol.model.Badge;
 import com.bigcomp.accesscontrol.model.BadgeReader;
 import com.bigcomp.accesscontrol.model.Resource;
 import com.bigcomp.accesscontrol.model.User;
-import com.bigcomp.accesscontrol.util.SystemClock;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,7 +91,6 @@ public class RealtimeSimulationEngine implements SimulationEngine {
         Resource resource = resourcesById.get(reader.getResourceId());
         if (resource != null) {
             simUser.lastLocation = resource.getLocation();
-            simUser.lastAccessTime = SystemClock.now();
         }
 
         Badge badge = simUser.badge;
@@ -161,15 +160,11 @@ public class RealtimeSimulationEngine implements SimulationEngine {
     }
 
     private static final class SimulatedUser {
-        private final User user;
         private final Badge badge;
-        private java.time.LocalDateTime lastAccessTime;
         private String lastLocation;
 
         private SimulatedUser(User user, Badge badge) {
-            this.user = user;
             this.badge = badge;
         }
     }
 }
-

@@ -3,7 +3,6 @@ package com.bigcomp.accesscontrol.integration;
 import com.bigcomp.accesscontrol.core.AccessRequestProcessor;
 import com.bigcomp.accesscontrol.core.Router;
 import com.bigcomp.accesscontrol.database.DatabaseManager;
-import com.bigcomp.accesscontrol.model.AccessRequest;
 import com.bigcomp.accesscontrol.model.AccessResponse;
 import com.bigcomp.accesscontrol.model.Badge;
 import com.bigcomp.accesscontrol.model.BadgeReader;
@@ -20,7 +19,6 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;

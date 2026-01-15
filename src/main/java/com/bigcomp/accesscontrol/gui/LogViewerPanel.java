@@ -1,9 +1,8 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol.gui;
 
 import com.bigcomp.accesscontrol.core.AccessControlSystem;
 import com.bigcomp.accesscontrol.logging.LogManager;
-import com.bigcomp.accesscontrol.util.AccessDiagnostic;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -21,7 +20,6 @@ import java.util.ArrayList;
  * Log Viewer Panel
  */
 public class LogViewerPanel extends JPanel {
-    private AccessControlSystem accessControlSystem;
     private JTable logTable;
     private DefaultTableModel tableModel;
     private LogManager logManager;
@@ -45,7 +43,6 @@ public class LogViewerPanel extends JPanel {
     private JButton clearLogsButton;
     
     public LogViewerPanel(AccessControlSystem accessControlSystem) {
-        this.accessControlSystem = accessControlSystem;
         this.logManager = accessControlSystem.getLogManager();
         initializeComponents();
         setupLayout();
@@ -373,7 +370,6 @@ public class LogViewerPanel extends JPanel {
         // First execute search to get currently displayed logs
         List<LogManager.LogEntry> entries = new ArrayList<>();
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             LocalDateTime startDate = LocalDateTime.parse(startDateField.getText().trim() + "T00:00:00", 
                 DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
             LocalDateTime endDate = LocalDateTime.parse(endDateField.getText().trim() + "T23:59:59", 
@@ -476,88 +472,6 @@ public class LogViewerPanel extends JPanel {
         }
     }
     
-    /**
-     * Diagnose selected log record
-     */
-    private void diagnoseSelectedRecord() {
-        int selectedRow = logTable.getSelectedRow();
-        if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, 
-                I18n.t("log.msg.selectRecordFirst"), I18n.t("log.msg.selectRecordFirstTitle"), 
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        // Get selected row data
-        String badgeCode = (String) tableModel.getValueAt(selectedRow, 1);
-        String resourceId = (String) tableModel.getValueAt(selectedRow, 3);
-        String status = (String) tableModel.getValueAt(selectedRow, 6);
-        
-        // Execute diagnosis
-        AccessDiagnostic diagnostic = new AccessDiagnostic(accessControlSystem);
-        String report = diagnostic.diagnoseAccessIssue(badgeCode, resourceId);
-        
-        // Display diagnosis results
-        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-        JDialog dialog = new JDialog(parentFrame, 
-            I18n.f("log.diag.title", status), true);
-        dialog.setSize(700, 600);
-        dialog.setLocationRelativeTo(this);
-        
-        JTextArea textArea = new JTextArea(report);
-        textArea.setEditable(false);
-        Font textAreaFont = UIManager.getFont("TextArea.font");
-        if (textAreaFont != null) {
-            textArea.setFont(textAreaFont);
-        }
-        textArea.setBackground(Color.WHITE);
-        
-        JScrollPane scrollPane = new JScrollPane(textArea);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        JButton closeButton = new JButton(I18n.t("common.close"));
-        closeButton.addActionListener(e -> dialog.dispose());
-        buttonPanel.add(closeButton);
-        
-        dialog.add(scrollPane, BorderLayout.CENTER);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
-        dialog.setVisible(true);
-    }
-    
-    /**
-     * Show system status report
-     */
-    private void showSystemStatusReport() {
-        AccessDiagnostic diagnostic = new AccessDiagnostic(accessControlSystem);
-        String report = diagnostic.generateSystemStatusReport();
-        
-        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-        JDialog dialog = new JDialog(parentFrame, 
-            I18n.t("log.diag.reportTitle"), true);
-        dialog.setSize(600, 500);
-        dialog.setLocationRelativeTo(this);
-        
-        JTextArea textArea = new JTextArea(report);
-        textArea.setEditable(false);
-        Font textAreaFont = UIManager.getFont("TextArea.font");
-        if (textAreaFont != null) {
-            textArea.setFont(textAreaFont);
-        }
-        textArea.setBackground(Color.WHITE);
-        
-        JScrollPane scrollPane = new JScrollPane(textArea);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        JButton closeButton = new JButton(I18n.t("common.close"));
-        closeButton.addActionListener(e -> dialog.dispose());
-        buttonPanel.add(closeButton);
-        
-        dialog.add(scrollPane, BorderLayout.CENTER);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
-        dialog.setVisible(true);
-    }
     
     /**
      * Clear log files

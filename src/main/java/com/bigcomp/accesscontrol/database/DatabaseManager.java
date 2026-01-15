@@ -1,10 +1,9 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol.database;
 
 import com.bigcomp.accesscontrol.model.*;
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**

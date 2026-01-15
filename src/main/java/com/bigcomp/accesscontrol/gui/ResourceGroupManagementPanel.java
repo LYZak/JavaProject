@@ -1,4 +1,4 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol.gui;
 
 import com.bigcomp.accesscontrol.core.AccessControlSystem;
@@ -481,7 +481,6 @@ public class ResourceGroupManagementPanel extends JPanel {
                 // Before deleting resource group, remove references to this resource group from all profiles
                 ProfileManager profileManager = accessControlSystem.getProfileManager();
                 Map<String, Profile> allProfiles = profileManager.getAllProfiles();
-                int updatedProfileCount = 0;
                 
                 for (Profile profile : allProfiles.values()) {
                     if (profile.getAccessRights().containsKey(selected)) {
@@ -489,7 +488,6 @@ public class ResourceGroupManagementPanel extends JPanel {
                         profile.removeAccessRight(selected);
                         try {
                             profileManager.saveProfile(profile);
-                            updatedProfileCount++;
                         } catch (Exception e) {
                             System.err.println("Failed to update profile: " + profile.getName() + " - " + e.getMessage());
                         }

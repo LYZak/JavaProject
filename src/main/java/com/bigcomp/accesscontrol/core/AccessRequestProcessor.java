@@ -1,4 +1,4 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol.core;
 
 import com.bigcomp.accesscontrol.model.AccessRequest;
@@ -78,14 +78,12 @@ public class AccessRequestProcessor {
         private static final long serialVersionUID = 1L;
 
         final int cacheVersion;
-        final long createdAtEpochMillis;
         final String dbUrl;
         final Long dbLastModifiedEpochMillis;
         final AccessControlContext context;
 
-        CacheEnvelope(int cacheVersion, long createdAtEpochMillis, String dbUrl, Long dbLastModifiedEpochMillis, AccessControlContext context) {
+        CacheEnvelope(int cacheVersion, String dbUrl, Long dbLastModifiedEpochMillis, AccessControlContext context) {
             this.cacheVersion = cacheVersion;
-            this.createdAtEpochMillis = createdAtEpochMillis;
             this.dbUrl = dbUrl;
             this.dbLastModifiedEpochMillis = dbLastModifiedEpochMillis;
             this.context = context;
@@ -119,7 +117,6 @@ public class AccessRequestProcessor {
         Long dbLastModified = getDbLastModifiedEpochMillis(resolveDbFileFromUrl());
         CacheEnvelope envelope = new CacheEnvelope(
             CACHE_VERSION,
-            System.currentTimeMillis(),
             dbManager.getDbUrl(),
             dbLastModified,
             current

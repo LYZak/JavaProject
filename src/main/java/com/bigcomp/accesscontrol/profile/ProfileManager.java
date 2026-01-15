@@ -1,4 +1,4 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol.profile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -140,6 +140,10 @@ public class ProfileManager {
                 filter.setMonths(monthSet);
                 filter.setExcludeMonths(data.excludeMonths);
             }
+        }
+        if (data.daysOfMonth != null && !data.daysOfMonth.isEmpty()) {
+            filter.setDaysOfMonth(new HashSet<>(data.daysOfMonth));
+            filter.setExcludeDaysOfMonth(data.excludeDaysOfMonth);
         }
         if (data.daysOfWeek != null && !data.daysOfWeek.isEmpty()) {
             Set<DayOfWeek> daySet = new HashSet<>();

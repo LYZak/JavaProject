@@ -1,3 +1,4 @@
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol.simulation.engine;
 
 import com.bigcomp.accesscontrol.core.Router;
@@ -11,7 +12,6 @@ import com.bigcomp.accesscontrol.util.SystemClock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -218,11 +218,9 @@ public class StressSimulationEngine implements SimulationEngine {
     }
 
     private static final class UserBadge {
-        private final User user;
         private final Badge badge;
 
         private UserBadge(User user, Badge badge) {
-            this.user = user;
             this.badge = badge;
         }
     }

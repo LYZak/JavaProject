@@ -1,4 +1,4 @@
-// Group 2 ChenGong ZhangZhao LiangYiKuo
+// Group 2 ChenGong ZhangZhao LiangYizhuo
 package com.bigcomp.accesscontrol;
 
 import com.bigcomp.accesscontrol.gui.MainWindow;
@@ -10,7 +10,6 @@ import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Main program entry point
