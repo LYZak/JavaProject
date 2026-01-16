@@ -1,0 +1,13 @@
+com\bigcomp\accesscontrol\gui\SimulationWorkbenchPanelQueueParserTest.class
+com\bigcomp\accesscontrol\simulation\RealtimeSimulationEngineTest.class
+com\bigcomp\accesscontrol\gui\SimulationDetailsFormatterTest.class
+com\bigcomp\accesscontrol\integration\SystemIntegrationTest.class
+com\bigcomp\accesscontrol\simulation\DemoDataGeneratorTest.class
+com\bigcomp\accesscontrol\core\AccessRequestProcessorCacheTest.class
+com\bigcomp\accesscontrol\core\AccessRequestProcessorTest.class
+com\bigcomp\accesscontrol\database\DatabaseManagerTest.class
+com\bigcomp\accesscontrol\core\AccessPolicyEnforcementTest.class
+com\bigcomp\accesscontrol\simulation\StressSimulationEngineTest.class
+com\bigcomp\accesscontrol\core\BadgeUpdateAndRouterEventTest.class
+com\bigcomp\accesscontrol\profile\TimeFilterTest.class
+com\bigcomp\accesscontrol\util\SystemClockTest.class
